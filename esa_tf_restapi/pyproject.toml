@@ -1,0 +1,6 @@
+[tool.coverage.run]
+branch = true
+omit = ["setup.py"]
+
+[tool.isort]
+profile = "black"
