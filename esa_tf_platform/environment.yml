@@ -1,0 +1,11 @@
+channels:
+  - defaults
+dependencies:
+  - black
+  - dask
+  - flake8
+  - gdal = 3.0.2
+  - isort
+  - make
+  - pytest
+  - pytest-cov

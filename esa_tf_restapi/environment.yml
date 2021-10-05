@@ -1,0 +1,12 @@
+channels:
+  - defaults
+dependencies:
+  - black
+  - dask
+  - distributed
+  - fastapi
+  - flake8
+  - isort
+  - make
+  - pytest
+  - pytest-cov
