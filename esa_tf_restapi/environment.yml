@@ -1,5 +1,7 @@
+name: esa_tf_restapi
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - black
   - dask
@@ -10,3 +12,4 @@ dependencies:
   - make
   - pytest
   - pytest-cov
+  - uvicorn
