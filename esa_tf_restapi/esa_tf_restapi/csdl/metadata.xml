@@ -1,0 +1,15 @@
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+    <edmx:DataServices>
+        <Schema Namespace="ESA.TF.Model"
+            xmlns="http://docs.oasis-open.org/odata/ns/edm">
+            <EntityContainer Name="DefaultContainer">
+                <EntitySet Name="Workflow" EntityType="ESA.TF.Model.Workflow">
+                    <!-- TODO -->
+                </EntitySet>
+                <EntitySet Name="" EntityType="ESA.TF.Model.TransformationOrder">
+                    <!-- TODO -->
+                </EntitySet>
+            </EntityContainer>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>
