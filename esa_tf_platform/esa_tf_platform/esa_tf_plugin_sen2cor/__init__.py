@@ -1,0 +1,1 @@
+from .workflows_config import sen2cor_l1c_l2a
