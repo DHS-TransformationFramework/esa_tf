@@ -13,3 +13,6 @@ dependencies:
   - pytest
   - pytest-cov
   - uvicorn
+  - pip
+  - pip:
+    - odata-query

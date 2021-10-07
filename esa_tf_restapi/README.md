@@ -48,6 +48,12 @@ curl "http://localhost:8000/Workflows('6c18b57d-fgk4-1236-b539-12h305c26z89')" |
 curl http://localhost:8000/TransformationOrders | jq
 ```
 
+It is also possible to filter accessible orders:
+
+```bash
+curl "http://localhost:8000/TransformationOrders?\$filter=`jq -rn --arg x "Status eq 'completed'" '$x|@uri'`" | jq
+```
+
 ### Request a new transformation
 
 ```bash
