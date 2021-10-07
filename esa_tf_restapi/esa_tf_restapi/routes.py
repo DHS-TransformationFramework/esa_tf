@@ -1,7 +1,9 @@
-from fastapi import Request, Response
+from fastapi import Request, Response, Query
+from typing import Optional, Any, List
 
 from . import app
 from .csdl import loadDefinition
+from .odata import parseQS
 
 
 @app.get("/$metadata")
@@ -63,7 +65,15 @@ async def workflow(request: Request, id: str):
 
 
 @app.get("/TransformationOrders")
-async def tranformation_orders(request: Request):
+async def tranformation_orders(
+    request: Request,
+    rawfilter: Optional[str] = Query(
+        None, alias="$filter", title="OData $filter query", max_length=50
+    ),
+):
+    odata_params = parseQS(filter=rawfilter)
+    filter = odata_params.filter
+    print(filter)
     base = request.url_for("tranformation_orders")
     return {
         "@odata.context": f"{base}/$metadata#TransformationOrder",
@@ -86,9 +96,9 @@ async def tranformation_orders(request: Request):
                         "Aerosol_Type": "RURAL",
                         "Mid_Latitude": "SUMMER",
                         "Ozone_Content": 0,
-                        "Cirrus_Correction": "True",
-                        "DEM": "True",
-                        "DEM_directory": "None",
+                        "Cirrus_Correction": True,
+                        "DEM": True,
+                        "DEM_directory": None,
                         "Resolution": 10,
                     }
                 ],
