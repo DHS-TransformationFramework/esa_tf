@@ -1,3 +1,12 @@
+import os
+from xml.etree import ElementTree
+
+
+SEN2COR_CONFILE_NAME = "L2A_GIPP.xml"
+SRTM_DOWNLOAD_ADDRESS = (
+    "http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/"
+)
+
 sen2cor_l1c_l2a = {
     "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
     "InputProductType": "S2MSILC",
@@ -48,3 +57,32 @@ sen2cor_l1c_l2a = {
         },
     ],
 }
+
+
+def set_sen2cor_options(etree, options, srtm_folder):
+    for k, v in options.items():
+        if k.lower() in ["row0", "col0", "nrow_win", "ncol_win"]:
+            etree.findall(f".//{k}")[0].text = str(v).upper()
+        elif k.lower() in [
+            "aerosol_type",
+            "mid_latitude",
+            "ozone_content",
+            "cirrus_correction",
+        ]:
+            tag_name = "_".join([s.capitalize() for s in k.split("_")])
+            etree.findall(f".//{tag_name}")[0].text = str(v).upper()
+        elif k.lower() == "dem_terrain_correction" and v:
+            etree.findall(".//DEM_Directory")[0].text = srtm_folder
+            etree.findall(".//DEM_Reference")[0].text = SRTM_DOWNLOAD_ADDRESS
+    return etree
+
+
+def create_sen2cor_confile(processing_dir, srtm_folder, options):
+    # Read the default Sen2Cor configuration file
+    sample_config_path = os.path.join(__package__, "resources", SEN2COR_CONFILE_NAME)
+    et = ElementTree.parse(sample_config_path)
+    et = set_sen2cor_options(et, options, srtm_folder)
+    # Write back to file
+    output_confile = os.path.join(processing_dir, SEN2COR_CONFILE_NAME)
+    et.write(output_confile)
+    return et
