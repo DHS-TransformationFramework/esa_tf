@@ -50,7 +50,7 @@ sen2cor_l1c_l2a = {
         },
         {
             "Name": "resolution",
-            "Description": "Target resolution, can be 10, 20 or 60m. If omitted, only 20 and 10m resolutions will be processed",
+            "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
             "Type": "boolean",
             "Default": True,
             "Values": [10, 20, 60],
@@ -60,16 +60,27 @@ sen2cor_l1c_l2a = {
 
 
 def set_sen2cor_options(etree, options, srtm_folder):
+    """Replace in the input ElementTree object (representing the parsed default L2A_GIPP.xml
+    configuration file) the values of tags that a user can specify as processing options, according
+    to the user desiderata specified by means of ``options``. The ``srtm_folder`` is the system
+    folder in which the SRTM DEM will be downloaded or, if DEM is already available, searched.
+
+    :param ElementTree.ElementTree etree: the parsed default L2A_GIPP.xml configuration file
+    :param dict options: dictionary of the user options
+    :param str srtm_folder: path of the folder in which the SRTM DEM will be downloaded
+    :return ElementTree.ElementTree:
+    """
     for k, v in options.items():
         if k.lower() in ["row0", "col0", "nrow_win", "ncol_win"]:
-            etree.findall(f".//{k}")[0].text = str(v).upper()
+            etree.findall(f".//{k.lower()}")[0].text = str(v).upper()
         elif k.lower() in [
             "aerosol_type",
             "mid_latitude",
             "ozone_content",
             "cirrus_correction",
         ]:
-            tag_name = "_".join([s.capitalize() for s in k.split("_")])
+            # e.g. "aerosol_type" ---> "Aerosol_Type"
+            tag_name = "_".join([s.capitalize() for s in k.lower().split("_")])
             etree.findall(f".//{tag_name}")[0].text = str(v).upper()
         elif k.lower() == "dem_terrain_correction" and v:
             etree.findall(".//DEM_Directory")[0].text = srtm_folder
@@ -78,6 +89,15 @@ def set_sen2cor_options(etree, options, srtm_folder):
 
 
 def create_sen2cor_confile(processing_dir, srtm_folder, options):
+    """Parse the default Sen2Cor L2A_GIPP.xml configuration file, set the user options and write
+    the new configuration file relative to the current customisation in the processing-dir. The
+    function returns the full path of the new created L2A_GIPP.xml file.
+
+    :param str processing_dir: path of the processing directory
+    :param str srtm_folder: path of the folder in which the SRTM DEM will be downloaded
+    :param dict options: dictionary of the user options
+    :return str:
+    """
     # Read the default Sen2Cor configuration file
     sample_config_path = os.path.join(__package__, "resources", SEN2COR_CONFILE_NAME)
     et = ElementTree.parse(sample_config_path)
@@ -85,4 +105,4 @@ def create_sen2cor_confile(processing_dir, srtm_folder, options):
     # Write back to file
     output_confile = os.path.join(processing_dir, SEN2COR_CONFILE_NAME)
     et.write(output_confile)
-    return et
+    return output_confile
