@@ -1,7 +1,17 @@
 <edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
     <edmx:DataServices>
-        <Schema Namespace="ESA.TF.Model"
-            xmlns="http://docs.oasis-open.org/odata/ns/edm">
+        <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="ESA.TF.Model">
+            <EnumType Name="WorkflowOptionType">
+                <Member Name="string" />
+                <Member Name="float" />
+                <Member Name="integer" />
+                <Member Name="boolean" />
+            </EnumType>
+            <ComplexType Name="WorkflowOption">
+                <Property Name="Name" Type="Edm.String" Nullable="false" />
+                <Property Name="Description" Type="Edm.String" Nullable="false" />
+                <Property Name="Type" Type="ESA.TF.Model.WorkflowType" Nullable="false" />
+            </ComplexType>
             <EntityContainer Name="DefaultContainer">
                 <EntitySet Name="Workflow" EntityType="ESA.TF.Model.Workflow">
                     <!-- TODO -->

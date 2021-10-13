@@ -1,5 +1,7 @@
 #!make
 
+PORT = 8080
+
 .PHONY: tests
 
 COV_REPORT = html
@@ -7,10 +9,10 @@ COV_REPORT = html
 .DEFAULT_GOAL := default
 
 start:
-	uvicorn esa_tf_restapi:app --reload
+	uvicorn --port $(PORT) esa_tf_restapi:app --reload
 
 serve:
-	uvicorn esa_tf_restapi:app
+	uvicorn --port $(PORT) esa_tf_restapi:app
 
 default: fix-code-style tests
 
