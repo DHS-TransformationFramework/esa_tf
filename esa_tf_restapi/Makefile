@@ -1,26 +1,22 @@
 #!make
 
-PORT = 8080
-
-.PHONY: tests
-
-COV_REPORT = html
+PORT := 8080
+ENVIRONMENT := ESA_TF_RESTAPI
+IMAGE_NAME := esa_tf_restapi
+COV_REPORT := html
 
 .DEFAULT_GOAL := default
 
 start:
 	uvicorn --port $(PORT) esa_tf_restapi:app --reload
 
-serve:
-	uvicorn --port $(PORT) esa_tf_restapi:app
-
-default: fix-code-style tests
+default: fix-code-style test
 
 fix-code-style:
 	black .
 	isort .
 
-tests:
+test:
 	python -m pytest -v --cov=. --cov-report=$(COV_REPORT) tests/
 
 code-quality:
@@ -31,3 +27,19 @@ code-quality:
 code-style:
 	black --check .
 	isort --check .
+
+# deploy
+
+conda-env-create:
+	conda env create -n $(ENVIRONMENT) -f environment.yml
+
+conda-env-update:
+	conda env update -n $(ENVIRONMENT) -f environment.yml
+
+image:
+	docker build -t $(IMAGE_NAME) .
+
+# run
+
+serve:
+	uvicorn --port $(PORT) esa_tf_restapi:app

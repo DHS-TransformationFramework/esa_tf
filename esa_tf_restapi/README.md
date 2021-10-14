@@ -19,7 +19,7 @@ Remember to define the `WEB_CONCURRENCY` envvar (default is 1).
 ## Running tests
 
 ```bash
-make tests
+make test
 ```
 
 ## Endpoints
