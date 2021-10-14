@@ -59,7 +59,7 @@ def get_workflows(product_type=None):
     return workflows
 
 
-def get_workflow_by_id(workflow_id=None, product_type=None):
+def get_workflow_by_id(workflow_id=None):
     workflows = get_workflows()
     try:
         workflow = workflows[workflow_id]
