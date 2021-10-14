@@ -13,11 +13,11 @@ services:
         command: dask-scheduler
 
     esa_tf_restapi:
-        image: esa_tf_restapi:${ESA_TF_RELEASE}
+        image: esa_tf_restapi:${ESA_TF_RELEASE:-latest}
         ports:
            - "8080:8080"
         command: make serve PORT=8080
 
     esa_tf_worker:
-        image: esa_tf_worker:${ESA_TF_RELEASE}
+        image: esa_tf_worker:${ESA_TF_RELEASE:-latest}
         command: make dask-worker DASKFLAGS="tcp://scheduler:8786"
