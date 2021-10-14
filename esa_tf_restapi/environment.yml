@@ -12,6 +12,7 @@ dependencies:
   - make
   - pytest
   - pytest-cov
+  - python = 3.9.7
   - uvicorn
   - pip
   - pip:

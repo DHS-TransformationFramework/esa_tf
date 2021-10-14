@@ -25,11 +25,11 @@ code-style:
 
 # deploy
 
-mamba-env-create:
-	mamba env create -n $(ENVIRONMENT) -f environment.yml
+conda-env-create:
+	conda env create -n $(ENVIRONMENT) -f environment.yml
 
-mamba-env-update:
-	mamba env update -n $(ENVIRONMENT) -f environment.yml
+conda-env-update:
+	conda env update -n $(ENVIRONMENT) -f environment.yml
 
 image:
 	docker build -t $(IMAGE_NAME) .
