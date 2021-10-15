@@ -72,7 +72,7 @@ def set_sen2cor_options(etree, options, srtm_path):
 
     :param ElementTree.ElementTree etree: the parsed default L2A_GIPP.xml configuration file
     :param dict options: dictionary of the user options
-    :param str srtm_path: path of the folder in which the SRTM DEM will be downloaded
+    :param str srtm_path: path of the folder in which the SRTM DEM will be downloaded or searched
     :return ElementTree.ElementTree:
     """
     for k, v in options.items():
@@ -116,7 +116,7 @@ def create_sen2cor_confile(processing_dir, srtm_path, options):
 def check_input_consistency(product_folder_path):
     """Check if the input product is a valid Sentinel-2 L1C product.
 
-    :param str product_folder_path:
+    :param str product_folder_path: path of the main Sentinel-2 L1C product folder
     :return:
     """
     if not os.path.isdir(product_folder_path):
@@ -136,9 +136,9 @@ def check_input_consistency(product_folder_path):
 
 
 def find_option_definition(option_name):
-    """
+    """Find in the workflow description the option definition by its name.
 
-    :param str option_name:
+    :param str option_name: the name of the input option
     :return dict:
     """
     for option_def in sen2cor_l1c_l2a["WorkflowOptions"]:
@@ -148,10 +148,10 @@ def find_option_definition(option_name):
 
 
 def check_ozone_content(options, valid_ozone_values):
-    """
+    """Check the validity of the ozone content option values.
 
-    :param dict options:
-    :param list_or_tuple valid_ozone_values:
+    :param dict options: dictionary of the asked user options
+    :param list_or_tuple valid_ozone_values: valid ozone content values as in the workflow description
     :return:
     """
     ozone_winter_values = (0, 250, 290, 330, 377, 420, 460)
@@ -172,9 +172,9 @@ def check_ozone_content(options, valid_ozone_values):
 
 
 def check_row_col_type(roi_options):
-    """
+    """Check the validity of the ROI options ``row0``, ``col0``.
 
-    :param dict roi_options:
+    :param dict roi_options: the ROI options ``row0``, ``col0``, ``nrow_win`` and ``ncol_win``
     :return bool:
     """
     # if row0 is a string, col0 must be a string with the same value
@@ -194,9 +194,9 @@ def check_row_col_type(roi_options):
 
 
 def check_nrow_ncol(roi_options):
-    """
+    """Check the validity of the ROI options ``nrow_win`` and ``ncol_win``.
 
-    :param dict roi_options:
+    :param dict roi_options: the ROI options ``row0``, ``col0``, ``nrow_win`` and ``ncol_win``
     :return bool:
     """
     for oname in ["nrow_win", "ncol_win"]:
@@ -206,9 +206,9 @@ def check_nrow_ncol(roi_options):
 
 
 def check_roi_options(roi_options):
-    """
+    """Check the validity of the ROI options.
 
-    :param dict roi_options:
+    :param dict roi_options: the ROI options ``row0``, ``col0``, ``nrow_win`` and ``ncol_win``
     :return bool:
     """
     if not roi_options:
@@ -223,15 +223,17 @@ def check_roi_options(roi_options):
 
 
 def check_options(options):
-    """
+    """Check the validity of the asked user options.
 
-    :param dict options:
+    :param dict options: the user's options dictionary
     :return bool:
     """
     # ATM ROI options are not present in the workflow definition
     roi_options = {k: v for k, v in options.items() if k in ROI_OPTIONS_NAMES}
-    other_options = {k: v for k, v in options.items() if k not in ROI_OPTIONS_NAMES}
     check_roi_options(roi_options)
+
+    # check the validity of non-ROI options
+    other_options = {k: v for k, v in options.items() if k not in ROI_OPTIONS_NAMES}
     valid_names = [option["Name"] for option in sen2cor_l1c_l2a["WorkflowOptions"]]
     for oname, ovalue in other_options.items():
         if oname == "ozone_content":
@@ -258,16 +260,18 @@ def run_processing(
     srtm_path,
     logger=None,
 ):
-    """
+    """Execute the processing by means of Sen2Cor tool to convert, according to the input user
+    option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
+    the path of the output product.
 
-    :param product_folder_path:
-    :param processing_dir:
-    :param output_dir:
-    :param options:
-    :param sen2cor_path:
-    :param srtm_path:
-    :param logger:
-    :return:
+    :param str product_folder_path: path of the main Sentinel-2 L1C product folder
+    :param str processing_dir: path of the processing directory
+    :param str output_dir: the output directory
+    :param dict options: the user's options dictionary
+    :param str sen2cor_path: path of the Sen2Cor ``L2A_Process`` script
+    :param str srtm_path: path of the folder in which the SRTM DEM will be downloaded or searched
+    :param logging.Logger logger: the processing logger object
+    :return str:
     """
     check_input_consistency(product_folder_path)
     check_options(options)
