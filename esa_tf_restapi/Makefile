@@ -4,11 +4,12 @@ PORT := 8080
 ENVIRONMENT := ESA_TF_RESTAPI
 IMAGE_NAME := esa_tf_restapi
 COV_REPORT := html
+SCHEDULER := "tcp://scheduler:8786"
 
 .DEFAULT_GOAL := default
 
 start:
-	uvicorn --port $(PORT) esa_tf_restapi:app --reload
+	SCHEDULER=$(SCHEDULER) uvicorn --port $(PORT) esa_tf_restapi:app --reload
 
 default: fix-code-style test
 
@@ -42,4 +43,4 @@ image:
 # run
 
 serve:
-	uvicorn --port $(PORT) esa_tf_restapi:app
+	SCHEDULER=$(SCHEDULER) uvicorn --port $(PORT) esa_tf_restapi:app

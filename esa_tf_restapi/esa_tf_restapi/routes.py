@@ -1,7 +1,8 @@
-from fastapi import Request, Response, Query
-from typing import Optional, Any, List
+from typing import Optional
 
-from . import app
+from fastapi import Query, Request, Response, HTTPException
+
+from . import api, app
 from .csdl import loadDefinition
 from .odata import parseQS
 
@@ -14,53 +15,25 @@ async def metadata():
 @app.get("/Workflows")
 async def workflows(request: Request):
     base = request.url_for("workflows")
-    id = "6c18b57d-fgk4-1236-b539-12h305c26z89"
+    data = api.get_workflows()
     return {
         "@odata.context": f"{base}/$metadata#Workflow",
         # "@odata.nextLink": "https://services.odata.org/V4/TripPinService/People?%24select=FirstName&%24skiptoken=8",
-        "value": [
-            {
-                "Id": id,
-                "Name": "S2_L1C_L2A",
-                "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
-                "InputProductType": "S2MSILC",
-                "OutputProductType": "S2MSI2A",
-                "WorkflowVersion": "1.2",
-                "WorkflowOptions": [
-                    {
-                        "Name": "Aerosol_Type",
-                        "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
-                        "Type": "String",
-                        "Default": "RURAL",
-                        "Value": ["MARITIME", "RURAL", "AUTO"],
-                    },
-                ],
-            }
-        ],
+        "value": [{**ops, "Id": id} for id, ops in data.items()],
     }
 
 
 @app.get("/Workflows('{id}')", name="workflow")
 async def workflow(request: Request, id: str):
+    data = api.get_workflows(id)
+    if not data:
+        raise HTTPException(status_code=404, detail=f"Workflow {id} not found")
     base = request.url_for("workflow", id=id)
     return {
+        **data,
         "@odata.id": f"{base}/Workflows('{id}')",
-        "@odata.context": f"{base}/$metadata",
-        "Id": "6c18b57d-fgk4-1236-b539-12h305c26z89",
-        "Name": "S2_L1C_L2A",
-        "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
-        "InputProductType": "S2MSILC",
-        "OutputProductType": "S2MSI2A",
-        "WorkflowVersion": "1.2",
-        "WorkflowOptions": [
-            {
-                "Name": "Aerosol_Type",
-                "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
-                "Type": "String",
-                "Default": "RURAL",
-                "Value": ["MARITIME", "RURAL", "AUTO"],
-            },
-        ],
+        "@odata.context": f"{base}/$metadata#Workflow('{id}')",
+        "Id": id,
     }
 
 
