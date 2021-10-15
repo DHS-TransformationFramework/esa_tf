@@ -65,7 +65,27 @@ def test_set_sen2cor_options_dem():
     )
 
 
-def test_create_sen2cor_confile(tmpdir):
+def test_create_sen2cor_confile_no_option(tmpdir):
+    processing_dir = tmpdir.join("processing_dir").strpath
+    os.mkdir(processing_dir)
+    srtm_path = tmpdir.join("dem").strpath
+    os.mkdir(srtm_path)
+    options = {}
+    output_confile = esa_tf_plugin_sen2cor.create_sen2cor_confile(
+        processing_dir, srtm_path, options
+    )
+
+    assert os.path.isfile(output_confile)
+
+    et = ElementTree.parse(output_confile)
+    # check default values
+    assert et.findall(".//Aerosol_Type")[0].text == "RURAL"
+    assert et.findall(".//Mid_Latitude")[0].text == "SUMMER"
+    assert et.findall(".//Ozone_Content")[0].text == "331"
+    assert et.findall(".//Cirrus_Correction")[0].text == "FALSE"
+
+
+def test_create_sen2cor_confile_with_options(tmpdir):
     processing_dir = tmpdir.join("processing_dir").strpath
     os.mkdir(processing_dir)
     srtm_path = tmpdir.join("dem").strpath
@@ -247,6 +267,11 @@ def test_check_roi_options_int_invalid_win():
     }
     with pytest.raises(ValueError):
         assert esa_tf_plugin_sen2cor.check_roi_options(options)
+
+
+def test_check_options_no_option():
+    options = {}
+    assert esa_tf_plugin_sen2cor.check_options(options) is True
 
 
 def test_check_options_valid_no_roi():
