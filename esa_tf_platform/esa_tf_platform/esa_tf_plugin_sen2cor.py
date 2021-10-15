@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import shutil
 import subprocess
 from xml.etree import ElementTree
 
@@ -11,57 +12,6 @@ SRTM_DOWNLOAD_ADDRESS = (
 )
 MTD_FILENAME = "MTD_MSIL1C.xml"
 ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
-
-sen2cor_l1c_l2a = {
-    "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
-    "InputProductType": "S2MSILC",
-    "OutputProductType": "S2MSI2A",
-    "WorkflowVersion": "0.1",
-    "WorkflowOptions": [
-        {
-            "Name": "aerosol_type",
-            "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
-            "Type": "string",
-            "Default": "rural",
-            "Values": ["maritime", "rural"],
-        },
-        {
-            "Name": "mid_latitude",
-            "Description": "If  'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
-            "Type": "string",
-            "Default": "summer",
-            "Values": ["summer", "winter", "auto"],
-        },
-        {
-            "Name": "ozone_content",
-            "Description": "0: to get the best approximation from metadata (this is the smallest difference between metadata and column DU), else select for midlatitude summer (MS) atmosphere: 250, 290, 331 (standard MS), 370, 410, 450; for midlatitude winter (MW) atmosphere: 250, 290, 330, 377 (standard MW), 420, 460",
-            "Type": "integer",
-            "Default": 331,
-            "Values": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
-        },
-        {
-            "Name": "cirrus_correction",
-            "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
-            "Type": "boolean",
-            "Default": False,
-            "Values": [True, False],
-        },
-        {
-            "Name": "dem_terrain_correction",
-            "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
-            "Type": "boolean",
-            "Default": True,
-            "Values": [True, False],
-        },
-        {
-            "Name": "resolution",
-            "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
-            "Type": "boolean",
-            "Default": True,
-            "Values": [10, 20, 60],
-        },
-    ],
-}
 
 
 def set_sen2cor_options(etree, options, srtm_path):
@@ -119,13 +69,17 @@ def check_input_consistency(product_folder_path):
     :param str product_folder_path: path of the main Sentinel-2 L1C product folder
     :return:
     """
-    msg = f"the input product {product_folder_path} is not a valid Sentinel-2 L1C product"
+    msg = (
+        f"the input product {product_folder_path} is not a valid Sentinel-2 L1C product"
+    )
     if not os.path.isdir(product_folder_path):
         raise ValueError(msg)
     mtd_file = glob.glob(os.path.join(product_folder_path, MTD_FILENAME))
     if len(mtd_file) != 1:
         raise ValueError(msg)
-    img_data = glob.glob(os.path.join(product_folder_path, "GRANULE", "*", "IMG_DATA", "*.jp2"))
+    img_data = glob.glob(
+        os.path.join(product_folder_path, "GRANULE", "*", "IMG_DATA", "*.jp2")
+    )
     if len(img_data) != 14:
         raise ValueError(msg)
 
@@ -246,13 +200,32 @@ def check_options(options):
     return True
 
 
+def compress_and_move(src_dir, dst_dir, format="zip"):
+    """Create in the output folder the compressed output file starting from the Sen2Cor output
+    Sentinel-2 L2A folder. The function returns the path of the compressed output file.
+
+    :param str src_dir: the folder path in which the Sen2Cor output is saved
+    :param str dst_dir: the output directory
+    :param str format: the archive format, default value: ``zip``
+    :return str:
+    """
+    sen2cor_filename = os.listdir(src_dir)[0]
+    # remove the ".SAFE" string (if present) from the output Sen2Cor folder
+    output_filename = os.path.splitext(sen2cor_filename)[0]
+    src_path = os.path.join(src_dir, sen2cor_filename)
+    dst_path = os.path.join(dst_dir, output_filename)
+    # the file extension is automatically added by the "shutil.make_archive" function
+    shutil.make_archive(dst_path, format, src_path)
+    return dst_path
+
+
 def run_processing(
     product_folder_path,
     processing_dir,
     output_dir,
     options,
     sen2cor_path,
-    srtm_path,
+    srtm_path=None,
     logger=None,
 ):
     """Execute the processing by means of Sen2Cor tool to convert, according to the input user
@@ -270,23 +243,77 @@ def run_processing(
     """
     check_input_consistency(product_folder_path)
     check_options(options)
+    # if the "srtm_path" is not defined, the SRTM tile is downloaded inside a dedicate folder
+    # into the processing-dir
+    if not srtm_path:
+        srtm_path = os.path.join(processing_dir, "dem")
+    os.makedirs(srtm_path, exist_ok=True)
+    # creation of the folder in which the Sen2Cor output will be created before compressing and
+    # moving it into the output directory
+    output_binder_dir = os.path.join(processing_dir, "output_binder_dir")
+    os.makedirs(output_binder_dir, exist_ok=True)
+    # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_path, options)
-    cmd = f"{sen2cor_path} {product_folder_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
+    # running the Sen2Cor script
+    cmd = f"{sen2cor_path} {product_folder_path} --output_dir {output_binder_dir} --GIP_L2A {sen2cor_confile}"
     if "resolution" in options:
         cmd += f" --resolution {options['resolution']}"
-    # > /dev/null 2>&1
-    stdout = open(os.devnull, "a")
-    stderr = open(os.devnull, "a")
-    if logger:
-        logger.info("Command line and its output ...\n\n" + cmd + "\n")
-        for hdlr in logger.handlers:
-            if isinstance(hdlr, logging.FileHandler):
-                # >> logfile_path 2>&1
-                outfile = open(hdlr.baseFilename, "a")
-                stdout = outfile
-                stderr = outfile
-    exit_status = subprocess.call(cmd, shell=True, stdout=stdout, stderr=stderr)
+    exit_status = subprocess.call(cmd, shell=True)
     if exit_status != 0:
         raise RuntimeError("Sen2Cor processing failed")
-    output_path = os.path.join(output_dir, os.listdir(output_dir))
+    # creation of the output archive file
+    output_path = compress_and_move(output_binder_dir, output_dir)
     return output_path
+
+
+sen2cor_l1c_l2a = {
+    "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
+    "Execute": run_processing,
+    "InputProductType": "S2MSILC",
+    "OutputProductType": "S2MSI2A",
+    "WorkflowVersion": "0.1",
+    "WorkflowOptions": [
+        {
+            "Name": "aerosol_type",
+            "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
+            "Type": "string",
+            "Default": "rural",
+            "Values": ["maritime", "rural"],
+        },
+        {
+            "Name": "mid_latitude",
+            "Description": "If  'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
+            "Type": "string",
+            "Default": "summer",
+            "Values": ["summer", "winter", "auto"],
+        },
+        {
+            "Name": "ozone_content",
+            "Description": "0: to get the best approximation from metadata (this is the smallest difference between metadata and column DU), else select for midlatitude summer (MS) atmosphere: 250, 290, 331 (standard MS), 370, 410, 450; for midlatitude winter (MW) atmosphere: 250, 290, 330, 377 (standard MW), 420, 460",
+            "Type": "integer",
+            "Default": 331,
+            "Values": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
+        },
+        {
+            "Name": "cirrus_correction",
+            "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
+            "Type": "boolean",
+            "Default": False,
+            "Values": [True, False],
+        },
+        {
+            "Name": "dem_terrain_correction",
+            "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
+            "Type": "boolean",
+            "Default": True,
+            "Values": [True, False],
+        },
+        {
+            "Name": "resolution",
+            "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
+            "Type": "boolean",
+            "Default": True,
+            "Values": [10, 20, 60],
+        },
+    ],
+}
