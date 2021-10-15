@@ -119,20 +119,15 @@ def check_input_consistency(product_folder_path):
     :param str product_folder_path: path of the main Sentinel-2 L1C product folder
     :return:
     """
+    msg = f"the input product {product_folder_path} is not a valid Sentinel-2 L1C product"
     if not os.path.isdir(product_folder_path):
-        raise ValueError(
-            f"{product_folder_path} is no a valid directory: specify the directory of a Sentinel-2 L1C input product"
-        )
-    mtd_file = glob.glob(MTD_FILENAME)
+        raise ValueError(msg)
+    mtd_file = glob.glob(os.path.join(product_folder_path, MTD_FILENAME))
     if len(mtd_file) != 1:
-        raise ValueError(
-            f"{product_folder_path} is an invalid input product. Please specify the directory of a Sentinel-2 L1C input product"
-        )
-    img_data = glob.glob(os.path.join(product_folder_path, "*", "*", "*", "*.jp2"))
+        raise ValueError(msg)
+    img_data = glob.glob(os.path.join(product_folder_path, "GRANULE", "*", "IMG_DATA", "*.jp2"))
     if len(img_data) != 14:
-        raise ValueError(
-            f"the input product {product_folder_path} is not a valid Sentinel-2 L1C product"
-        )
+        raise ValueError(msg)
 
 
 def find_option_definition(option_name):
