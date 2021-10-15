@@ -1,8 +1,8 @@
 import glob
 import logging
 import os
-from xml.etree import ElementTree
 import subprocess
+from xml.etree import ElementTree
 
 
 SEN2COR_CONFILE_NAME = "L2A_GIPP.xml"
