@@ -1,0 +1,23 @@
+# Required Environment variables
+# ESA_TF_RELEASE
+
+version: '3.8'
+
+services:
+    esa_tf_scheduler:
+        image: daskdev/dask:2021.8.1-py3.9
+        hostname: scheduler
+        ports:
+          - "8786:8786"
+          - "8787:8787"
+        command: dask-scheduler
+
+    esa_tf_restapi:
+        image: esa_tf_restapi:${ESA_TF_RELEASE:-latest}
+        ports:
+           - "8080:8080"
+        command: make serve PORT=8080
+
+    esa_tf_worker:
+        image: esa_tf_worker:${ESA_TF_RELEASE:-latest}
+        command: make dask-worker DASKFLAGS="tcp://scheduler:8786"

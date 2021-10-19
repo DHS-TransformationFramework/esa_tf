@@ -1,14 +1,9 @@
 #!make
 
-PORT := 8080
-ENVIRONMENT := ESA_TF_RESTAPI
-IMAGE_NAME := esa_tf_restapi
+ENVIRONMENT := ESA_TF_PLATFORM
+DASKFLAGS :=
+IMAGE_NAME := esa_tf_worker
 COV_REPORT := html
-
-.DEFAULT_GOAL := default
-
-start:
-	uvicorn --port $(PORT) esa_tf_restapi:app --reload
 
 default: fix-code-style test
 
@@ -41,5 +36,5 @@ image:
 
 # run
 
-serve:
-	uvicorn --port $(PORT) esa_tf_restapi:app
+dask-worker:
+	dask-worker $(DASKFLAGS)

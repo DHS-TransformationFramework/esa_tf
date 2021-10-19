@@ -2,10 +2,11 @@ channels:
   - defaults
 dependencies:
   - black
-  - dask
+  - dask = 2021.8.1
   - flake8
   - gdal = 3.0.2
   - isort
   - make
+  - python = 3.9.7
   - pytest
   - pytest-cov
