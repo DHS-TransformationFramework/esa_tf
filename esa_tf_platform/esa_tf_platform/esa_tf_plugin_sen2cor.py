@@ -220,44 +220,50 @@ def compress_and_move(src_dir, dst_dir, format="zip"):
 
 
 def run_processing(
-    product_folder_path,
+    product_file,
+    *,
+    workflow_options,
     processing_dir,
     output_dir,
-    options,
-    sen2cor_path,
-    srtm_path=None,
+    sen2cor_script_file=None,
+    srtm_dir=None,
     logger=None,
 ):
     """Execute the processing by means of Sen2Cor tool to convert, according to the input user
     option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
     the path of the output product.
 
-    :param str product_folder_path: path of the main Sentinel-2 L1C product folder
+    :param str product_file: path of the main Sentinel-2 L1C product folder
+    :param dict workflow_options: the user's options dictionary
     :param str processing_dir: path of the processing directory
     :param str output_dir: the output directory
-    :param dict options: the user's options dictionary
-    :param str sen2cor_path: path of the Sen2Cor ``L2A_Process`` script
-    :param str srtm_path: path of the folder in which the SRTM DEM will be downloaded or searched
+    :param str sen2cor_script_file: path of the Sen2Cor ``L2A_Process`` script
+    :param str srtm_dir: directory in which the SRTM DEM will be downloaded or searched
     :param logging.Logger logger: the processing logger object
     :return str:
     """
-    check_input_consistency(product_folder_path)
-    check_options(options)
+    if sen2cor_script_file is None:
+        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "Sen2Cor-02.09.00-Linux64")
+    if srtm_dir is None:
+        srtm_dir = os.getenv("SRTM_DIR", )
+
+    check_input_consistency(product_file)
+    check_options(workflow_options)
     # if the "srtm_path" is not defined, the SRTM tile is downloaded inside a dedicate folder
     # into the processing-dir
-    if not srtm_path:
-        srtm_path = os.path.join(processing_dir, "dem")
-    os.makedirs(srtm_path, exist_ok=True)
+    if not srtm_dir:
+        srtm_dir = os.path.join(workflow_options, "dem")
+    os.makedirs(srtm_dir, exist_ok=True)
     # creation of the folder in which the Sen2Cor output will be created before compressing and
     # moving it into the output directory
-    output_binder_dir = os.path.join(processing_dir, "output_binder_dir")
+    output_binder_dir = os.path.join(workflow_options, "output_binder_dir")
     os.makedirs(output_binder_dir, exist_ok=True)
     # creation of the Sen2Cor configuration files inside the processing-dir
-    sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_path, options)
+    sen2cor_confile = create_sen2cor_confile(workflow_options, srtm_dir, workflow_options)
     # running the Sen2Cor script
-    cmd = f"{sen2cor_path} {product_folder_path} --output_dir {output_binder_dir} --GIP_L2A {sen2cor_confile}"
-    if "resolution" in options:
-        cmd += f" --resolution {options['resolution']}"
+    cmd = f"{sen2cor_script_file} {product_file} --output_dir {output_binder_dir} --GIP_L2A {sen2cor_confile}"
+    if "resolution" in workflow_options:
+        cmd += f" --resolution {workflow_options['resolution']}"
     exit_status = subprocess.call(cmd, shell=True)
     if exit_status != 0:
         raise RuntimeError("Sen2Cor processing failed")

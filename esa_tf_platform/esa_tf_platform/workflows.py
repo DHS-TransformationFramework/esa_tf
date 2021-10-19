@@ -86,19 +86,22 @@ def create_directories(*directory_list):
 
 
 def read_hub_credentials(
-    hub_name, hubs_credential_file,
+    hubs_credential_file,
+    hub_name="scihub",
 ):
-    if hub_name is None:
-        hub_name = "scihub"
     with open(hubs_credential_file) as file:
         hubs_credentials = yaml.load(file, Loader=yaml.FullLoader)
     return hubs_credentials[hub_name]
 
 
 def download_product(
-    hub_name, product, *, processing_dir, hubs_credentials_file,
+    product,
+    *,
+    processing_dir,
+    hubs_credentials_file,
+    hub_name="scihub",
 ):
-    hub_credentials = read_hub_credentials(hub_name, hubs_credentials_file)
+    hub_credentials = read_hub_credentials(hubs_credentials_file, hub_name)
     api = sentinelsat.SentinelAPI(**hub_credentials)
     uuid_products = api.query(identifier=product.strip(".zip"))
     if len(uuid_products) == 0:
@@ -117,9 +120,9 @@ def download_product(
 def run_workflow(
     workflow_id,
     *,
-    product_reference=None,
-    workflow_kwargs=None,
-    order_id=None,
+    product_reference,
+    workflow_options,
+    order_id,
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
@@ -130,7 +133,7 @@ def run_workflow(
     :param dict product_reference: dictionary containing the information to retrieve the product to be processed
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
-    :param dict workflow_kwargs: dictionary cotaining the workflow kwargs.
+    :param dict workflow_options: dictionary cotaining the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
     :param str working_dir: optional working directory where will be create the processing directory. If it is None
     it is used the value of the environment variable "WORKING_DIR".
@@ -161,14 +164,19 @@ def run_workflow(
     hub_name = product_reference.get("api_hub", "scihub")
     product_file = download_product(
         product=product,
-        hub_name=hub_name,
         hubs_credentials_file=hubs_credentials_file,
         processing_dir=processing_dir,
+        hub_name=hub_name,
     )
 
     # run workflow
-    workflow_runner = get_workflow_by_id(workflow_id)["runner"]
-    output_file = workflow_runner(product_file, processing_dir, workflow_kwargs)
+    workflow_runner = get_workflow_by_id(workflow_id)["Execute"]
+    output_file = workflow_runner(
+        product_file,
+        processing_dir=processing_dir,
+        output_dir=output_dir,
+        workflow_options=workflow_options
+    )
 
     # delite workflow processing dir
     os.rmdir(processing_dir)
