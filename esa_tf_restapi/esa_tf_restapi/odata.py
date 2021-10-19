@@ -1,6 +1,6 @@
 from collections import namedtuple
-from odata_query.grammar import ODataLexer
-from odata_query.grammar import ODataParser
+
+from odata_query.grammar import ODataLexer, ODataParser
 
 ODataParams = namedtuple("OData", ["filter",])
 ODataFilterExpr = namedtuple("ODataFilterEQ", ["name", "value", "operator"])
@@ -16,4 +16,3 @@ def parseQS(filter: str = None):
     )
     print(odata_filter)
     return ODataParams(filter=filter)
-

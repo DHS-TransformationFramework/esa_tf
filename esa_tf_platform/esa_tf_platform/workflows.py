@@ -40,7 +40,7 @@ def workflow_dict_from_pkg(pkg_entrypoints):
 def load_workflows_configurations(pkg_entrypoints):
     pkg_entrypoints = remove_duplicates(pkg_entrypoints)
     workflow_entrypoints = workflow_dict_from_pkg(pkg_entrypoints)
-    return {name: {**workflows, "Name": name} for name, workflows in workflow_entrypoints.items()}
+    return {name: {**workflows, "Id": name} for name, workflows in workflow_entrypoints.items()}
 
 
 def filter_by_product_type(workflows, product_type=None):
@@ -51,9 +51,21 @@ def filter_by_product_type(workflows, product_type=None):
     return filtered_workflows
 
 
-def list_workflows(product_type=None):
+def get_workflows(product_type=None):
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
     workflows = load_workflows_configurations(pkg_entrypoints)
     if product_type:
         workflows = filter_by_product_type(workflows, product_type)
     return workflows
+
+
+def get_workflow_by_id(workflow_id=None):
+    workflows = get_workflows()
+    try:
+        workflow = workflows[workflow_id]
+    except KeyError:
+        raise ValueError(
+            f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
+        )
+    return workflow
+
