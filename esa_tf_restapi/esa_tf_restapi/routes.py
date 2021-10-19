@@ -1,5 +1,6 @@
-from fastapi import Request, Response, Query
-from typing import Optional, Any, List
+from typing import Any, List, Optional
+
+from fastapi import Query, Request, Response
 
 from . import app
 from .csdl import loadDefinition
