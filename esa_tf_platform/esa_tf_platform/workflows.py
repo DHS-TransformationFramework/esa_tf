@@ -81,8 +81,7 @@ def get_workflow_by_id(workflow_id=None):
 
 def create_directories(*directory_list):
     for directory in directory_list:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        os.makedirs(directory, exist_ok=True)
 
 
 def read_hub_credentials(
@@ -135,12 +134,11 @@ def run_workflow(
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
     :param dict workflow_options: dictionary cotaining the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
-    :param str working_dir: optional working directory where will be create the processing directory. If it is None
-    it is used the value of the environment variable "WORKING_DIR".
-    :param str output_dir: optional output directory. If it is None it is used the value of the environment
-    variable "OUTPUT_DIR"
-    :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None it
-    is used the value of the environment variable "HUBS_CREDENTIALS_FILE"
+    :param str working_dir: optional working directory where will be create the processing directory. If it is None,
+    the environment variable ``WORKING_DIR`` is used.
+    :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
+    :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
+    the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
     """
     # define create directories
     if working_dir is None:

@@ -237,26 +237,33 @@ def run_processing(
     :param dict workflow_options: the user's options dictionary
     :param str processing_dir: path of the processing directory
     :param str output_dir: the output directory
-    :param str sen2cor_script_file: path of the Sen2Cor ``L2A_Process`` script
-    :param str srtm_dir: directory in which the SRTM DEM will be downloaded or searched
+    :param str sen2cor_script_file: path of the Sen2Cor ``L2A_Process`` script. If not defined the
+    environment variable ``SEN2COR_SCRIPT_FILE`` will be used.
+    :param str srtm_dir: path of the folder in which the SRTM DEM will be downloaded or searched. If not defined the
+    environment variable ``SRTM_DIR`` will be used. In case this variable does not exist a directory dem
+    in the ``processing_dir`` will be created.
     :param logging.Logger logger: the processing logger object
     :return str:
     """
     if sen2cor_script_file is None:
-        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "Sen2Cor-02.09.00-Linux64")
+        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "Sen2Cor-02.09.00-Linux64/bin/L2A_Process")
     if srtm_dir is None:
-        srtm_dir = os.getenv("SRTM_DIR", )
+        srtm_dir = os.getenv("SRTM_DIR", None)
 
     check_input_consistency(product_file)
     check_options(workflow_options)
     # if the "srtm_path" is not defined, the SRTM tile is downloaded inside a dedicate folder
     # into the processing-dir
     if not srtm_dir:
-        srtm_dir = os.path.join(workflow_options, "dem")
-    os.makedirs(srtm_dir, exist_ok=True)
+        srtm_dir = os.path.join(processing_dir, "dem")
+        os.makedirs(srtm_dir, exist_ok=True)
+    if srtm_dir and not os.path.isdir(srtm_dir):
+        raise ValueError(
+            f"{srtm_dir} not not found, please define it using the environment variable 'SRTM_DIR'"
+        )
     # creation of the folder in which the Sen2Cor output will be created before compressing and
     # moving it into the output directory
-    output_binder_dir = os.path.join(workflow_options, "output_binder_dir")
+    output_binder_dir = os.path.join(processing_dir, "output_binder_dir")
     os.makedirs(output_binder_dir, exist_ok=True)
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(workflow_options, srtm_dir, workflow_options)
