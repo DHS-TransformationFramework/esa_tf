@@ -10,3 +10,5 @@ dependencies:
   - python = 3.9.7
   - pytest
   - pytest-cov
+  - pip:
+    - sentinelsat
