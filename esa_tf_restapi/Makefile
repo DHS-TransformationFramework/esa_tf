@@ -4,7 +4,6 @@ PORT := 8080
 ENVIRONMENT := ESA_TF_RESTAPI
 IMAGE_NAME := esa_tf_restapi
 COV_REPORT := html
-SCHEDULER := "tcp://scheduler:8786"
 
 .DEFAULT_GOAL := default
 

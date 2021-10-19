@@ -153,6 +153,5 @@ curl -d '{"key1":"value1", "key2":"value2"}' -H "Content-Type: application/json"
 ### State of a transformation
 
 ```bash
-curl "http://localhost:8000/TransformationOrders('2b17b57d-fff4-4645-b539-91f305c26x53')" | jq
+curl -v -d '{"WorkflowId":"sen2cor_l1c_l2a","InputProductReference":{"Reference":"S1A_IW_SLC__1SDV_20211019T093044_20211019T093114_040186_04C28E_3317.zip"},"WorkflowOptions":{"Name":"aerosol_type","Type":"string","Default":"rural","Values":["maritime","rural"]}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
 ```
-
