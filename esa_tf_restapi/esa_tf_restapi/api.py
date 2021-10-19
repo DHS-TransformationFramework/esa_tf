@@ -85,6 +85,7 @@ def submit_workflow(
             output_dir=output_dir,
             hubs_credential_file=hubs_credential_file,
         )
+
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
     return future.key

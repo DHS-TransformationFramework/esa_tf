@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import Query, Request, Response, HTTPException
+from fastapi import HTTPException, Query, Request, Response
 
 from . import api, app
 from .csdl import loadDefinition
