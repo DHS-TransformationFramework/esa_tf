@@ -3,12 +3,12 @@ import uuid
 
 import dask.distributed
 
-CLIENT = None
+CLIENT = dask.distributed.Client("tcp://192.168.1.117:8786")
 
 
 def instantiate_client(dask_scheduler=None):
     global CLIENT
-    if CLIENT is None:
+    if not CLIENT:
         if dask_scheduler is None:
             dask_scheduler = os.getenv("SCHEDULER")
         if dask_scheduler is None:
@@ -52,7 +52,7 @@ def submit_workflow(
     workflow_options,
     working_dir=None,
     output_dir=None,
-    hubs_credential_file=None,
+    hubs_credentials_file=None,
     scheduler=None,
 ):
     """
@@ -71,7 +71,7 @@ def submit_workflow(
     :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
     the value of environment variable SCHEDULER.
     """
-    order_id = uuid.uuid4()
+    order_id = str(uuid.uuid4())
 
     def task():
         import esa_tf_platform
@@ -83,9 +83,13 @@ def submit_workflow(
             order_id=order_id,
             working_dir=working_dir,
             output_dir=output_dir,
-            hubs_credential_file=hubs_credential_file,
+            hubs_credentials_file=hubs_credentials_file,
         )
 
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
+    FUTURES[future.key] = future
     return future.key
+
+
+FUTURES = {}
