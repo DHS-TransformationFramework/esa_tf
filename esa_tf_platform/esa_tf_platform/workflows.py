@@ -1,3 +1,4 @@
+import importlib
 import itertools
 import os
 import warnings
@@ -168,7 +169,11 @@ def run_workflow(
     )
 
     # run workflow
-    workflow_runner = get_workflow_by_id(workflow_id)["Execute"]
+    workflow_runner_name = get_workflow_by_id(workflow_id)["Execute"]
+    module_name, function_name = workflow_runner_name.rsplit(".", 1)
+    module = importlib(module_name)
+    workflow_runner = getattr(module , "run_processing")
+
     output_file = workflow_runner(
         product_file,
         processing_dir=processing_dir,
