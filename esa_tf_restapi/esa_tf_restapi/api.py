@@ -41,7 +41,7 @@ def get_workflows(product=None, scheduler=None):
 
 def get_order_status(order_id, scheduler=None):
     client = instantiate_client(scheduler)
-    status = client.cluster.scheduler.get_task_status(keys=[order_id])[order_id]
+    status = client.futures[order_id]
     return status
 
 
