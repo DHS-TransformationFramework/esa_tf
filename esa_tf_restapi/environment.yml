@@ -4,7 +4,8 @@ channels:
   - conda-forge
 dependencies:
   - black
-  - dask
+  - cloudpickle = 1.6.0
+  - dask = 2021.8.1
   - distributed
   - fastapi
   - flake8
