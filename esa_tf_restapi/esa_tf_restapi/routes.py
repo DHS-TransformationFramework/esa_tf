@@ -25,15 +25,15 @@ async def workflows(request: Request):
 
 @app.get("/Workflows('{id}')", name="workflow")
 async def workflow(request: Request, id: str):
-    data = api.get_workflows(id)
+    data = api.get_workflow_by_id(id)
     if not data:
         raise HTTPException(status_code=404, detail=f"Workflow {id} not found")
     base = request.url_for("workflow", id=id)
     return {
-        **data,
         "@odata.id": f"{base}/Workflows('{id}')",
         "@odata.context": f"{base}/$metadata#Workflow('{id}')",
         "Id": id,
+        **data,
     }
 
 

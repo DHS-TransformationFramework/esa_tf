@@ -15,7 +15,7 @@ services:
     esa_tf_restapi:
         image: esa_tf_restapi:${ESA_TF_RELEASE:-latest}
         ports:
-           - "8080:8080"
+            - "8080:8080"
         command: make serve PORT=8080 SCHEDULER="tcp://scheduler:8786"
 
     esa_tf_worker:
