@@ -240,5 +240,5 @@ curl -d '{"key1":"value1", "key2":"value2"}' -H "Content-Type: application/json"
 ### State of a transformation
 
 ```bash
-curl -v -d '{"WorkflowId":"sen2cor_l1c_l2a","InputProductReference":{"Reference":"S1A_IW_SLC__1SDV_20211019T093044_20211019T093114_040186_04C28E_3317.zip"},"WorkflowOptions":{"Name":"aerosol_type","Type":"string","Default":"rural","Values":["maritime","rural"]}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
+curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"}, "WorkflowOptions": {"aerosol_type": "maritime", "mid_latitude": "auto", "ozone_content": 0, "cirrus_correction": true, "dem_terrain_correction": true, "row0": 600, "col0": 1200, "nrow_win": 600, "ncol_win": 600}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
 ```

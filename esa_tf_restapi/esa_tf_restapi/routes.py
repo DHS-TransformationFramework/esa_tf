@@ -118,7 +118,9 @@ async def transformation_order_create(
 ):
     id = api.submit_workflow(
         data.workflow_id,
-        product_reference=data.product_reference,
+        product_reference=data.product_reference.dict(
+            by_alias=True, exclude_unset=True
+        ),
         workflow_options=data.workflow_options,
     )
     url = request.url_for("transformation_order", id=id)
