@@ -27,13 +27,13 @@ make test
 ### Common Schema Definition Language (CSDL)
 
 ```bash
-curl "http://localhost:8000/\$metadata"
+curl "http://localhost:8080/\$metadata"
 ```
 
 ### List of plugins
 
 ```bash
-curl http://localhost:8000/Workflows | jq
+curl http://localhost:8080/Workflows | jq
 ```
 
 Response:
@@ -129,7 +129,7 @@ Response:
 ### Access a single plugin definition
 
 ```bash
-curl "http://localhost:8000/Workflows('6c18b57d-fgk4-1236-b539-12h305c26z89')" | jq
+curl "http://localhost:8080/Workflows('6c18b57d-fgk4-1236-b539-12h305c26z89')" | jq
 ```
 
 Response:
@@ -222,19 +222,19 @@ Response:
 ### List of transformation orders
 
 ```bash
-curl http://localhost:8000/TransformationOrders | jq
+curl http://localhost:8080/TransformationOrders | jq
 ```
 
 It is also possible to filter accessible orders:
 
 ```bash
-curl "http://localhost:8000/TransformationOrders?\$filter=`jq -rn --arg x "Status eq 'completed'" '$x|@uri'`" | jq
+curl "http://localhost:8080/TransformationOrders?\$filter=`jq -rn --arg x "Status eq 'completed'" '$x|@uri'`" | jq
 ```
 
 ### Request a new transformation
 
 ```bash
-curl -d '{"key1":"value1", "key2":"value2"}' -H "Content-Type: application/json" http://localhost:8000/TransformationOrders | jq
+curl -d '{"key1":"value1", "key2":"value2"}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
 ```
 
 ### State of a transformation
