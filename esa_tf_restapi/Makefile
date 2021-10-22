@@ -42,4 +42,4 @@ image:
 # run
 
 serve:
-	SCHEDULER=$(SCHEDULER) uvicorn --port $(PORT) esa_tf_restapi:app
+	SCHEDULER=$(SCHEDULER) uvicorn --host 0.0.0.0 --port $(PORT) esa_tf_restapi:app
