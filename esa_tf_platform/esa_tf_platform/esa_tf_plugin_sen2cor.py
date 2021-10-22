@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import pkg_resources
 import shutil
 import subprocess
 from xml.etree import ElementTree
@@ -54,7 +55,9 @@ def create_sen2cor_confile(processing_dir, srtm_path, options):
     :return str:
     """
     # Read the default Sen2Cor configuration file
-    sample_config_path = os.path.join(__package__, "resources", SEN2COR_CONFILE_NAME)
+    sample_config_path = pkg_resources.resource_filename(
+        __package__, os.path.join("resources", SEN2COR_CONFILE_NAME)
+    )
     et = ElementTree.parse(sample_config_path)
     et = set_sen2cor_options(et, options, srtm_path)
     # Write back to file
@@ -220,7 +223,7 @@ def compress_and_move(src_dir, dst_dir, format="zip"):
 
 
 def run_processing(
-    product_file,
+    product_path,
     *,
     workflow_options,
     processing_dir,
@@ -233,7 +236,7 @@ def run_processing(
     option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
     the path of the output product.
 
-    :param str product_file: path of the main Sentinel-2 L1C product folder
+    :param str product_path: path of the main Sentinel-2 L1C product folder
     :param dict workflow_options: the user's options dictionary
     :param str processing_dir: path of the processing directory
     :param str output_dir: the output directory
@@ -250,7 +253,7 @@ def run_processing(
     if srtm_dir is None:
         srtm_dir = os.getenv("SRTM_DIR", None)
 
-    check_input_consistency(product_file)
+    check_input_consistency(product_path)
     check_options(workflow_options)
     # if the "srtm_path" is not defined, the SRTM tile is downloaded inside a dedicate folder
     # into the processing-dir
@@ -266,9 +269,9 @@ def run_processing(
     output_binder_dir = os.path.join(processing_dir, "output_binder_dir")
     os.makedirs(output_binder_dir, exist_ok=True)
     # creation of the Sen2Cor configuration files inside the processing-dir
-    sen2cor_confile = create_sen2cor_confile(workflow_options, srtm_dir, workflow_options)
+    sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
     # running the Sen2Cor script
-    cmd = f"{sen2cor_script_file} {product_file} --output_dir {output_binder_dir} --GIP_L2A {sen2cor_confile}"
+    cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_binder_dir} --GIP_L2A {sen2cor_confile}"
     if "resolution" in workflow_options:
         cmd += f" --resolution {workflow_options['resolution']}"
     exit_status = subprocess.call(cmd, shell=True)

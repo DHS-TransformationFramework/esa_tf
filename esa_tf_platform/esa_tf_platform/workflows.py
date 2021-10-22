@@ -2,6 +2,7 @@ import importlib
 import itertools
 import os
 import warnings
+import zipfile
 
 import pkg_resources
 import sentinelsat
@@ -117,6 +118,12 @@ def download_product(
     return product_info["path"]
 
 
+def unzip_product(product_zip_file, processing_dir):
+    with zipfile.ZipFile(product_zip_file, 'r') as product_zip:
+        product_folder = product_zip.infolist()[0].filename
+        product_zip.extractall(processing_dir)
+    return os.path.join(processing_dir, product_folder)
+
 def run_workflow(
     workflow_id,
     *,
@@ -161,21 +168,22 @@ def run_workflow(
     # download
     product = product_reference["Reference"]
     hub_name = product_reference.get("api_hub", "scihub")
-    product_file = download_product(
+    product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
         processing_dir=processing_dir,
         hub_name=hub_name,
     )
+    product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
     workflow_runner_name = get_workflow_by_id(workflow_id)["Execute"]
     module_name, function_name = workflow_runner_name.rsplit(".", 1)
-    module = importlib(module_name)
-    workflow_runner = getattr(module , "run_processing")
+    module = importlib.import_module(module_name)
+    workflow_runner = getattr(module, "run_processing")
 
     output_file = workflow_runner(
-        product_file,
+        product_path,
         processing_dir=processing_dir,
         output_dir=output_dir,
         workflow_options=workflow_options
