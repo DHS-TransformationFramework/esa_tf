@@ -1,6 +1,7 @@
 import importlib
 import itertools
 import os
+import shutil
 import warnings
 import zipfile
 
@@ -189,6 +190,6 @@ def run_workflow(
         workflow_options=workflow_options
     )
 
-    # delite workflow processing dir
-    os.rmdir(processing_dir)
+    # delete workflow processing dir
+    shutil.rmtree(processing_dir, ignore_errors=True)
     return output_file
