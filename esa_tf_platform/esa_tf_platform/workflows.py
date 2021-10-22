@@ -88,8 +88,7 @@ def create_directories(*directory_list):
 
 
 def read_hub_credentials(
-    hubs_credential_file,
-    hub_name="scihub",
+    hubs_credential_file, hub_name="scihub",
 ):
     with open(hubs_credential_file) as file:
         hubs_credentials = yaml.load(file, Loader=yaml.FullLoader)
@@ -97,11 +96,7 @@ def read_hub_credentials(
 
 
 def download_product(
-    product,
-    *,
-    processing_dir,
-    hubs_credentials_file,
-    hub_name="scihub",
+    product, *, processing_dir, hubs_credentials_file, hub_name="scihub",
 ):
     hub_credentials = read_hub_credentials(hubs_credentials_file, hub_name)
     api = sentinelsat.SentinelAPI(**hub_credentials)
@@ -120,10 +115,11 @@ def download_product(
 
 
 def unzip_product(product_zip_file, processing_dir):
-    with zipfile.ZipFile(product_zip_file, 'r') as product_zip:
+    with zipfile.ZipFile(product_zip_file, "r") as product_zip:
         product_folder = product_zip.infolist()[0].filename
         product_zip.extractall(processing_dir)
     return os.path.join(processing_dir, product_folder)
+
 
 def run_workflow(
     workflow_id,
@@ -161,7 +157,7 @@ def run_workflow(
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
             f"{hubs_credentials_file} not not found, please define it using 'hubs_credentials_file' "
-            "keyword argument or the environment variable HUBS_CREDENTIAL_FILE"
+            "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
         )
     processing_dir = os.path.join(working_dir, order_id)
     create_directories(working_dir, output_dir, processing_dir)
@@ -187,7 +183,7 @@ def run_workflow(
         product_path,
         processing_dir=processing_dir,
         output_dir=output_dir,
-        workflow_options=workflow_options
+        workflow_options=workflow_options,
     )
 
     # delete workflow processing dir
