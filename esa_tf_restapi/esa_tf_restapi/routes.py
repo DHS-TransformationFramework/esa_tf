@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import HTTPException, Query, Request, Response
 
-from . import api, app
+from . import api, app, models
 from .csdl import loadDefinition
 from .odata import parseQS
 
@@ -113,11 +113,18 @@ async def transformation_order(request: Request, id: str):
 
 
 @app.post("/TransformationOrders", status_code=201)
-async def transformation_order_create(request: Request, response: Response):
-    id = "2b17b57d-fff4-4645-b539-91f305c26x53"
+async def transformation_order_create(
+    request: Request, response: Response, data: models.TranformationOrder,
+):
+    id = api.submit_workflow(
+        data.workflow_id,
+        product_reference=data.product_reference.dict(
+            by_alias=True, exclude_unset=True
+        ),
+        workflow_options=data.workflow_options,
+    )
     url = request.url_for("transformation_order", id=id)
     response.headers["Location"] = url
-    return await transformation_order(request=request, id=id)
-
-
-# ******* METADATA DEFINITIONS *******
+    return {
+        "Id": id,
+    }

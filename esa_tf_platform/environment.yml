@@ -1,12 +1,20 @@
+name: esa_tf_platform
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - black
+  - cloudpickle = 1.6.0
   - dask = 2021.8.1
   - flake8
   - gdal = 3.0.2
   - isort
   - make
+  # - numpy = 1.21.1
   - python = 3.9.7
   - pytest
   - pytest-cov
+  - pip
+  - sentinelsat
+  - pip:
+    - sentinelsat

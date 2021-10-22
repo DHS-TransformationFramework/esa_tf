@@ -50,3 +50,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+
+# Project specific
+esa_tf/config/
+dask-worker-space/
+esa_tf_platform/working_dir/

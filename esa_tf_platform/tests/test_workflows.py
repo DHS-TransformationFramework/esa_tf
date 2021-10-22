@@ -12,6 +12,7 @@ dummy_workflow_config2b = {"conf": "2b"}
 dummy_workflow_config3a = {"conf": "3a"}
 dummy_workflow_config3b = {"conf": "3b"}
 
+
 @pytest.fixture
 def dummy_duplicated_entrypoints():
     specs = [
@@ -54,6 +55,3 @@ def test_workflows_dict_from_pkg():
     wk = workflows.workflow_dict_from_pkg(entrypoints)
     assert len(wk) == 2
     assert wk.keys() == set(("workflow1", "workflow2"))
-
-
-
