@@ -35,7 +35,7 @@ jobs:
         use-only-tar-bz2: true
     - name: Install dependencies
       run: |
-        make conda-env-update ENVIRONMENT=base
+        make conda-env-create && conda activate ESA_TF_PLATFORM
     - name: Install esa_tf_platform
       run: |
         python -m pip install --no-deps -e .
@@ -71,7 +71,7 @@ jobs:
         use-only-tar-bz2: true
     - name: Install dependencies
       run: |
-        make conda-env-update ENVIRONMENT=base
+        make conda-env-create && conda activate ESA_TF_PLATFORM
     - name: Install esa_tf_platform
       run: |
         python -m pip install --no-deps -e .
@@ -89,7 +89,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        make conda-env-update ENVIRONMENT=base
+        make conda-env-create && conda activate ESA_TF_PLATFORM
     - name: Check code style with black
       run: |
         make code-style
