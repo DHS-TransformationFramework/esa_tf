@@ -40,7 +40,7 @@ image: $(SEN2COR_RUN)
 	docker build -t $(IMAGE_NAME) --build-arg SEN2COR_RUN=$(SEN2COR_RUN) .
 
 shell:
-	docker run -ti $(IMAGE_NAME)
+	docker run -ti --rm $(IMAGE_NAME)
 
 # run
 
