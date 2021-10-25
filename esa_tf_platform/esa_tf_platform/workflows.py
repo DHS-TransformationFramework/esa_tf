@@ -76,7 +76,7 @@ def get_workflow_by_id(workflow_id=None):
     try:
         workflow = workflows[workflow_id]
     except KeyError:
-        raise ValueError(
+        raise KeyError(
             f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
         )
     return workflow

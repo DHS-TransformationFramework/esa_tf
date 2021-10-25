@@ -25,8 +25,10 @@ async def workflows(request: Request):
 
 @app.get("/Workflows('{id}')", name="workflow")
 async def workflow(request: Request, id: str):
-    data = api.get_workflow_by_id(id)
-    if not data:
+    data = {}
+    try:
+        data = api.get_workflow_by_id(id)
+    except KeyError:
         raise HTTPException(status_code=404, detail=f"Workflow {id} not found")
     base = request.url_for("workflow", id=id)
     return {
