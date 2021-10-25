@@ -33,9 +33,15 @@ jobs:
         auto-update-conda: false
         python-version: 3.8
         use-only-tar-bz2: true
+    - name: Init conda
+      run: |
+        conda init bash && source ~/.bashrc
     - name: Install dependencies
       run: |
-        make conda-env-create && conda init bash && source ~/.bashrc && conda activate ESA_TF_PLATFORM
+        make conda-env-create
+    - name: Activate environment
+      run: |
+        conda activate ESA_TF_PLATFORM
     - name: Install esa_tf_platform
       run: |
         python -m pip install --no-deps -e .
@@ -69,12 +75,15 @@ jobs:
         auto-update-conda: false
         python-version: 3.8
         use-only-tar-bz2: true
+    - name: Init conda
+      run: |
+        conda init bash && source ~/.bashrc
     - name: Install dependencies
       run: |
-        make conda-env-create && conda init bash && source ~/.bashrc && conda activate ESA_TF_PLATFORM
-    - name: Install esa_tf_platform
+        make conda-env-create
+    - name: Activate environment
       run: |
-        python -m pip install --no-deps -e .
+        conda activate ESA_TF_PLATFORM
     - name: Lint with flake8
       run: |
         make code-quality
@@ -87,9 +96,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Init conda
+      run: |
+        conda init bash && source ~/.bashrc
     - name: Install dependencies
       run: |
-        make conda-env-create && conda init bash && source ~/.bashrc && conda activate ESA_TF_PLATFORM
+        make conda-env-create
+    - name: Activate environment
+      run: |
+        conda activate ESA_TF_PLATFORM
     - name: Check code style with black
       run: |
         make code-style
