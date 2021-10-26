@@ -39,16 +39,28 @@ def get_workflows(product=None, scheduler=None):
     return client.gather(future)
 
 
-def get_order_status(order_id, scheduler=None):
-    client = instantiate_client(scheduler)
-    status = client.futures[order_id]
+def get_order_status(order_id):
+    future = FUTURES[order_id]["future"]
+    workflow_id = FUTURES[order_id]["workflow_id"]
+    input_product_reference = FUTURES[order_id]["input_product_reference"]
+    workflow_options = FUTURES[order_id]["workflow_options"]
+    status = {
+        "Id": order_id,
+        "Status": future.status,
+        "SubmissionDate": submission_date
+        "Workflow_id": workflow_id,
+        "InputProductReference": input_product_reference,
+        "WorkflowId": "6c18b57d-fgk4-1236-b539-12h305c26z89",
+        "WorkflowOptions": workflow_options
+    }
+
     return status
 
 
 def submit_workflow(
     workflow_id,
     *,
-    product_reference,
+    input_product_reference,
     workflow_options,
     working_dir=None,
     output_dir=None,
@@ -80,7 +92,7 @@ def submit_workflow(
 
         return esa_tf_platform.run_workflow(
             workflow_id,
-            product_reference=product_reference,
+            product_reference=input_product_reference,
             workflow_options=workflow_options,
             order_id=order_id,
             working_dir=working_dir,
@@ -90,7 +102,12 @@ def submit_workflow(
 
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
-    FUTURES[future.key] = future
+    FUTURES[future.key] = {
+        "future": future,
+        "input_product_reference": input_product_reference,
+        "workflow_options": workflow_options,
+        "workflow_id": workflow_id,
+    }
     return future.key
 
 
