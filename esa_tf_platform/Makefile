@@ -5,6 +5,7 @@ DASKFLAGS :=
 IMAGE_NAME := esa_tf_worker
 SEN2COR_RUN := Sen2Cor-02.09.00-Linux64.run
 SEN2COR_URL := http://step.esa.int/thirdparties/sen2cor/2.9.0/$(SEN2COR_RUN)
+DOCKER_RUN_FLAGS := -v $(CURDIR)/../data:/data
 COV_REPORT := html
 
 default: fix-code-style test
@@ -40,7 +41,7 @@ image: $(SEN2COR_RUN)
 	docker build -t $(IMAGE_NAME) --build-arg SEN2COR_RUN=$(SEN2COR_RUN) .
 
 shell:
-	docker run -ti --rm $(IMAGE_NAME)
+	docker run -ti --rm $(DOCKER_RUN_FLAGS) $(IMAGE_NAME)
 
 # run
 

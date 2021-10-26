@@ -1,6 +1,7 @@
 FROM continuumio/miniconda3
 ARG SEN2COR_RUN=Sen2Cor-02.09.00-Linux64.run
 
+# `file` is required to install Sen2Cor
 RUN apt update && apt install -y \
     file \
     make
