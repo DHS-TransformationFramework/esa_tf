@@ -47,7 +47,6 @@ def get_order_status(order_id):
     status = {
         "Id": order_id,
         "Status": future.status,
-        "SubmissionDate": submission_date
         "Workflow_id": workflow_id,
         "InputProductReference": input_product_reference,
         "WorkflowId": "6c18b57d-fgk4-1236-b539-12h305c26z89",
