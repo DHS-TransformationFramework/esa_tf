@@ -42,4 +42,5 @@ image:
 # run
 
 serve:
-	SCHEDULER=$(SCHEDULER) uvicorn --host 0.0.0.0 --port $(PORT) esa_tf_restapi:app
+# 	set WEB_CONCURRENCY envvar to control number of workers
+	SCHEDULER=$(SCHEDULER) gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$(PORT) esa_tf_restapi:app

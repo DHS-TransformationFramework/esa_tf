@@ -97,7 +97,7 @@ async def transformation_order(request: Request, id: str):
         "@odata.context": f"{base}/$metadata",
         # "@odata.nextLink": "https://services.odata.org/V4/TripPinService/People?%24select=FirstName&%24skiptoken=8",
         "Id": id,
-        "Status": data.state,
+        **data,
     }
 
 
@@ -107,7 +107,7 @@ async def transformation_order_create(
 ):
     id = api.submit_workflow(
         data.workflow_id,
-        product_reference=data.product_reference.dict(
+        input_product_reference=data.product_reference.dict(
             by_alias=True, exclude_unset=True
         ),
         workflow_options=data.workflow_options,
