@@ -15,6 +15,7 @@ dependencies:
   - pytest-cov
   - python = 3.9.7
   - uvicorn
+  - gunicorn
   - pip
   - pip:
     - odata-query
