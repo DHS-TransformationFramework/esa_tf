@@ -70,7 +70,7 @@ def submit_workflow(
     """
     Submit the workflow defined by 'workflow_id' using dask:
     :param str workflow_id:  id that identifies the workflow to run
-    :param dict product_reference: dictionary containing the information to retrieve the product to be processed
+    :param dict input_product_reference: dictionary containing the information to retrieve the product to be processed
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
     :param dict workflow_options: dictionary cotaining the workflow kwargs.
@@ -78,7 +78,7 @@ def submit_workflow(
     it is used the value of the environment variable "WORKING_DIR".
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
-    :param str hubs_credential_file:  optional file containing the credential of the hub. If it is None it
+    :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None it
     is used the value of the environment variable "HUBS_CREDENTIALS_FILE"
     :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
     the value of environment variable SCHEDULER.
