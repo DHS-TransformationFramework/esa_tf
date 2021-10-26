@@ -4,6 +4,7 @@ import uuid
 import dask.distributed
 
 CLIENT = None
+WORKFLOWS = {}
 
 
 def instantiate_client(dask_scheduler=None):
@@ -40,10 +41,10 @@ def get_workflows(product=None, scheduler=None):
 
 
 def get_order_status(order_id):
-    future = FUTURES[order_id]["future"]
-    workflow_id = FUTURES[order_id]["workflow_id"]
-    input_product_reference = FUTURES[order_id]["input_product_reference"]
-    workflow_options = FUTURES[order_id]["workflow_options"]
+    future = WORKFLOWS[order_id]["future"]
+    workflow_id = WORKFLOWS[order_id]["workflow_id"]
+    input_product_reference = WORKFLOWS[order_id]["input_product_reference"]
+    workflow_options = WORKFLOWS[order_id]["workflow_options"]
     status = {
         "Id": order_id,
         "Status": future.status,
@@ -53,7 +54,7 @@ def get_order_status(order_id):
         "WorkflowOptions": workflow_options
     }
 
-    return status
+    return future
 
 
 def submit_workflow(
@@ -101,13 +102,10 @@ def submit_workflow(
 
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
-    FUTURES[future.key] = {
+    WORKFLOWS[future.key] = {
         "future": future,
         "input_product_reference": input_product_reference,
         "workflow_options": workflow_options,
         "workflow_id": workflow_id,
     }
     return future.key
-
-
-FUTURES = {}
