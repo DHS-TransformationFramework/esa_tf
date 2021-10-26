@@ -10,7 +10,7 @@ COPY $SEN2COR_RUN /opt
 RUN bash /opt/$SEN2COR_RUN --target /opt/sen2cor \
     && rm /opt/$SEN2COR_RUN
 
-RUN export PATH=$PATH:/opt/sen2cor/bin
+ENV PATH="${PATH}:/opt/sen2cor/bin"
 
 COPY Makefile /opt/esa-tf-platform/
 COPY environment.yml /opt/esa-tf-platform/
