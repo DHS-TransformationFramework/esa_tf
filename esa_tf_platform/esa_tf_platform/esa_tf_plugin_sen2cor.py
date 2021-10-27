@@ -63,7 +63,7 @@ def create_sen2cor_confile(processing_dir, srtm_path, options):
     # Write back to file
     output_confile = os.path.join(processing_dir, SEN2COR_CONFILE_NAME)
     et.write(output_confile)
-    return output_confile
+    return os.path.abspath(output_confile)
 
 
 def check_input_consistency(product_folder_path):
@@ -203,23 +203,25 @@ def check_options(options):
     return True
 
 
-def compress_and_move(src_dir, dst_dir, format="zip"):
-    """Create in the output folder the compressed output file starting from the Sen2Cor output
-    Sentinel-2 L2A folder. The function returns the path of the compressed output file.
+def rename_output(output_dir):
+    """Rename the Sen2Cor output folder removing the ".SAFE" string (if present) from the default
+    output name and return the new output product path.
 
-    :param str src_dir: the folder path in which the Sen2Cor output is saved
-    :param str dst_dir: the output directory
-    :param str format: the archive format, default value: ``zip``
+    :param str output_dir: the folder path in which the Sen2Cor output is saved
     :return str:
     """
-    sen2cor_filename = os.listdir(src_dir)[0]
+    sen2cor_output = None
+    # cycling over output_dir content to discard file like .DS_STORE
+    for d in os.listdir(output_dir):
+        if os.path.isdir(os.path.join(output_dir, d)) and (not d.startswith(".")):
+            sen2cor_output = d
+            break
+    if sen2cor_output is None:
+        raise RuntimeError(f"no Sen2Cor output product dir has been found in {output_dir}")
     # remove the ".SAFE" string (if present) from the output Sen2Cor folder
-    output_filename = os.path.splitext(sen2cor_filename)[0]
-    src_path = os.path.join(src_dir, sen2cor_filename)
-    dst_path = os.path.join(dst_dir, output_filename)
-    # the file extension is automatically added by the "shutil.make_archive" function
-    shutil.make_archive(dst_path, format, src_path)
-    return dst_path
+    output_path = os.path.join(output_dir, os.path.splitext(sen2cor_output)[0])
+    os.rename(os.path.join(output_dir, sen2cor_output), output_path)
+    return output_path
 
 
 def run_processing(
@@ -230,7 +232,6 @@ def run_processing(
     output_dir,
     sen2cor_script_file=None,
     srtm_dir=None,
-    logger=None,
 ):
     """Execute the processing by means of Sen2Cor tool to convert, according to the input user
     option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
@@ -245,42 +246,42 @@ def run_processing(
     :param str srtm_dir: path of the folder in which the SRTM DEM will be downloaded or searched. If not defined the
     environment variable ``SRTM_DIR`` will be used. In case this variable does not exist a directory dem
     in the ``processing_dir`` will be created.
-    :param logging.Logger logger: the processing logger object
     :return str:
     """
     if sen2cor_script_file is None:
-        sen2cor_script_file = os.getenv(
-            "SEN2COR_SCRIPT_FILE", "L2A_Process"
-        )
+        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
     if srtm_dir is None:
         srtm_dir = os.getenv("SRTM_DIR", None)
-
-    check_input_consistency(product_path)
-    check_options(workflow_options)
+    output_dir = os.path.abspath(output_dir)
+    processing_dir = os.path.abspath(processing_dir)
+    product_path = os.path.abspath(product_path)
+    sen2cor_script_file = os.path.abspath(sen2cor_script_file)
     # if the "srtm_path" is not defined, the SRTM tile is downloaded inside a dedicate folder
     # into the processing-dir
     if not srtm_dir:
         srtm_dir = os.path.join(processing_dir, "dem")
         os.makedirs(srtm_dir, exist_ok=True)
+    else:
+        srtm_dir = os.path.abspath(srtm_dir)
     if srtm_dir and not os.path.isdir(srtm_dir):
         raise ValueError(
             f"{srtm_dir} not not found, please define it using the environment variable 'SRTM_DIR'"
         )
-    # creation of the folder in which the Sen2Cor output will be created before compressing and
-    # moving it into the output directory
-    output_binder_dir = os.path.join(processing_dir, "output_binder_dir")
-    os.makedirs(output_binder_dir, exist_ok=True)
+
+    check_input_consistency(product_path)
+    check_options(workflow_options)
+
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
     # running the Sen2Cor script
-    cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_binder_dir} --GIP_L2A {sen2cor_confile}"
+    cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
     if "resolution" in workflow_options:
         cmd += f" --resolution {workflow_options['resolution']}"
-    exit_status = subprocess.call(cmd, shell=True)
-    if exit_status != 0:
-        raise RuntimeError("Sen2Cor processing failed")
+    print(f"the following Sen2Cor command will be executed:\n    {cmd}\n")
+    process = subprocess.run(cmd, shell=True)
+    process.check_returncode()
     # creation of the output archive file
-    output_path = compress_and_move(output_binder_dir, output_dir)
+    output_path = rename_output(output_dir)
     return output_path
 
 
