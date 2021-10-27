@@ -210,7 +210,14 @@ def rename_output(output_dir):
     :param str output_dir: the folder path in which the Sen2Cor output is saved
     :return str:
     """
-    sen2cor_output = os.listdir(output_dir)[0]
+    sen2cor_output = None
+    # cycling over output_dir content to discard file like .DS_STORE
+    for d in os.listdir(output_dir):
+        if os.path.isdir(os.path.join(output_dir, d)) and (not d.startswith(".")):
+            sen2cor_output = d
+            break
+    if sen2cor_output is None:
+        raise RuntimeError(f"no Sen2Cor output product dir has been found in {output_dir}")
     # remove the ".SAFE" string (if present) from the output Sen2Cor folder
     output_path = os.path.join(output_dir, os.path.splitext(sen2cor_output)[0])
     os.rename(os.path.join(output_dir, sen2cor_output), output_path)
@@ -225,7 +232,6 @@ def run_processing(
     output_dir,
     sen2cor_script_file=None,
     srtm_dir=None,
-    logger=None,
 ):
     """Execute the processing by means of Sen2Cor tool to convert, according to the input user
     option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
@@ -240,7 +246,6 @@ def run_processing(
     :param str srtm_dir: path of the folder in which the SRTM DEM will be downloaded or searched. If not defined the
     environment variable ``SRTM_DIR`` will be used. In case this variable does not exist a directory dem
     in the ``processing_dir`` will be created.
-    :param logging.Logger logger: the processing logger object
     :return str:
     """
     if sen2cor_script_file is None:
@@ -272,9 +277,9 @@ def run_processing(
     cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
     if "resolution" in workflow_options:
         cmd += f" --resolution {workflow_options['resolution']}"
-    exit_status = subprocess.call(cmd, shell=True)
-    if exit_status != 0:
-        raise RuntimeError("Sen2Cor processing failed")
+    print(f"the following Sen2Cor command will be executed:\n    {cmd}\n")
+    process = subprocess.run(cmd, shell=True)
+    process.check_returncode()
     # creation of the output archive file
     output_path = rename_output(output_dir)
     return output_path
