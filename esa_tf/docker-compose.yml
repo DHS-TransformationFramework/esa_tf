@@ -21,11 +21,10 @@ services:
     esa_tf_worker:
         image: esa_tf_worker:${ESA_TF_RELEASE:-latest}
         volumes:
-          - "${SRTM_DIR:-./tmp}:/data/dem/srtm"
+          - "${DATA_DIR:-./data}:/data"
           - "${CONFIG_DIR:-./config}:/config"
-          - "${OUTPUT_DIR:-./output}:/data/output"
         environment:
-          - SRTM_DIR=/data/dem/srtm
+          - DEM_DIR=/data/dem
           - HUBS_CREDENTIALS_FILE=/config/hubs_credential.yaml
           - OUTPUT_DIR=/data/output
         command: make dask-worker DASKFLAGS="tcp://scheduler:8786"
