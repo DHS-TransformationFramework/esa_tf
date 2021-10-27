@@ -201,6 +201,6 @@ def run_workflow(
     )
 
     # delete workflow processing dir
-    output_file = zip_product(output, output_dir)
-    # shutil.rmtree(processing_dir, ignore_errors=True)
-    return output_file
+    output_zip_file = zip_product(output, output_dir)
+    shutil.rmtree(processing_dir, ignore_errors=True)
+    return output_zip_file
