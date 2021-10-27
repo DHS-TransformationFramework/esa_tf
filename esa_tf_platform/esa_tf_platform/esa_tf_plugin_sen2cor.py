@@ -247,22 +247,25 @@ def run_processing(
         sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
     if srtm_dir is None:
         srtm_dir = os.getenv("SRTM_DIR", None)
-    sen2cor_script_file = os.path.abspath(sen2cor_script_file)
-    srtm_dir = os.path.abspath(srtm_dir)
     output_dir = os.path.abspath(output_dir)
+    processing_dir = os.path.abspath(processing_dir)
     product_path = os.path.abspath(product_path)
-
-    check_input_consistency(product_path)
-    check_options(workflow_options)
+    sen2cor_script_file = os.path.abspath(sen2cor_script_file)
     # if the "srtm_path" is not defined, the SRTM tile is downloaded inside a dedicate folder
     # into the processing-dir
     if not srtm_dir:
         srtm_dir = os.path.join(processing_dir, "dem")
         os.makedirs(srtm_dir, exist_ok=True)
+    else:
+        srtm_dir = os.path.abspath(srtm_dir)
     if srtm_dir and not os.path.isdir(srtm_dir):
         raise ValueError(
             f"{srtm_dir} not not found, please define it using the environment variable 'SRTM_DIR'"
         )
+
+    check_input_consistency(product_path)
+    check_options(workflow_options)
+
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
     # running the Sen2Cor script
