@@ -85,7 +85,13 @@ def submit_workflow(
     the value of environment variable SCHEDULER.
     """
     if not order_id:
-        order_id = str(uuid.uuid4())
+        order_id = dask.base.tokenize(
+            workflow_id,
+            input_product_reference,
+            workflow_options,
+            working_dir,
+            output_dir
+        )
 
     def task():
         import esa_tf_platform
