@@ -45,16 +45,19 @@ def get_order_status(order_id):
     workflow_id = WORKFLOWS[order_id]["workflow_id"]
     input_product_reference = WORKFLOWS[order_id]["input_product_reference"]
     workflow_options = WORKFLOWS[order_id]["workflow_options"]
-    status = {
+    process_status = future.status
+    order_status = {
         "Id": order_id,
-        "Status": future.status,
+        "Status": process_status,
         "Workflow_id": workflow_id,
         "InputProductReference": input_product_reference,
         "WorkflowId": "6c18b57d-fgk4-1236-b539-12h305c26z89",
         "WorkflowOptions": workflow_options
     }
+    if process_status == "finished":
+        order_status["OutputFile"] = os.path.basename(future.result())
 
-    return future
+    return order_status
 
 
 def submit_workflow(
