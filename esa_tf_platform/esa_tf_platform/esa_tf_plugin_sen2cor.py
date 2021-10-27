@@ -278,9 +278,8 @@ def run_processing(
     if "resolution" in workflow_options:
         cmd += f" --resolution {workflow_options['resolution']}"
     print(f"the following Sen2Cor command will be executed:\n    {cmd}\n")
-    exit_status = subprocess.call(cmd, shell=True)
-    if exit_status != 0:
-        raise RuntimeError("Sen2Cor processing failed")
+    process = subprocess.run(cmd, shell=True, text=True)
+    process.check_returncode()
     # creation of the output archive file
     output_path = rename_output(output_dir)
     return output_path
