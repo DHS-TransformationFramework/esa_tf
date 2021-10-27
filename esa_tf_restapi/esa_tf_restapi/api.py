@@ -89,8 +89,6 @@ def submit_workflow(
             workflow_id,
             input_product_reference,
             workflow_options,
-            working_dir,
-            output_dir
         )
 
     def task():
