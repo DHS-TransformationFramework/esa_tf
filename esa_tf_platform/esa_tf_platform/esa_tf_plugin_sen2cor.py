@@ -255,7 +255,6 @@ def run_processing(
     output_dir = os.path.abspath(output_dir)
     processing_dir = os.path.abspath(processing_dir)
     product_path = os.path.abspath(product_path)
-    sen2cor_script_file = os.path.abspath(sen2cor_script_file)
     # if the "srtm_path" is not defined, the SRTM tile is downloaded inside a dedicate folder
     # into the processing-dir
     if not srtm_dir:
