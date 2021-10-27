@@ -232,7 +232,6 @@ def run_processing(
     output_dir,
     sen2cor_script_file=None,
     srtm_dir=None,
-    logger=None,
 ):
     """Execute the processing by means of Sen2Cor tool to convert, according to the input user
     option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
@@ -247,7 +246,6 @@ def run_processing(
     :param str srtm_dir: path of the folder in which the SRTM DEM will be downloaded or searched. If not defined the
     environment variable ``SRTM_DIR`` will be used. In case this variable does not exist a directory dem
     in the ``processing_dir`` will be created.
-    :param logging.Logger logger: the processing logger object
     :return str:
     """
     if sen2cor_script_file is None:
