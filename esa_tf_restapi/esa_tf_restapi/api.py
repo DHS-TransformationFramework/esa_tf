@@ -47,7 +47,7 @@ def build_order_status(order):
         "Status": future.status,
         "WorkflowId": order["workflow_id"],
         "InputProductReference": order["input_product_reference"],
-        "WorkflowOptions": order["workflow_options"]
+        "WorkflowOptions": order["workflow_options"],
     }
     if future.status == "finished":
         order_status["OutputFile"] = os.path.basename(future.result())
@@ -58,7 +58,7 @@ def build_order_status(order):
 def get_order_status(order_id):
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
-        raise ValueError(f"Transformation Order {order_id} not found")
+        raise KeyError(f"Transformation Order {order_id} not found")
     order_status = build_order_status(order)
     return order_status
 
@@ -66,9 +66,8 @@ def get_order_status(order_id):
 def get_transformation_orders(workflow_id=None, status=None):
     orders_status = []
     for order in TRANSFORMATION_ORDERS.values():
-        add_order = (
-            (not workflow_id or (workflow_id == order["workflow_id"])) and
-            (not status or (status == order["future"].status))
+        add_order = (not workflow_id or (workflow_id == order["workflow_id"])) and (
+            not status or (status == order["future"].status)
         )
         if add_order:
             order_status = build_order_status(order)
@@ -105,9 +104,7 @@ def submit_workflow(
     """
     if not order_id:
         order_id = dask.base.tokenize(
-            workflow_id,
-            input_product_reference,
-            workflow_options,
+            workflow_id, input_product_reference, workflow_options,
         )
 
     def task():
