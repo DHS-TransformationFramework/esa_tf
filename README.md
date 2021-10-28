@@ -6,13 +6,16 @@ applied on-demand to Copernicus Sentinel products, prior to delivery to the user
 
 In its current development status *Alpha*, it features:
 
-* The ability to [obtain a list of available workflows via the REST API](#List-of-plugins)
-* The ability to [submit a Transformation Order via the REST API](#Request-a-new-transformation)
-* The ability to [monitor the status of an ongoing process via the REST API](#Monitoring-status-of-a-transformation-order)
+* The ability to [obtain a list of available workflows via the REST API](#List-of-plugins).
+* The ability to [submit a Transformation Order via the REST API](#Request-a-new-transformation).
+* The ability to [monitor the status of an ongoing process via the REST API](#Monitoring-status-of-a-transformation-order).
 * The installation of [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
-* *Pluggability*, i.e. the capability to add new plugins
-* *SRTM DEM* download in the processing directory 
-  during the transformation, then removed after the end of the processing 
+  which uses SenCor v2.9 tool to convert Sentinel-2 L1C products into L2A output products. 
+  Sen2Cor uses *SRTM DEM* for classification and atmospheric correction. The DEM is 
+  downloaded in the processing directory during the transformation, 
+  then it is removed at the end of the processing.
+* *Pluggability*, i.e. the capability to add new plugins.
+   
 
 It can currently be deployed via docker-compose, as explained in the 
 in [the Docker compose startup](#Docker-compose-startup) section.
