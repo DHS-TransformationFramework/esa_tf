@@ -12,7 +12,11 @@ data/land-cover/.timestamp: $(ESACCI_ZIP)
 	$(RM) -r tmp
 	touch data/land-cover/.timestamp
 
-setup: data/land-cover/.timestamp
+setup:
+	make -C ../esa_tf_platform setup
 
 up:
 	docker-compose up
+
+down:
+	docker-compose down
