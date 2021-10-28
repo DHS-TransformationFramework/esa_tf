@@ -51,7 +51,7 @@ curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')" | jq
 curl http://localhost:8080/TransformationOrders | jq
 ```
 
-It is also possible to filter accessible orders (**TODO**):
+It is also possible to filter accessible orders:
 
 ```bash
 curl "http://localhost:8080/TransformationOrders?\$filter=`jq -rn --arg x "Status eq 'completed'" '$x|@uri'`" | jq

@@ -54,3 +54,15 @@ def test_workflows_dict_from_pkg():
     wk = workflows.workflow_dict_from_pkg(entrypoints)
     assert len(wk) == 2
     assert wk.keys() == set(("workflow1", "workflow2"))
+
+
+@mock.patch("pkg_resources.EntryPoint.load", mock.MagicMock(return_value={}))
+def test_load_workflows_configurations():
+    specs = [
+        "workflow1 = esa_tf_platform.tests.test_workflows:dummy_workflow_config1",
+        "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2a",
+        "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2b",
+    ]
+    entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
+    wk = workflows.load_workflows_configurations(entrypoints)
+    assert len(wk) == 2
