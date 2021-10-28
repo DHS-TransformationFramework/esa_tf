@@ -59,7 +59,8 @@ def get_workflows(product=None, scheduler=None):
 
 def build_transformation_order(order):
     transformation_order = copy.deepcopy(order)
-    future = transformation_order.pop("future")
+    _ = transformation_order.pop("future")
+    future = order["future"]
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
     if future.status == "finished":
         transformation_order["OutputFile"] = os.path.basename(future.result())
