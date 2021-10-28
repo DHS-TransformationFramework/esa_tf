@@ -24,7 +24,6 @@ services:
             - "${DATA_DIR:-./data}:/data"
             - "${CONFIG_DIR:-./config}:/config"
         environment:
-            - DEM_DIR=/data/dem
             - HUBS_CREDENTIALS_FILE=/config/hubs_credential.yaml
             - OUTPUT_DIR=/data/output
         command: make dask-worker DASKFLAGS="tcp://scheduler:8786"
