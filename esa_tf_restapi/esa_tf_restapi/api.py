@@ -25,7 +25,7 @@ def instantiate_client(scheduler_addr=None):
     if scheduler_addr is None:
         raise ValueError("Scheduler not defined")
 
-    if not CLIENT or CLIENT.scheduler.addr != "tcp://192.168.1.117:8786":
+    if not CLIENT or CLIENT.scheduler.addr != scheduler_addr:
         CLIENT = dask.distributed.Client(scheduler_addr)
 
     return CLIENT
