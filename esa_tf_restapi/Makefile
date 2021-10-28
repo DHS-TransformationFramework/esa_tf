@@ -2,7 +2,7 @@
 
 PORT := 8080
 ENVIRONMENT := ESA_TF_RESTAPI
-IMAGE_NAME := esa_tf_restapi
+IMAGE_NAME := ghcr.io/bopen/esa_tf_restapi
 COV_REPORT := html
 
 .DEFAULT_GOAL := default
@@ -42,4 +42,5 @@ image:
 # run
 
 serve:
-	SCHEDULER=$(SCHEDULER) uvicorn --host 0.0.0.0 --port $(PORT) esa_tf_restapi:app
+# 	set WEB_CONCURRENCY envvar to control number of workers
+	SCHEDULER=$(SCHEDULER) gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$(PORT) esa_tf_restapi:app

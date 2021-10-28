@@ -76,7 +76,7 @@ def get_workflow_by_id(workflow_id=None):
     try:
         workflow = workflows[workflow_id]
     except KeyError:
-        raise ValueError(
+        raise KeyError(
             f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
         )
     return workflow
@@ -121,6 +121,16 @@ def unzip_product(product_zip_file, processing_dir):
     return os.path.join(processing_dir, product_folder)
 
 
+def zip_product(output, output_dir):
+    basename = os.path.basename(output.rstrip("/"))
+    dirname = os.path.dirname(output.rstrip("/"))
+    output_zip_path = os.path.join(output_dir, basename)
+    output_file = shutil.make_archive(
+        base_name=output_zip_path, format="zip", root_dir=dirname, base_dir=basename,
+    )
+    return output_file
+
+
 def run_workflow(
     workflow_id,
     *,
@@ -160,7 +170,8 @@ def run_workflow(
             "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
         )
     processing_dir = os.path.join(working_dir, order_id)
-    create_directories(working_dir, output_dir, processing_dir)
+    output_binder_dir = os.path.join(working_dir, order_id, "output_binder_dir")
+    create_directories(working_dir, output_dir, processing_dir, output_binder_dir)
 
     # download
     product = product_reference["Reference"]
@@ -179,13 +190,14 @@ def run_workflow(
     module = importlib.import_module(module_name)
     workflow_runner = getattr(module, "run_processing")
 
-    output_file = workflow_runner(
+    output = workflow_runner(
         product_path,
         processing_dir=processing_dir,
-        output_dir=output_dir,
+        output_dir=output_binder_dir,
         workflow_options=workflow_options,
     )
 
     # delete workflow processing dir
+    output_zip_file = zip_product(output, output_dir)
     shutil.rmtree(processing_dir, ignore_errors=True)
-    return output_file
+    return output_zip_file

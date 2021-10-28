@@ -1,5 +1,3 @@
-# Required Environment variables
-# ESA_TF_RELEASE
 
 version: '3.8'
 
@@ -8,22 +6,24 @@ services:
         image: daskdev/dask:2021.8.1-py3.9
         hostname: scheduler
         ports:
-          - "8786:8786"
-          - "8787:8787"
+            - "8786:8786"
+            - "8787:8787"
         command: dask-scheduler
 
     esa_tf_restapi:
-        image: esa_tf_restapi:${ESA_TF_RELEASE:-latest}
+        image: ghcr.io/bopen/esa_tf_restapi:${ESA_TF_RELEASE:-latest}
+        build: ../esa_tf_restapi
         ports:
             - "8080:8080"
         command: make serve PORT=8080 SCHEDULER="tcp://scheduler:8786"
 
     esa_tf_worker:
-        image: esa_tf_worker:${ESA_TF_RELEASE:-latest}
+        image: ghcr.io/bopen/esa_tf_worker:${ESA_TF_RELEASE:-latest}
+        build: ../esa_tf_platform
         volumes:
-          - "${SRTM_DIR:-./tmp}:/data/dem/srtm"
-          - "${CONFIG_DIR:-./config}:/config"
+            - "${DATA_DIR:-./data}:/data"
+            - "${CONFIG_DIR:-./config}:/config"
         environment:
-          - SRTM_DIR=/data/dem/srtm
-          - HUBS_CREDENTIALS_FILE=/config/hubs_credential.yaml
+            - HUBS_CREDENTIALS_FILE=/config/hubs_credential.yaml
+            - OUTPUT_DIR=/data/output
         command: make dask-worker DASKFLAGS="tcp://scheduler:8786"

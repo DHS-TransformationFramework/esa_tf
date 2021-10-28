@@ -11,10 +11,13 @@ dependencies:
   - flake8
   - isort
   - make
+  - nomkl
   - pytest
   - pytest-cov
   - python = 3.9.7
   - uvicorn
+  - gunicorn
   - pip
   - pip:
     - odata-query
+    - sentinelsat

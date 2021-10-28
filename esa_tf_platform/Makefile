@@ -2,7 +2,9 @@
 
 ENVIRONMENT := ESA_TF_PLATFORM
 DASKFLAGS :=
-IMAGE_NAME := esa_tf_worker
+IMAGE_NAME := ghcr.io/bopen/esa_tf_worker
+SEN2COR_RUN := Sen2Cor-02.09.00-Linux64.run
+SEN2COR_URL := http://step.esa.int/thirdparties/sen2cor/2.9.0/$(SEN2COR_RUN)
 COV_REPORT := html
 
 default: fix-code-style test
@@ -31,8 +33,16 @@ conda-env-create:
 conda-env-update:
 	conda env update -n $(ENVIRONMENT) -f environment.yml
 
-image:
-	docker build -t $(IMAGE_NAME) .
+$(SEN2COR_RUN):
+	curl -LO $(SEN2COR_URL)
+
+setup: $(SEN2COR_RUN)
+
+image: $(SEN2COR_RUN)
+	docker build -t $(IMAGE_NAME) --build-arg SEN2COR_RUN=$(SEN2COR_RUN) .
+
+shell:
+	docker-compose -f ../esa_tf/docker-compose.yml run --rm $(IMAGE_NAME) bash
 
 # run
 
