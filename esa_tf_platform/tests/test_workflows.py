@@ -66,4 +66,3 @@ def test_load_workflows_configurations():
     entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
     wk = workflows.load_workflows_configurations(entrypoints)
     assert len(wk) == 2
-
