@@ -137,7 +137,15 @@ def submit_workflow(
         )
 
     client = instantiate_client(scheduler)
-    future = client.submit(task, key=order_id)
+    if (
+        order_id in TRANSFORMATION_ORDERS
+        and TRANSFORMATION_ORDERS[order_id]["future"].status == "error"
+    ):
+        future = TRANSFORMATION_ORDERS[order_id]["future"]
+        client.retry(future)
+    else:
+        future = client.submit(task, key=order_id)
+
     TRANSFORMATION_ORDERS[future.key] = {
         "future": future,
         "Id": future.key,
