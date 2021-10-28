@@ -29,12 +29,12 @@ Required software on the VM:
 
 Change folder to `esa_tf` and start the docker compose:
 ```bash
-    cd esa_tf
-    make setup
-    make up
+cd esa_tf
+make setup
+make up
 ```
 
-The API endpoints will be available on `http://localhost:8080`
+The API endpoints will be available on `http://localhost:8080`.
 
 ## How to test API endpoints
 
