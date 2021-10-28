@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from odata_query.grammar import ODataLexer, ODataParser
 
-ODataParams = namedtuple("OData", ["filter",])
+ODataParams = namedtuple("OData", ["filter"])
 ODataFilterExpr = namedtuple("ODataFilterEQ", ["name", "value", "operator"])
 
 lexer = ODataLexer()
