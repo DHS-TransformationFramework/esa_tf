@@ -70,7 +70,7 @@ def build_transformation_order(order):
 def get_transformation_order(order_id):
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
-        raise ValueError(f"Transformation Order {order_id} not found")
+        raise KeyError(f"Transformation Order {order_id} not found")
     transformation_order = build_transformation_order(order)
     return transformation_order
 
@@ -80,7 +80,7 @@ def get_transformation_orders(workflow_id=None, status=None):
     for order in TRANSFORMATION_ORDERS.values():
         add_order = (
             (not workflow_id or (workflow_id == order["WorkflowId"])) and
-            (not status or (status == order["future"].status))
+            (not status or (status == STATUS_DASK_TO_API[order["future"].status]))
         )
         if add_order:
             transformation_order = build_transformation_order(order)
