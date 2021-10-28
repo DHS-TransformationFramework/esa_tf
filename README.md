@@ -66,7 +66,7 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('cd1c192c-7dd2-4250-af0f-13528680d371')" | jq # -r '.Id'
+curl "http://localhost:8080/TransformationOrders('fe950364a8e9b37057d64f9d056edc05')" | jq # -r '.Id'
 ```
 
 To submit a transformation order and monitor it's state, in one shot:
