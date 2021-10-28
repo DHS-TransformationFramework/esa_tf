@@ -11,14 +11,14 @@ services:
         command: dask-scheduler
 
     esa_tf_restapi:
-        image: esa_tf_restapi:${ESA_TF_RELEASE:-latest}
+        image: ghcr.io/bopen/esa_tf_restapi:${ESA_TF_RELEASE:-latest}
         build: ../esa_tf_restapi
         ports:
             - "8080:8080"
         command: make serve PORT=8080 SCHEDULER="tcp://scheduler:8786"
 
     esa_tf_worker:
-        image: esa_tf_worker:${ESA_TF_RELEASE:-latest}
+        image: ghcr.io/bopen/esa_tf_worker:${ESA_TF_RELEASE:-latest}
         build: ../esa_tf_platform
         volumes:
             - "${DATA_DIR:-./data}:/data"

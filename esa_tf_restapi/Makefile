@@ -2,7 +2,7 @@
 
 PORT := 8080
 ENVIRONMENT := ESA_TF_RESTAPI
-IMAGE_NAME := esa_tf_restapi
+IMAGE_NAME := ghcr.io/bopen/esa_tf_restapi
 COV_REPORT := html
 
 .DEFAULT_GOAL := default
