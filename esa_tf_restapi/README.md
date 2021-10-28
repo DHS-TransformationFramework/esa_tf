@@ -1,16 +1,3 @@
-Copyright 2021-2022, European Space Agency (ESA)
-
-Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     https://opensource.org/licenses/AGPL-3.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, 
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
 # ESA transformation framework REST API
 
 ## How to run
@@ -85,3 +72,30 @@ To submit a transformation order and monitor it's state, in one shot:
 ```
 curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"}, "WorkflowOptions": {"aerosol_type": "maritime", "mid_latitude": "auto", "ozone_content": 0, "cirrus_correction": true, "dem_terrain_correction": true, "row0": 600, "col0": 1200, "nrow_win": 600, "ncol_win": 600}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq -r '.Id' | curl "http://localhost:8080/TransformationOrders('`cat -`')" | jq
 ```
+
+## Current Limitations
+
+* Plugin memory requirements for this release are set to a minimum of 6GB of RAM
+* The activation of ESA-CCI data-package necessary for Sen2Cor plugin 
+  to generate products compatible with L2A Core products is not included in this release
+* SRTM-DEM is currently downloaded in the processing directory 
+  during the transformation, then removed after the end of the processing 
+* The selection of a Region of Interest (ROI) 
+  with Sen2Cor plugin is not yet supported by the REST API
+
+
+# License information
+
+Copyright 2021-2022, European Space Agency (ESA)
+
+Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     https://opensource.org/licenses/AGPL-3.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, 
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
