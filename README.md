@@ -21,34 +21,33 @@ The API endpoints will be available on `http://localhost:8080`
 
 ## How to test API endpoints
 
-### Common Schema Definition Language (CSDL) - **TODO**
+To test endpoins from the command line we suggest to install and use:
 
-```bash
-curl "http://localhost:8080/\$metadata"
-```
+- `curl`
+- `jq` (optional)
 
 ### List of plugins
 
 ```bash
-curl http://localhost:8080/Workflows
+curl http://localhost:8080/Workflows | jq
 ```
 
 ### Access a plugin definition
 
 ```bash
-curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')"
+curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')" | jq
 ```
 
 ### List of transformation orders
 
 ```bash
-curl http://localhost:8080/TransformationOrders
+curl http://localhost:8080/TransformationOrders | jq
 ```
 
 It is also possible to filter accessible orders:
 
 ```bash
-curl "http://localhost:8080/TransformationOrders?\$filter=Status%20eq%20'completed'"
+curl "http://localhost:8080/TransformationOrders?\$filter=Status%20eq%20'completed'" | jq
 ```
 
 ### Request a new transformation
@@ -60,5 +59,5 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('cd1c192c-7dd2-4250-af0f-13528680d371')"
+curl "http://localhost:8080/TransformationOrders('cd1c192c-7dd2-4250-af0f-13528680d371')" | jq
 ```
