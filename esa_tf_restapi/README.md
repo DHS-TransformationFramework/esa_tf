@@ -84,7 +84,7 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
   with Sen2Cor plugin is not yet supported by the REST API
 
 
-## License information
+# License information
 
 Copyright 2021-2022, European Space Agency (ESA)
 
