@@ -1,7 +1,5 @@
 import glob
-import logging
 import os
-import shutil
 import subprocess
 from xml.etree import ElementTree
 
