@@ -10,6 +10,8 @@ Required software on the VM:
 * `docker-compose`
 * `make`
 * `curl`
+* `unzip`
+* `tar`
 
 Change folder to `esa_tf` and start the docker compose:
 ```bash
