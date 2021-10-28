@@ -26,30 +26,21 @@ jobs:
           ubuntu-latest-3.8
     - uses: conda-incubator/setup-miniconda@v2
       with:
-        channels: conda-forge
         channel-priority: strict
         mamba-version: "*"
         activate-environment: ubuntu-latest-3.8
         auto-update-conda: false
         python-version: 3.8
         use-only-tar-bz2: true
-    - name: Init conda
-      run: |
-        conda init bash && source ~/.bashrc
     - name: Install dependencies
       run: |
-        make conda-env-create
-    - name: Activate environment
-      run: |
-        conda activate ESA_TF_PLATFORM
+        make conda-env-create ENVIRONMENT=ubuntu-latest-3.8
     - name: Install esa_tf_platform
       run: |
         python -m pip install --no-deps -e .
     - name: Run unit tests
       run: |
         make test COV_REPORT=xml
-    - name: Upload code coverage to Codecov
-      uses: codecov/codecov-action@v1
 
   code-quality:
     runs-on: ubuntu-latest
@@ -68,22 +59,15 @@ jobs:
           ubuntu-latest-3.8
     - uses: conda-incubator/setup-miniconda@v2
       with:
-        channels: conda-forge
         channel-priority: strict
         mamba-version: "*"
         activate-environment: ubuntu-latest-3.8
         auto-update-conda: false
         python-version: 3.8
         use-only-tar-bz2: true
-    - name: Init conda
-      run: |
-        conda init bash && source ~/.bashrc
     - name: Install dependencies
       run: |
-        make conda-env-create
-    - name: Activate environment
-      run: |
-        conda activate ESA_TF_PLATFORM
+        make conda-env-create ENVIRONMENT=ubuntu-latest-3.8
     - name: Lint with flake8
       run: |
         make code-quality
@@ -96,15 +80,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Init conda
-      run: |
-        conda init bash && source ~/.bashrc
-    - name: Install dependencies
-      run: |
-        make conda-env-create
-    - name: Activate environment
-      run: |
-        conda activate ESA_TF_PLATFORM
     - name: Check code style with black
       run: |
-        make code-style
+        $CONDA/bin/conda install black
+        $CONDA/bin/black --check .
+    - name: Check code style with isort
+      run: |
+        $CONDA/bin/conda install isort
+        $CONDA/bin/isort --check .
