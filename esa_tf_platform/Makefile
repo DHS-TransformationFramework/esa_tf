@@ -34,7 +34,9 @@ conda-env-update:
 	conda env update -n $(ENVIRONMENT) -f environment.yml
 
 $(SEN2COR_RUN):
-	wget $(SEN2COR_URL)
+	curl -LO $(SEN2COR_URL)
+
+setup: $(SEN2COR_RUN)
 
 image: $(SEN2COR_RUN)
 	docker build -t $(IMAGE_NAME) --build-arg SEN2COR_RUN=$(SEN2COR_RUN) .
