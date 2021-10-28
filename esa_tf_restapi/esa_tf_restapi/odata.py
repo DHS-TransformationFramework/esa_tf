@@ -10,9 +10,10 @@ parser = ODataParser()
 
 
 def parseQS(filter: str = None):
-    odata_filter = parser.parse(lexer.tokenize(filter))
-    filter = ODataFilterExpr(
-        name=odata_filter.left.name, value=odata_filter.right.val, operator="eq"
-    )
-    print(odata_filter)
-    return ODataParams(filter=filter)
+    od_filter = ODataFilterExpr(None, None, None)
+    if filter:
+        odata_filter = parser.parse(lexer.tokenize(filter))
+        od_filter = ODataFilterExpr(
+            name=odata_filter.left.name, value=odata_filter.right.val, operator="eq"
+        )
+    return ODataParams(filter=od_filter)
