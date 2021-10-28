@@ -25,7 +25,7 @@ def instantiate_client(scheduler_addr=None):
     if scheduler_addr is None:
         raise ValueError("Scheduler not defined")
 
-    if not CLIENT or CLIENT.scheduler.addr != 'tcp://192.168.1.117:8786':
+    if not CLIENT or CLIENT.scheduler.addr != "tcp://192.168.1.117:8786":
         CLIENT = dask.distributed.Client(scheduler_addr)
 
     return CLIENT
@@ -70,7 +70,7 @@ def build_transformation_order(order):
 def get_transformation_order(order_id):
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
-        raise ValueError(f"Transformation Order {order_id} not found")
+        raise KeyError(f"Transformation Order {order_id} not found")
     transformation_order = build_transformation_order(order)
     return transformation_order
 
@@ -78,9 +78,8 @@ def get_transformation_order(order_id):
 def get_transformation_orders(workflow_id=None, status=None):
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
-        add_order = (
-            (not workflow_id or (workflow_id == order["WorkflowId"])) and
-            (not status or (status == order["future"].status))
+        add_order = (not workflow_id or (workflow_id == order["WorkflowId"])) and (
+            not status or (status == order["future"].status)
         )
         if add_order:
             transformation_order = build_transformation_order(order)
@@ -117,9 +116,7 @@ def submit_workflow(
     """
     if not order_id:
         order_id = dask.base.tokenize(
-            workflow_id,
-            input_product_reference,
-            workflow_options,
+            workflow_id, input_product_reference, workflow_options,
         )
 
     # definition of the task must be internal
