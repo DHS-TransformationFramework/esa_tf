@@ -1,5 +1,4 @@
 import os
-import uuid
 
 import dask.distributed
 
@@ -7,18 +6,26 @@ CLIENT = None
 TRANSFORMATION_ORDERS = {}
 
 
-def instantiate_client(dask_scheduler=None):
+def instantiate_client(scheduler_addr=None):
+    """
+    Return a client with a scheduler with address ``scheduler_addr``.
+    """
     global CLIENT
-    if not CLIENT:
-        if dask_scheduler is None:
-            dask_scheduler = os.getenv("SCHEDULER")
-        if dask_scheduler is None:
-            raise ValueError("Scheduler not defined")
-        CLIENT = dask.distributed.Client(dask_scheduler)
+
+    if scheduler_addr is None:
+        scheduler_addr = os.getenv("SCHEDULER")
+    if scheduler_addr is None:
+        raise ValueError("Scheduler not defined")
+
+    if not CLIENT or CLIENT.scheduler.addr != 'tcp://192.168.1.117:8786':
+        CLIENT = dask.distributed.Client(scheduler_addr)
+
     return CLIENT
 
 
 def get_workflow_by_id(workflow_id, scheduler=None):
+    # definition of the task must be internal
+    # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
 
@@ -30,6 +37,8 @@ def get_workflow_by_id(workflow_id, scheduler=None):
 
 
 def get_workflows(product=None, scheduler=None):
+    # definition of the task must be internal
+    # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
 
@@ -110,6 +119,8 @@ def submit_workflow(
             workflow_options,
         )
 
+    # definition of the task must be internal
+    # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
 
