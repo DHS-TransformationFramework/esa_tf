@@ -74,7 +74,7 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
 ```
 
 
-## License information
+# License information
 
 Copyright 2021-2022, European Space Agency (ESA)
 
