@@ -58,11 +58,11 @@ async def tranformation_orders(
 
 
 @app.get("/TransformationOrders('{id}')", name="transformation_order")
-async def transformation_order(request: Request, id: str):
+async def get_transformation_order(request: Request, id: str):
     base = request.url_for("transformation_order", id=id)
     data = None
     try:
-        data = api.get_order_status(id)
+        data = api.get_transformation_order(id)
     except KeyError:
         raise HTTPException(
             status_code=404, detail=f"Transformation order {id} not found"
