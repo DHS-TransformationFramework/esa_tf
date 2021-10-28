@@ -5,7 +5,6 @@ import pytest
 
 from esa_tf_platform import workflows
 
-
 dummy_workflow_config1 = {"conf": "1"}
 dummy_workflow_config2a = {"conf": "2a"}
 dummy_workflow_config2b = {"conf": "2b"}

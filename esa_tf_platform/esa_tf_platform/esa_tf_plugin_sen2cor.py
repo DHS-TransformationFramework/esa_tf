@@ -1,11 +1,11 @@
 import glob
 import logging
 import os
-import pkg_resources
 import shutil
 import subprocess
 from xml.etree import ElementTree
 
+import pkg_resources
 
 SEN2COR_CONFILE_NAME = "L2A_GIPP.xml"
 SRTM_DOWNLOAD_ADDRESS = (
@@ -217,7 +217,9 @@ def rename_output(output_dir):
             sen2cor_output = d
             break
     if sen2cor_output is None:
-        raise RuntimeError(f"no Sen2Cor output product dir has been found in {output_dir}")
+        raise RuntimeError(
+            f"no Sen2Cor output product dir has been found in {output_dir}"
+        )
     # remove the ".SAFE" string (if present) from the output Sen2Cor folder
     output_path = os.path.join(output_dir, os.path.splitext(sen2cor_output)[0])
     os.rename(os.path.join(output_dir, sen2cor_output), output_path)
