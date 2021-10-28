@@ -1,3 +1,4 @@
+import copy
 import os
 
 import dask.distributed
@@ -49,39 +50,35 @@ def get_workflows(product=None, scheduler=None):
     return client.gather(future)
 
 
-def build_order_status(order):
-    future = order["future"]
-    order_status = {
-        "Id": future.key,
-        "Status": future.status,
-        "WorkflowId": order["workflow_id"],
-        "InputProductReference": order["input_product_reference"],
-        "WorkflowOptions": order["workflow_options"],
-    }
+def build_transformation_order(order):
+    transformation_order = copy.deepcopy(order)
+    future = transformation_order.pop("future")
+    transformation_order["Status"] = future.status
     if future.status == "finished":
-        order_status["OutputFile"] = os.path.basename(future.result())
+        transformation_order["OutputFile"] = os.path.basename(future.result())
 
-    return order_status
+    return transformation_order
 
 
-def get_order_status(order_id):
+def get_transformation_order(order_id):
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
-        raise KeyError(f"Transformation Order {order_id} not found")
-    order_status = build_order_status(order)
-    return order_status
+        raise ValueError(f"Transformation Order {order_id} not found")
+    transformation_order = build_transformation_order(order)
+    return transformation_order
 
 
 def get_transformation_orders(workflow_id=None, status=None):
-    orders_status = []
+    transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
-        add_order = (not workflow_id or (workflow_id == order["workflow_id"])) and (
-            not status or (status == order["future"].status)
+        add_order = (
+            (not workflow_id or (workflow_id == order["WorkflowId"])) and
+            (not status or (status == order["future"].status))
         )
         if add_order:
-            order_status = build_order_status(order)
-            orders_status.append(order_status)
-    return orders_status
+            transformation_order = build_transformation_order(order)
+            transformation_orders.append(transformation_order)
+    return transformation_orders
 
 
 def submit_workflow(
@@ -113,7 +110,9 @@ def submit_workflow(
     """
     if not order_id:
         order_id = dask.base.tokenize(
-            workflow_id, input_product_reference, workflow_options,
+            workflow_id,
+            input_product_reference,
+            workflow_options,
         )
 
     # definition of the task must be internal
@@ -135,8 +134,9 @@ def submit_workflow(
     future = client.submit(task, key=order_id)
     TRANSFORMATION_ORDERS[future.key] = {
         "future": future,
-        "input_product_reference": input_product_reference,
-        "workflow_options": workflow_options,
-        "workflow_id": workflow_id,
+        "Id": future.key,
+        "InputProductReference": input_product_reference,
+        "WorkflowOptions": workflow_options,
+        "WorkflowId": workflow_id,
     }
     return future.key
