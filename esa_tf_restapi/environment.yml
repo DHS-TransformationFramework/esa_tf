@@ -11,6 +11,7 @@ dependencies:
   - flake8
   - isort
   - make
+  - nomkl
   - pytest
   - pytest-cov
   - python = 3.9.7

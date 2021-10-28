@@ -1,0 +1,3 @@
+
+up:
+	docker-compose up
