@@ -1,5 +1,30 @@
 # ESA transformation framework
 
+The Transformation Framework is a component of ESA DHS intended to provide 
+data transformation capabilities via the integration of processing elements 
+applied on-demand to Copernicus Sentinel products, prior to delivery to the users. 
+
+In its current development status *Alpha*, it features:
+
+* The ability to [obtain a list of available workflows via the REST API](#List-of-plugins)
+* The ability to [submit a Transformation Order via the REST API](#Request-a-new-transformation)
+* The ability to [monitor the status of an ongoing process via the REST API](#Monitoring-status-of-a-transformation-order)
+* The installation of [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
+* *Pluggability*, i.e. the capability to add new plugins
+* *SRTM DEM* download in the processing directory 
+  during the transformation, then removed after the end of the processing 
+
+It can currently be deployed via docker-compose, as explained in the 
+in [the Docker compose startup](#Docker-compose-startup) section.
+
+## Notes
+
+* Plugin memory requirements are set to a minimum of 6GB of RAM
+* The activation of ESA-CCI data-package necessary for Sen2Cor plugin 
+  to generate products compatible with L2A Core products is not included in this release
+* The selection of a Region of Interest (ROI) 
+  with Sen2Cor plugin is not yet supported by the REST API
+
 ## Docker compose startup
 
 Required docker engine configuration:
@@ -74,6 +99,8 @@ To submit a transformation order and monitor it's state, in one shot:
 ```bash
 curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"}, "WorkflowOptions": {"aerosol_type": "maritime", "mid_latitude": "auto", "ozone_content": 0, "cirrus_correction": true, "dem_terrain_correction": true, "row0": 600, "col0": 1200, "nrow_win": 600, "ncol_win": 600}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq -r '.Id' | curl "http://localhost:8080/TransformationOrders('`cat -`')" | jq
 ```
+
+
 
 # License information
 
