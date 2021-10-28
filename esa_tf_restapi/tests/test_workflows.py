@@ -1,10 +1,7 @@
 import pytest
-
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from esa_tf_restapi import app
-from esa_tf_restapi import api
+from esa_tf_restapi import api, app
 
 client = TestClient(app)
 

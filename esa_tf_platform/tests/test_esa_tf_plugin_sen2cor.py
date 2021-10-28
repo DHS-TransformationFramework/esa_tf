@@ -5,7 +5,6 @@ import pytest
 
 from esa_tf_platform import esa_tf_plugin_sen2cor
 
-
 VALID_OZONE_VALUES = [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460]
 
 
