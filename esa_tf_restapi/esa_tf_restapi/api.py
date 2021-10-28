@@ -75,14 +75,14 @@ def get_transformation_order(order_id):
     return transformation_order
 
 
-def get_transformation_orders(workflow_id=None, status=None):
+def get_transformation_orders(status=None, workflow_id=None):
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
+        transformation_order = build_transformation_order(order)
         add_order = (not workflow_id or (workflow_id == order["WorkflowId"])) and (
-            not status or (status == STATUS_DASK_TO_API[order["future"].status])
+            not status or (status == transformation_order["Status"])
         )
         if add_order:
-            transformation_order = build_transformation_order(order)
             transformation_orders.append(transformation_order)
     return transformation_orders
 
