@@ -126,10 +126,7 @@ def zip_product(output, output_dir):
     dirname = os.path.dirname(output.rstrip("/"))
     output_zip_path = os.path.join(output_dir, basename)
     output_file = shutil.make_archive(
-        base_name=output_zip_path,
-        format="zip",
-        root_dir=dirname,
-        base_dir=basename,
+        base_name=output_zip_path, format="zip", root_dir=dirname, base_dir=basename,
     )
     return output_file
 

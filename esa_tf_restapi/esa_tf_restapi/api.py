@@ -4,7 +4,7 @@ import uuid
 import dask.distributed
 
 CLIENT = None
-WORKFLOWS = {}
+TRANSFORMATION_ORDERS = {}
 
 
 def instantiate_client(dask_scheduler=None):
@@ -40,21 +40,40 @@ def get_workflows(product=None, scheduler=None):
     return client.gather(future)
 
 
-def get_order_status(order_id):
-    future = WORKFLOWS[order_id]["future"]
-    workflow_id = WORKFLOWS[order_id]["workflow_id"]
-    input_product_reference = WORKFLOWS[order_id]["input_product_reference"]
-    workflow_options = WORKFLOWS[order_id]["workflow_options"]
-    status = {
-        "Id": order_id,
+def build_order_status(order):
+    future = order["future"]
+    order_status = {
+        "Id": future.key,
         "Status": future.status,
-        "Workflow_id": workflow_id,
-        "InputProductReference": input_product_reference,
-        "WorkflowId": "6c18b57d-fgk4-1236-b539-12h305c26z89",
-        "WorkflowOptions": workflow_options
+        "WorkflowId": order["workflow_id"],
+        "InputProductReference": order["input_product_reference"],
+        "WorkflowOptions": order["workflow_options"]
     }
+    if future.status == "finished":
+        order_status["OutputFile"] = os.path.basename(future.result())
 
-    return future
+    return order_status
+
+
+def get_order_status(order_id):
+    order = TRANSFORMATION_ORDERS.get(order_id, None)
+    if order is None:
+        raise ValueError(f"Transformation Order {order_id} not found")
+    order_status = build_order_status(order)
+    return order_status
+
+
+def get_transformation_orders(workflow_id=None, status=None):
+    orders_status = []
+    for order in TRANSFORMATION_ORDERS.values():
+        add_order = (
+            (not workflow_id or (workflow_id == order["workflow_id"])) and
+            (not status or (status == order["future"].status))
+        )
+        if add_order:
+            order_status = build_order_status(order)
+            orders_status.append(order_status)
+    return orders_status
 
 
 def submit_workflow(
@@ -106,7 +125,7 @@ def submit_workflow(
 
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
-    WORKFLOWS[future.key] = {
+    TRANSFORMATION_ORDERS[future.key] = {
         "future": future,
         "input_product_reference": input_product_reference,
         "workflow_options": workflow_options,
