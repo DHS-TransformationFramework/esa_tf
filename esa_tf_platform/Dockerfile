@@ -18,7 +18,7 @@ COPY environment.yml /opt/esa-tf-platform/
 
 WORKDIR /opt/esa-tf-platform
 
-RUN make conda-env-update ENVIRONMENT=base
+RUN make conda-env-update ENVIRONMENT=base && conda clean -afy
 
 COPY . /opt/esa-tf-platform
 
