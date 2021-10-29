@@ -58,10 +58,15 @@ def get_workflows(product=None, scheduler=None):
 
 
 def build_transformation_order(order):
-    transformation_order = copy.deepcopy(order)
-    transformation_order.pop("future")
     future = order["future"]
-    transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
+    future = dask.distributed.Future(future.key, client=instantiate_client())
+
+    transformation_order = {
+        "Status": STATUS_DASK_TO_API[future.status],
+        "WorkflowId": order["WorkflowId"],
+        "InputProductReference": order["InputProductReference"],
+        "WorkflowOptions": order["WorkflowOptions"]
+    }
 
     if future.status == "finished":
         transformation_order["OutputFile"] = os.path.basename(future.result())
