@@ -24,8 +24,7 @@ data/land-cover/.timestamp: $(ESACCI_ZIP)
 	touch data/land-cover/.timestamp
 
 export HUBS_CREDENTIALS
-config/hubs_credentials.yaml:
-	mkdir -p config
+config/hubs_credentials.yaml: skel
 	echo "$$HUBS_CREDENTIALS" > $@
 
 setup: config/hubs_credentials.yaml

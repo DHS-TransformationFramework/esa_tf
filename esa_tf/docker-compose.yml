@@ -22,8 +22,9 @@ services:
         build: ../esa_tf_platform
         volumes:
             - "${DATA_DIR:-./data}:/data"
+            - "${OUTPUT_DIR:-./output}:/output"
             - "${CONFIG_DIR:-./config}:/config"
         environment:
             - HUBS_CREDENTIALS_FILE=/config/hubs_credentials.yaml
-            - OUTPUT_DIR=/data/output
+            - OUTPUT_DIR=/output
         command: make dask-worker DASKFLAGS="tcp://scheduler:8786"
