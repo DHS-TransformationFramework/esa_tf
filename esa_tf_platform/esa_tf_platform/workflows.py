@@ -175,7 +175,7 @@ def run_workflow(
 
     # download
     product = product_reference["Reference"]
-    hub_name = product_reference.get("api_hub", "scihub")
+    hub_name = product_reference.get("DataSourceName", "scihub")
     product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
