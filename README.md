@@ -1,32 +1,33 @@
 # ESA transformation framework
 
 The Transformation Framework is a component of the
-Copernicus Sentinels Collaborative Data Hub Software (DHS) intended to provide 
-data transformation capabilities via the integration of processing elements 
-applied on-demand to Copernicus Sentinel products, prior to delivery to the users. 
+Copernicus Sentinels Collaborative Data Hub Software (DHS) intended to provide
+data transformation capabilities via the integration of processing elements
+applied on-demand to Copernicus Sentinel products, prior to delivery to the users.
+
+## Features
 
 In its current development status *Alpha*, it features:
 
-* The ability to [obtain a list of available workflows via the REST API](#List-of-plugins).
-* The ability to [submit a Transformation Order via the REST API](#Request-a-new-transformation).
-* The ability to [monitor the status of an ongoing process via the REST API](#Monitoring-status-of-a-transformation-order).
-* The installation of [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
-  which uses SenCor v2.9 tool to convert Sentinel-2 L1C products into L2A output products. 
-  Sen2Cor uses *SRTM DEM* for classification and atmospheric correction. The DEM is 
-  downloaded in the processing directory during the transformation, 
+- The ability to [obtain a list of available workflows via the REST API](#List-of-plugins).
+- The ability to [submit a Transformation Order via the REST API](#Request-a-new-transformation).
+- The ability to [monitor the status of an ongoing process via the REST API](#Monitoring-status-of-a-transformation-order).
+- The installation of [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
+  which uses SenCor v2.9 tool to convert Sentinel-2 L1C products into L2A output products.
+  Sen2Cor uses *SRTM DEM* for classification and atmospheric correction. The DEM is
+  downloaded in the processing directory during the transformation,
   then it is removed at the end of the processing.
-* *Pluggability*, i.e. the capability to add new plugins.
-   
+- *Pluggability*, i.e. the capability to add new plugins.
 
-It can currently be deployed via docker-compose, as explained in the 
+It can currently be deployed via docker-compose, as explained in the
 in [the Docker compose startup](#Docker-compose-startup) section.
 
-## Notes
+### Notes
 
-* Plugin memory requirements are set to a minimum of 6GB of RAM
-* The activation of ESA-CCI data-package necessary for Sen2Cor plugin 
+- Plugin memory requirements are set to a minimum of 6GB of RAM
+- The activation of ESA-CCI data-package necessary for Sen2Cor plugin
   to generate products compatible with L2A Core products is not included in this release
-* The selection of a Region of Interest (ROI) 
+- The selection of a Region of Interest (ROI)
   with Sen2Cor plugin is not yet supported by the REST API
 
 ## Docker compose startup
