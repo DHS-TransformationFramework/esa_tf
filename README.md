@@ -54,7 +54,7 @@ Configure the credentials to access the external data sources in the file `confi
 according to the following example:
 
 ```yaml
-# 
+# example for: config/hubs_credentials.yaml
 apihub:
   api_url: https://apihub.copernicus.eu/apihub
   user: my-apihub-username

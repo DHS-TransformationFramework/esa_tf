@@ -162,7 +162,7 @@ def run_workflow(
         output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
     if hubs_credentials_file is None:
         hubs_credentials_file = os.getenv(
-            "HUBS_CREDENTIALS_FILE", "./hubs_credential.yaml"
+            "HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml"
         )
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
