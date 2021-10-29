@@ -1,6 +1,6 @@
 # ESA transformation framework
 
-The Transformation Framework is a component of the
+The ESA Transformation Framework is a component of the
 Copernicus Sentinels Collaborative Data Hub Software (DHS) intended to provide
 data transformation capabilities via the integration of processing elements
 applied on-demand to Copernicus Sentinel products, prior to delivery to the users.
@@ -9,26 +9,24 @@ applied on-demand to Copernicus Sentinel products, prior to delivery to the user
 
 In its current development status *Alpha*, it features:
 
-- The ability to [obtain a list of available workflows via the REST API](#List-of-plugins).
-- The ability to [submit a Transformation Order via the REST API](#Request-a-new-transformation).
-- The ability to [monitor the status of an ongoing process via the REST API](#Monitoring-status-of-a-transformation-order).
-- The installation of [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
-  which uses SenCor v2.9 tool to convert Sentinel-2 L1C products into L2A output products.
-  Sen2Cor uses *SRTM DEM* for classification and atmospheric correction. The DEM is
-  downloaded in the processing directory during the transformation,
-  then it is removed at the end of the processing.
-- *Pluggability*, i.e. the capability to add new plugins.
-
-It can currently be deployed via docker-compose, as explained in the
-in [the Docker compose startup](#Docker-compose-startup) section.
+- The ability to define and configure workflows 
+  (i.e. processing elements), via a plugin architecture. (DHS-EVO-31, DHS-EVO-36)
+- The ability to perform parallel processing on the local host
+  or over a distributed architecture. (DHS-EVO-33)
+- The functionalities which allow setting workflow parameters and options
+  [via a REST API](#How-to-test-API-endpoints). (DHS-EVO-32)
+- A [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
+  which uses Sen2Cor v2.9 tool to convert Sentinel-2 L1C products into L2A output products,
+  by using *SRTM DEM* for classification and atmospheric correction. (DHS-EVO-35) 
+- A deployment [via docker-compose](#Docker-compose-startup). (DHS-MNT-16)
 
 ### Notes
 
-- Plugin memory requirements are set to a minimum of 6GB of RAM
+- Plugin memory requirements are set to a minimum of 6GB of RAM.
 - The activation of ESA-CCI data-package necessary for Sen2Cor plugin
-  to generate products compatible with L2A Core products is not included in this release
+  to generate products compatible with L2A Core products is not included in this release.
 - The selection of a Region of Interest (ROI)
-  with Sen2Cor plugin is not yet supported by the REST API
+  with Sen2Cor plugin is not yet supported by the REST API.
 
 ## Docker compose startup
 
