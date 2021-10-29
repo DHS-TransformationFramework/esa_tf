@@ -9,7 +9,7 @@ applied on-demand to Copernicus Sentinel products, prior to delivery to the user
 
 In its current development status *Alpha*, it features:
 
-- The ability to define and configure workflows 
+- The ability to define and configure workflows
   (i.e. processing elements), via a plugin architecture. (DHS-EVO-31, DHS-EVO-36)
 - The ability to perform parallel processing on the local host
   or over a distributed architecture. (DHS-EVO-33)
@@ -17,7 +17,7 @@ In its current development status *Alpha*, it features:
   [via a REST API](#How-to-test-API-endpoints). (DHS-EVO-32)
 - A [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
   which uses Sen2Cor v2.9 tool to convert Sentinel-2 L1C products into L2A output products,
-  by using *SRTM DEM* for classification and atmospheric correction. (DHS-EVO-35) 
+  by using *SRTM DEM* for classification and atmospheric correction. (DHS-EVO-35)
 - A deployment [via docker-compose](#Docker-compose-startup). (DHS-MNT-16)
 
 ### Notes
