@@ -28,7 +28,7 @@ In its current development status *Alpha*, it features:
 - The selection of a Region of Interest (ROI)
   with Sen2Cor plugin is not yet supported by the REST API.
 
-## Docker compose startup
+## Docker compose setup
 
 Required docker engine configuration:
 
@@ -43,11 +43,31 @@ Required software on the VM:
 - `unzip`
 - `tar`
 
-Change folder to `esa_tf` and start the docker compose:
+Change folder to `esa_tf` and download the external resources:
 
 ```bash
 cd esa_tf
 make setup
+```
+
+Configure the credentials to access the external data sources in the file `config/hubs_credentials.yaml`,
+according to the following example:
+
+```yaml
+# 
+apihub:
+  api_url: https://apihub.copernicus.eu/apihub
+  user: my-apihub-username
+  password: my-apihub-password
+scihub:
+  api_url: https://scihub.copernicus.eu/dhus
+  user: my-scihub-username
+  password: my-scihub-password
+```
+
+Finally, start the docker compose:
+
+```
 make up
 ```
 
