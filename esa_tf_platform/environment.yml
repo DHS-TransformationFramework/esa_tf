@@ -9,6 +9,7 @@ dependencies:
   - gdal = 3.0.2
   - isort
   - make
+  - mdformat
   - nomkl
   # - numpy = 1.21.1
   - python = 3.9.7
