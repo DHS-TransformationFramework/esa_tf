@@ -1,3 +1,4 @@
+import copy
 import os
 
 import dask.distributed
@@ -6,18 +7,33 @@ CLIENT = None
 TRANSFORMATION_ORDERS = {}
 
 
-def instantiate_client(dask_scheduler=None):
+STATUS_DASK_TO_API = {
+    "pending": "in_progress",
+    "finished": "completed",
+    "error": "failed",
+}
+
+
+def instantiate_client(scheduler_addr=None):
+    """
+    Return a client with a scheduler with address ``scheduler_addr``.
+    """
     global CLIENT
-    if not CLIENT:
-        if dask_scheduler is None:
-            dask_scheduler = os.getenv("SCHEDULER")
-        if dask_scheduler is None:
-            raise ValueError("Scheduler not defined")
-        CLIENT = dask.distributed.Client(dask_scheduler)
+
+    if scheduler_addr is None:
+        scheduler_addr = os.getenv("SCHEDULER")
+    if scheduler_addr is None:
+        raise ValueError("Scheduler not defined")
+
+    if not CLIENT or CLIENT.scheduler.addr != scheduler_addr:
+        CLIENT = dask.distributed.Client(scheduler_addr)
+
     return CLIENT
 
 
 def get_workflow_by_id(workflow_id, scheduler=None):
+    # definition of the task must be internal
+    # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
 
@@ -29,6 +45,8 @@ def get_workflow_by_id(workflow_id, scheduler=None):
 
 
 def get_workflows(product=None, scheduler=None):
+    # definition of the task must be internal
+    # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
 
@@ -39,39 +57,36 @@ def get_workflows(product=None, scheduler=None):
     return client.gather(future)
 
 
-def build_order_status(order):
+def build_transformation_order(order):
+    transformation_order = copy.deepcopy(order)
+    transformation_order.pop("future")
     future = order["future"]
-    order_status = {
-        "Id": future.key,
-        "Status": future.status,
-        "WorkflowId": order["workflow_id"],
-        "InputProductReference": order["input_product_reference"],
-        "WorkflowOptions": order["workflow_options"],
-    }
+    transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
+
     if future.status == "finished":
-        order_status["OutputFile"] = os.path.basename(future.result())
+        transformation_order["OutputFile"] = os.path.basename(future.result())
 
-    return order_status
+    return transformation_order
 
 
-def get_order_status(order_id):
+def get_transformation_order(order_id):
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
-        raise ValueError(f"Transformation Order {order_id} not found")
-    order_status = build_order_status(order)
-    return order_status
+        raise KeyError(f"Transformation Order {order_id} not found")
+    transformation_order = build_transformation_order(order)
+    return transformation_order
 
 
-def get_transformation_orders(workflow_id=None, status=None):
-    orders_status = []
+def get_transformation_orders(status=None, workflow_id=None):
+    transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
-        add_order = (not workflow_id or (workflow_id == order["workflow_id"])) and (
-            not status or (status == order["future"].status)
+        transformation_order = build_transformation_order(order)
+        add_order = (not workflow_id or (workflow_id == order["WorkflowId"])) and (
+            not status or (status == transformation_order["Status"])
         )
         if add_order:
-            order_status = build_order_status(order)
-            orders_status.append(order_status)
-    return orders_status
+            transformation_orders.append(transformation_order)
+    return transformation_orders
 
 
 def submit_workflow(
@@ -106,6 +121,8 @@ def submit_workflow(
             workflow_id, input_product_reference, workflow_options,
         )
 
+    # definition of the task must be internal
+    # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
 
@@ -123,8 +140,9 @@ def submit_workflow(
     future = client.submit(task, key=order_id)
     TRANSFORMATION_ORDERS[future.key] = {
         "future": future,
-        "input_product_reference": input_product_reference,
-        "workflow_options": workflow_options,
-        "workflow_id": workflow_id,
+        "Id": future.key,
+        "InputProductReference": input_product_reference,
+        "WorkflowOptions": workflow_options,
+        "WorkflowId": workflow_id,
     }
     return future.key

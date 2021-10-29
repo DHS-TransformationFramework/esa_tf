@@ -19,5 +19,6 @@ dependencies:
   - gunicorn
   - pip
   - pip:
+    - mdformat-gfm
     - odata-query
     - sentinelsat
