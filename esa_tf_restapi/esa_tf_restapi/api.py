@@ -59,8 +59,6 @@ def get_workflows(product=None, scheduler=None):
 
 def build_transformation_order(order):
     future = order["future"]
-    future = dask.distributed.Future(future.key, client=instantiate_client())
-
     transformation_order = {
         "Status": STATUS_DASK_TO_API[future.status],
         "WorkflowId": order["WorkflowId"],
@@ -146,16 +144,15 @@ def submit_workflow(
         order_id in TRANSFORMATION_ORDERS
         and TRANSFORMATION_ORDERS[order_id]["future"].status == "error"
     ):
-        future = TRANSFORMATION_ORDERS[order_id]["future"]
-        client.retry(future)
+        client.retry(TRANSFORMATION_ORDERS[order_id]["future"])
     else:
         future = client.submit(task, key=order_id)
 
-    TRANSFORMATION_ORDERS[future.key] = {
-        "future": future,
-        "Id": future.key,
-        "InputProductReference": input_product_reference,
-        "WorkflowOptions": workflow_options,
-        "WorkflowId": workflow_id,
-    }
+        TRANSFORMATION_ORDERS[future.key] = {
+            "future": future,
+            "Id": future.key,
+            "InputProductReference": input_product_reference,
+            "WorkflowOptions": workflow_options,
+            "WorkflowId": workflow_id,
+        }
     return future.key
