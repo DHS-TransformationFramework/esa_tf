@@ -22,11 +22,11 @@ In its current development status *Alpha*, it features:
 
 ### Notes
 
-- Plugin memory requirements are set to a minimum of 6GB of RAM.
 - The activation of ESA-CCI data-package necessary for Sen2Cor plugin
   to generate products compatible with L2A Core products is not included in this release.
 - The selection of a Region of Interest (ROI)
   with Sen2Cor plugin is not yet supported by the REST API.
+- Failed requests are not re-tried.
 
 ## Docker compose setup
 
@@ -50,20 +50,8 @@ cd esa_tf
 make setup
 ```
 
-Configure the credentials to access the external data sources in the file `config/hubs_credentials.yaml`,
-according to the following example:
-
-```yaml
-# example for: config/hubs_credentials.yaml
-apihub:
-  api_url: https://apihub.copernicus.eu/apihub
-  user: my-apihub-username
-  password: my-apihub-password
-scihub:
-  api_url: https://scihub.copernicus.eu/dhus
-  user: my-scihub-username
-  password: my-scihub-password
-```
+Configure the user names and passwords to access the external data sources in the file
+`config/hubs_credentials.yaml`.
 
 Finally, start the docker compose:
 
