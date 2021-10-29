@@ -84,3 +84,7 @@ jobs:
       run: |
         $CONDA/bin/conda install isort
         $CONDA/bin/isort --check .
+    - name: Check documentation style with mdformat
+      run: |
+        $CONDA/bin/conda -c conda-forge install mdformat
+        $CONDA/bin/mdformat --check .
