@@ -24,14 +24,10 @@ The API endpoints will be available on `http://localhost:8080`.
 
 ## How to test API endpoints
 
-Required software on the VM:
-* `jq`
+To easily test REST API from the command line you can use the following softwares:
 
-### Common Schema Definition Language (CSDL)
-
-```bash
-curl "http://localhost:8080/\$metadata"
-```
+* *curl*
+* *jq* (optional)
 
 ### List of plugins
 
@@ -39,7 +35,7 @@ curl "http://localhost:8080/\$metadata"
 curl http://localhost:8080/Workflows | jq
 ```
 
-### Access a plugin definition
+### Access plugin definition
 
 ```bash
 curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')" | jq
@@ -54,7 +50,7 @@ curl http://localhost:8080/TransformationOrders | jq
 It is also possible to filter accessible orders:
 
 ```bash
-curl "http://localhost:8080/TransformationOrders?\$filter=`jq -rn --arg x "Status eq 'completed'" '$x|@uri'`" | jq
+curl "http://localhost:8080/TransformationOrders?\$filter=Status%20eq%20'completed'" | jq
 ```
 
 ### Request a new transformation
@@ -66,13 +62,7 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('fe950364a8e9b37057d64f9d056edc05')" | jq # -r '.Id'
-```
-
-To submit a transformation order and monitor it's state, in one shot:
-
-```bash
-curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"}, "WorkflowOptions": {"aerosol_type": "maritime", "mid_latitude": "auto", "ozone_content": 0, "cirrus_correction": true, "dem_terrain_correction": true, "row0": 600, "col0": 1200, "nrow_win": 600, "ncol_win": 600}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq -r '.Id' | curl "http://localhost:8080/TransformationOrders('`cat -`')" | jq
+curl "http://localhost:8080/TransformationOrders('fe950364a8e9b37057d64f9d056edc05')" | jq
 ```
 
 # License information
