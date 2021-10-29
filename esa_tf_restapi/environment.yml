@@ -11,7 +11,6 @@ dependencies:
   - flake8
   - isort
   - make
-  - mdformat-gfm
   - nomkl
   - pytest
   - pytest-cov
@@ -20,5 +19,6 @@ dependencies:
   - gunicorn
   - pip
   - pip:
+    - mdformat-gfm
     - odata-query
     - sentinelsat
