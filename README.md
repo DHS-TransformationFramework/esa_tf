@@ -1,6 +1,7 @@
 # ESA transformation framework
 
-The Transformation Framework is a component of ESA DHS intended to provide 
+The Transformation Framework is a component of the
+Copernicus Sentinels Collaborative Data Hub Software (DHS) intended to provide 
 data transformation capabilities via the integration of processing elements 
 applied on-demand to Copernicus Sentinel products, prior to delivery to the users. 
 
