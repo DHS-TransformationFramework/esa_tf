@@ -11,7 +11,7 @@ dependencies:
   - flake8
   - isort
   - make
-  - mdformat
+  - mdformat-gfm
   - nomkl
   - pytest
   - pytest-cov
