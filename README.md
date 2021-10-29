@@ -1,6 +1,34 @@
 # ESA transformation framework
 
-## Docker compose startup
+The ESA Transformation Framework is a component of the
+Copernicus Sentinels Collaborative Data Hub Software (DHS) intended to provide
+data transformation capabilities via the integration of processing elements
+applied on-demand to Copernicus Sentinel products, prior to delivery to the users.
+
+## Features
+
+In its current development status *Alpha*, it features:
+
+- The ability to define and configure workflows
+  (i.e. processing elements), via a plugin architecture. (DHS-EVO-31, DHS-EVO-36)
+- The ability to perform parallel processing on the local host
+  or over a distributed architecture. (DHS-EVO-33)
+- The functionalities which allow setting workflow parameters and options
+  [via a REST API](#How-to-test-API-endpoints). (DHS-EVO-32)
+- A [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
+  which uses Sen2Cor v2.9 tool to convert Sentinel-2 L1C products into L2A output products,
+  by using *SRTM DEM* for classification and atmospheric correction. (DHS-EVO-35)
+- A deployment [via docker-compose](#Docker-compose-startup). (DHS-MNT-16)
+
+### Notes
+
+- The activation of ESA-CCI data-package necessary for Sen2Cor plugin
+  to generate products compatible with L2A Core products is not included in this release.
+- The selection of a Region of Interest (ROI)
+  with Sen2Cor plugin is not yet supported by the REST API.
+- Failed requests are not re-tried.
+
+## Docker compose setup
 
 Required docker engine configuration:
 
@@ -15,11 +43,19 @@ Required software on the VM:
 - `unzip`
 - `tar`
 
-Change folder to `esa_tf` and start the docker compose:
+Change folder to `esa_tf` and download the external resources:
 
 ```bash
 cd esa_tf
 make setup
+```
+
+Configure the user names and passwords to access the external data sources in the file
+`config/hubs_credentials.yaml`.
+
+Finally, start the docker compose:
+
+```
 make up
 ```
 
