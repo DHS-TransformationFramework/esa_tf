@@ -20,6 +20,13 @@ In its current development status *Alpha*, it features:
   by using *SRTM DEM* for classification and atmospheric correction. (DHS-EVO-35)
 - A deployment [via docker-compose](#Docker-compose-startup). (DHS-MNT-16)
 
+Other features in the roadmap:
+
+- Product reformatting plugin (GeoTIFF, etc) (DHS-EVO-34)
+- Add support for multiple users.
+- Compute traceability record and upload it to the traceability service.
+- Integrate logging and monitoring in the DHS.
+
 ### Notes
 
 - The activation of ESA-CCI data-package necessary for Sen2Cor plugin
