@@ -10,7 +10,8 @@ class ContentDate(BaseModel):
 
 class ProductReference(BaseModel):
     reference: str = Field(alias="Reference")
-    content_date: Optional[ContentDate] = Field(None, alias="ContentDate")
+    data_source_name: Optional[str] = Field(None, alias="DataSourceName")
+    content_date: Optional[ContentDate] = Field(alias="ContentDate")
 
 
 class TranformationOrder(BaseModel):
