@@ -60,7 +60,8 @@ make setup
 ```
 
 Configure the user names and passwords to access the external data sources in the file
-`config/hubs_credentials.yaml`.
+`config/hubs_credentials.yaml` and the forlder where the ESA Transformation Framework
+will place the outputs in the `.env` file.
 
 Finally, start the docker compose:
 
