@@ -41,7 +41,7 @@ Other features in the roadmap:
 
 Required docker engine configuration:
 
-- resources -> advanced -> memory `>4Gb`
+- resources -> advanced -> memory `>6Gb`
 - resources -> advanced -> disk image size `>50Gb`
 
 Required software on the VM:
