@@ -111,7 +111,7 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('ecd01f71e70affc3bc64cb4cff91be95')" | jq
+curl "http://localhost:8080/TransformationOrders('519b07e33c050b9da1d26bb3e2f04f45')" | jq
 ```
 
 ## License information
