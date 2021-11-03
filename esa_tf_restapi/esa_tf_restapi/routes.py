@@ -4,7 +4,7 @@ from fastapi import HTTPException, Query, Request, Response
 
 from . import api, app, models
 from .csdl import loadDefinition
-from .odata import parseQS
+from .odata import parse_qs
 
 
 @app.get("/$metadata")
@@ -46,7 +46,7 @@ async def tranformation_orders(
         None, alias="$filter", title="OData $filter query", max_length=50
     ),
 ):
-    odata_params = parseQS(filter=rawfilter)
+    odata_params = parse_qs(filter=rawfilter)
     filter = odata_params.filter
     data = api.get_transformation_orders(status=filter.value)
     base = request.url_for("tranformation_orders")

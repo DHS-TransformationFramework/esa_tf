@@ -44,20 +44,70 @@ def to_payload():
     api.submit_workflow = orig
 
 
+@pytest.fixture()
+def tr_orders():
+    orig = api.get_transformation_orders
+
+    def get_transformation_orders(status=None):
+        entries = [
+            {"Id": "foo", "Status": "in_progress"},
+            {"Id": "bar", "Status": "completed"},
+        ]
+        return [e for e in entries if status is None or e["Status"] == status]
+
+    api.get_transformation_orders = get_transformation_orders
+    yield
+    api.get_transformation_orders = orig
+
+
+@pytest.fixture()
+def tr_order():
+    orig = api.get_transformation_order
+
+    def get_transformation_order(id):
+        if id == "foo":
+            return {"Id": id}
+        raise KeyError(f"Cannot find {id}")
+
+    api.get_transformation_order = get_transformation_order
+    yield
+    api.get_transformation_order = orig
+
+
 def test_list_workflows(workflows):
     response = client.get("/Workflows")
     assert response.status_code == 200
-    res = response.json()
-    assert len(res["value"]) == 1
-    assert res["value"][0]["Id"] == "sen2cor_l1c_l2a"
+    result = response.json()
+    assert len(result["value"]) == 1
+    assert result["value"][0]["Id"] == "sen2cor_l1c_l2a"
 
 
 def test_get_workflow(workflow):
     response = client.get("/Workflows('sen2cor_l1c_l2a')")
     assert response.status_code == 200
-    res = response.json()
-    assert res["Id"] == "sen2cor_l1c_l2a"
+    result = response.json()
+    assert result["Id"] == "sen2cor_l1c_l2a"
     response = client.get("/Workflows('foo-bar')")
+    assert response.status_code == 404
+
+
+def test_list_tranformation_orders(tr_orders):
+    response = client.get("/TransformationOrders")
+    assert response.status_code == 200
+    result = response.json()
+    assert len(result["value"]) == 2
+    response = client.get("/TransformationOrders?$filter=Status eq 'completed'")
+    assert response.status_code == 200
+    result = response.json()
+    assert len(result["value"]) == 1
+
+
+def test_get_tranformation_order(tr_order):
+    response = client.get("/TransformationOrders('foo')")
+    assert response.status_code == 200
+    result = response.json()
+    assert result["Id"] == "foo"
+    response = client.get("/TransformationOrders('bar')")
     assert response.status_code == 404
 
 
@@ -75,5 +125,5 @@ def test_run_tranformation_order(to_payload):
         response.headers["Location"]
         == f"{client.base_url}/TransformationOrders('foo-bar-baz')"
     )
-    res = response.json()
-    assert res["Id"] == "foo-bar-baz"
+    result = response.json()
+    assert result["Id"] == "foo-bar-baz"
