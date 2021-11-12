@@ -329,7 +329,7 @@ sen2cor_l1c_l2a = {
         {
             "Name": "resolution",
             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
-            "Type": "boolean",
+            "Type": "integer",
             "Default": True,
             "Values": [10, 20, 60],
         },
