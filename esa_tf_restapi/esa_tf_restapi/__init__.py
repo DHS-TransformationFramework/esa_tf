@@ -13,7 +13,17 @@
 # limitations under the License.
 
 from fastapi import FastAPI
+from . import api
 
 app = FastAPI()
 
+workflows = {}
+
 from . import routes
+
+
+@app.on_event("startup")
+async def startup_event():
+    global workflows
+    results = api.get_workflows()
+    workflows = results
