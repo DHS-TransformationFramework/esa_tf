@@ -13,7 +13,7 @@ MTD_FILENAME = "MTD_MSIL1C.xml"
 ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
 
 
-def set_sen2cor_options(etree, options, srtm_path):
+def set_sen2cor_options(etree, options, srtm_dir):
     """Replace in the input ElementTree object (representing the parsed default L2A_GIPP.xml
     configuration file) the values of tags that a user can specify as processing options, according
     to the user desiderata specified by means of ``options``. The ``srtm_path`` is the system
@@ -21,23 +21,22 @@ def set_sen2cor_options(etree, options, srtm_path):
 
     :param ElementTree.ElementTree etree: the parsed default L2A_GIPP.xml configuration file
     :param dict options: dictionary of the user options
-    :param str srtm_path: path of the folder in which the SRTM DEM will be downloaded or searched
+    :param str srtm_dir: path of the folder in which the SRTM DEM will be downloaded or searched
     :return ElementTree.ElementTree:
     """
     for k, v in options.items():
         if k.lower() in ["row0", "col0", "nrow_win", "ncol_win"]:
             etree.findall(f".//{k.lower()}")[0].text = str(v).upper()
-        elif k.lower() in [
-            "aerosol_type",
-            "mid_latitude",
-            "ozone_content",
-            "cirrus_correction",
+        elif k in [
+            "Aerosol_Type",
+            "Mid_Latitude",
+            "Ozone_Content",
+            "Cirrus_Correction",
+            "DEM_Terrain_Correction"
         ]:
-            # e.g. "aerosol_type" ---> "Aerosol_Type"
-            tag_name = "_".join([s.capitalize() for s in k.lower().split("_")])
-            etree.findall(f".//{tag_name}")[0].text = str(v).upper()
-        elif k.lower() == "dem_terrain_correction" and v:
-            etree.findall(".//DEM_Directory")[0].text = srtm_path
+            etree.findall(f".//{k}")[0].text = str(v).upper()
+        if srtm_dir:
+            etree.findall(".//DEM_Directory")[0].text = srtm_dir
             etree.findall(".//DEM_Reference")[0].text = SRTM_DOWNLOAD_ADDRESS
     return etree
 
@@ -108,13 +107,13 @@ def check_ozone_content(options, valid_ozone_values):
     ozone_summer_values = (0, 250, 290, 331, 370, 410, 450)
     ozone_content_value = options["ozone_content"]
     mid_latitude_value = options["mid_latitude"]
-    if mid_latitude_value == "auto" and (ozone_content_value not in valid_ozone_values):
+    if mid_latitude_value == "AUTO" and (ozone_content_value not in valid_ozone_values):
         raise ValueError()
-    elif mid_latitude_value == "winter" and (
+    elif mid_latitude_value == "WINTER" and (
         ozone_content_value not in ozone_winter_values
     ):
         raise ValueError()
-    elif mid_latitude_value == "summer" and (
+    elif mid_latitude_value == "SUMMER" and (
         ozone_content_value not in ozone_summer_values
     ):
         raise ValueError()
@@ -188,11 +187,11 @@ def check_options(options):
     for oname, ovalue in other_options.items():
         if oname == "ozone_content":
             check_ozone_content(
-                options, find_option_definition("ozone_content")["Values"]
+                options, find_option_definition("ozone_content")["Enum"]
             )
         elif oname in valid_names:
-            valid_values = find_option_definition(oname)["Values"]
-            if ovalue not in valid_values:
+            valid_values = find_option_definition(oname).get("Enum")
+            if valid_values and (ovalue not in valid_values):
                 raise ValueError(
                     f"invalid value '{ovalue}'' for '{oname}': valid values are {valid_values}"
                 )
@@ -285,6 +284,7 @@ def run_processing(
 
 
 sen2cor_l1c_l2a = {
+    "Name": "Sen2Cor_L1C_L2A",
     "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
     "Execute": "esa_tf_platform.esa_tf_plugin_sen2cor.run_processing",
     "InputProductType": "S2MSILC",
@@ -292,46 +292,44 @@ sen2cor_l1c_l2a = {
     "WorkflowVersion": "0.1",
     "WorkflowOptions": [
         {
-            "Name": "aerosol_type",
+            "Name": "Aerosol_Type",
             "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
             "Type": "string",
-            "Default": "rural",
-            "Values": ["maritime", "rural"],
+            "Default": "RURAL",
+            "Enum": ["MARITIME", "RURAL"],
         },
         {
-            "Name": "mid_latitude",
+            "Name": "Mid_Latitude",
             "Description": "If  'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
             "Type": "string",
-            "Default": "summer",
-            "Values": ["summer", "winter", "auto"],
+            "Default": "SUMMER",
+            "Enum": ["SUMMER", "WINTER", "AUTO"],
         },
         {
-            "Name": "ozone_content",
+            "Name": "Ozone_Content",
             "Description": "0: to get the best approximation from metadata (this is the smallest difference between metadata and column DU), else select for midlatitude summer (MS) atmosphere: 250, 290, 331 (standard MS), 370, 410, 450; for midlatitude winter (MW) atmosphere: 250, 290, 330, 377 (standard MW), 420, 460",
             "Type": "integer",
             "Default": 331,
-            "Values": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
+            "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
         },
         {
-            "Name": "cirrus_correction",
+            "Name": "Cirrus_Correction",
             "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
             "Type": "boolean",
             "Default": False,
-            "Values": [True, False],
         },
         {
-            "Name": "dem_terrain_correction",
+            "Name": "DEM_Terrain_Correction",
             "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
             "Type": "boolean",
             "Default": True,
-            "Values": [True, False],
         },
         {
-            "Name": "resolution",
+            "Name": "Resolution",
             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
             "Type": "integer",
             "Default": True,
-            "Values": [10, 20, 60],
+            "Enum": [10, 20, 60],
         },
     ],
 }
