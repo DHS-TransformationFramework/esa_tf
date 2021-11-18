@@ -248,10 +248,7 @@ def run_processing(
     :return str:
     """
     if sen2cor_script_file is None:
-        sen2cor_script_file = os.getenv(
-            "SEN2COR_SCRIPT_FILE",
-            "L2A_Process",
-        )
+        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process",)
     if srtm_dir is None:
         srtm_dir = os.getenv("SRTM_DIR", None)
     output_dir = os.path.abspath(output_dir)

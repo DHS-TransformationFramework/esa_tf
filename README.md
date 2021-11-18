@@ -105,18 +105,18 @@ curl "http://localhost:8080/TransformationOrders?\$filter=Status%20eq%20'complet
 ### Request a new transformation
 
 ```bash
-curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"aerosol_type": "maritime", "mid_latitude": "auto", "ozone_content": 0, "cirrus_correction": true, "dem_terrain_correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
+curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"Aerosol_Type": "MARITIME", "Mid_Latitude": "AUTO", "Ozone_Content": 0, "Cirrus_Correction": true, "DEM_Terrain_Correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
 ```
 
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('519b07e33c050b9da1d26bb3e2f04f45')" | jq
+curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')" | jq
 ```
 
 ## License information
 
-```
+```text
 Copyright 2021-2022, European Space Agency (ESA)
 
 Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (the "License");

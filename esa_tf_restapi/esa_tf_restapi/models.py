@@ -78,7 +78,6 @@ class TranformationOrder(BaseModel):
             current_option = workflow_options[key]
             if "Enum" not in current_option:
                 continue
-            print(key, value, current_option)
             if value not in current_option["Enum"]:
                 raise ValueError(
                     f"Disallowed value for {key}: "
