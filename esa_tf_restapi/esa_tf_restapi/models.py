@@ -1,5 +1,7 @@
-from typing import Dict, Optional, Any
-from pydantic import BaseModel, Field, create_model, validator
+from typing import Optional
+
+from pydantic import BaseModel, Field, validator
+from pydantic.errors import MissingError
 
 TYPES = {
     "boolean": bool,
@@ -10,7 +12,7 @@ TYPES = {
 
 
 def type_checking(param_type, wf_opt_type):
-    return TYPES[wf_opt_type] == param_type
+    return TYPES.get(wf_opt_type) == param_type
 
 
 class ContentDate(BaseModel):
@@ -46,9 +48,11 @@ class TranformationOrder(BaseModel):
         from . import workflows
 
         workflow_id = values.get("workflow_id")
-        workflow = workflows[workflow_id]
-        # workflow_options = workflow.get("WorkflowOptions")
+        workflow = workflows.get(workflow_id, {})
         workflow_options = {opt["Name"]: opt for opt in workflow.get("WorkflowOptions")}
+
+        if not v:
+            raise MissingError()
 
         # Check for possible W.O. name
         possible_wo_names = workflow_options.keys()
@@ -74,10 +78,11 @@ class TranformationOrder(BaseModel):
             current_option = workflow_options[key]
             if "Enum" not in current_option:
                 continue
+            print(key, value, current_option)
             if value not in current_option["Enum"]:
                 raise ValueError(
                     f"Disallowed value for {key}: "
-                    f"{value} has been provided while possible values are {current_option['Enum']}"
+                    f"{value} has been provided while possible values are "
+                    f"{', '.join([str(x) for x in current_option['Enum']])}"
                 )
-
         return v
