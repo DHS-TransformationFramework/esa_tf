@@ -23,3 +23,5 @@ RUN make conda-env-update ENVIRONMENT=base && conda clean -afy
 COPY . /opt/esa-tf-platform
 
 RUN pip install .
+
+WORKDIR /tmp
