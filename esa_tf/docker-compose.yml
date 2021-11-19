@@ -28,5 +28,5 @@ services:
         environment:
             - HUBS_CREDENTIALS_FILE=/config/hubs_credentials.yaml
             - OUTPUT_DIR=/output
-            - OUTPUT_OWNER_ID=${UID:-0}
+            - OUTPUT_OWNER_ID=${OUTPUT_OWNER_ID:-0}
         command: make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"
