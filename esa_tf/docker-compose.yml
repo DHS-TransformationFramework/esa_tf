@@ -19,6 +19,7 @@ services:
     esa_tf_worker:
         image: ghcr.io/bopen/esa_tf_worker:${ESA_TF_RELEASE:-latest}
         build: ../esa_tf_platform
+        user: ${UID:-root}
         depends_on:
             - esa_tf_scheduler
         volumes:
