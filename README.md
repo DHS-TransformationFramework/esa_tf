@@ -19,7 +19,7 @@ In its current development status *Alpha*, it features:
   which uses Sen2Cor v2.9 tool to convert Sentinel-2 L1C products into L2A output products,
   by using *SRTM DEM* for classification and atmospheric correction. (DHS-EVO-35)
 - A deployment [via docker-compose](#Docker-compose-startup). (DHS-MNT-16)
-- Continuous Integration and Continuous Delivery (CI/CD) via GitHub Actions. 
+- Continuous Integration and Continuous Delivery (CI/CD) via GitHub Actions.
 
 Other features in the roadmap:
 
@@ -65,7 +65,7 @@ will place the outputs in the `.env` file.
 
 Finally, start the docker compose:
 
-```
+```bash
 make up
 ```
 
