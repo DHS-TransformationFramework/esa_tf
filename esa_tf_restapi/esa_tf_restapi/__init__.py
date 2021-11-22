@@ -14,6 +14,17 @@
 
 from fastapi import FastAPI
 
+from . import api
+
 app = FastAPI()
 
+workflows = {}
+
 from . import routes
+
+
+@app.on_event("startup")
+async def startup_event():
+    global workflows
+    data = api.get_workflows()
+    workflows = data
