@@ -29,7 +29,7 @@ class ProductReference(BaseModel):
 class TranformationOrder(BaseModel):
     workflow_id: str = Field(alias="WorkflowId")
     product_reference: ProductReference = Field(alias="InputProductReference")
-    workflow_options: dict = Field(alias="WorkflowOptions")
+    workflow_options: Optional[dict] = Field(alias="WorkflowOptions")
 
     @validator("workflow_id", always=True)
     def validate_wf_id(cls, v, values):
@@ -43,16 +43,13 @@ class TranformationOrder(BaseModel):
             )
         return v
 
-    @validator("workflow_options", always=True)
+    @validator("workflow_options")
     def validate_wf_options(cls, v, values):
         from . import workflows
 
         workflow_id = values.get("workflow_id")
         workflow = workflows.get(workflow_id, {})
         workflow_options = {opt["Name"]: opt for opt in workflow.get("WorkflowOptions")}
-
-        if not v:
-            raise MissingError()
 
         # Check for possible W.O. name
         possible_wo_names = workflow_options.keys()

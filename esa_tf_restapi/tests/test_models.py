@@ -53,36 +53,25 @@ def test_transformation_order_missing_params(register_workflows):
         excinfo.value
     )
 
-    with pytest.raises(ValidationError) as excinfo:
-        models.TranformationOrder(
-            WorkflowId="workflow_1", InputProductReference={"Reference": "Ref a"}
-        )
-    assert "WorkflowOptions\n  field required (type=value_error.missing)" in str(
-        excinfo.value
-    )
-
     # Checking for registered workflow
     with pytest.raises(ValidationError) as excinfo:
         models.TranformationOrder(
-            WorkflowId="workflow_xxxx",
-            InputProductReference={"Reference": "Ref a"},
-            WorkflowOptions={},
+            WorkflowId="workflow_xxxx", InputProductReference={"Reference": "Ref a"},
         )
     assert (
         "WorkflowId\n  Unknown workflow: workflow_xxxx. Registered workflows are: workflow_1 (type=value_error)"
         in str(excinfo.value)
     )
 
-    # Testing workflow options can't be provided as empty dict
-    with pytest.raises(ValidationError) as excinfo:
+    # Testing workflow options can be provided as empty dict
+    try:
         models.TranformationOrder(
             WorkflowId="workflow_1",
             InputProductReference={"Reference": "Ref a"},
             WorkflowOptions={},
         )
-    assert "WorkflowOptions\n  field required (type=value_error.missing)" in str(
-        excinfo.value
-    )
+    except:
+        pytest.fail("Empty WorkflowOptions should be allowed")
 
 
 def test_transformation_order_validate_workflow_options(register_workflows):
