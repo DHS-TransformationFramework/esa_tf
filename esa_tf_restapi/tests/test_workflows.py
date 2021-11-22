@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+import esa_tf_restapi
 from esa_tf_restapi import api, app
 
 client = TestClient(app)
@@ -74,6 +75,26 @@ def tr_order():
     api.get_transformation_order = orig
 
 
+@pytest.fixture()
+def fake_workflows():
+    workflows = {
+        "sen2cor_l1c_l2a": {
+            "Name": "Sen2Cor_L1C_L2A",
+            "WorkflowOptions": [
+                {
+                    "Name": "Aerosol_Type",
+                    "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
+                    "Type": "string",
+                    "Default": "RURAL",
+                    "Enum": ["MARITIME", "RURAL"],
+                },
+            ],
+            "Id": "workflow_1",
+        }
+    }
+    esa_tf_restapi.workflows = workflows
+
+
 def test_list_workflows(workflows):
     response = client.get("/Workflows")
     assert response.status_code == 200
@@ -111,13 +132,13 @@ def test_get_tranformation_order(tr_order):
     assert response.status_code == 404
 
 
-def test_run_tranformation_order(to_payload):
+def test_run_tranformation_order(to_payload, fake_workflows):
     response = client.post(
         "/TransformationOrders",
         json={
             "WorkflowId": "sen2cor_l1c_l2a",
             "InputProductReference": {"Reference": "foo_bar.zip"},
-            "WorkflowOptions": {},
+            "WorkflowOptions": {"Aerosol_Type": "RURAL"},
         },
     )
     assert response.status_code == 201
