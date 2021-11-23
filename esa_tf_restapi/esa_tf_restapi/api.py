@@ -1,5 +1,7 @@
 import copy
+from datetime import datetime
 import os
+
 
 import dask.distributed
 
@@ -138,11 +140,13 @@ def submit_workflow(
 
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
+    current_time = datetime.now()
     TRANSFORMATION_ORDERS[future.key] = {
         "future": future,
         "Id": future.key,
+        "SubmissionDate": current_time.strftime("%Y-%m-%dT%H:%m:%S"),
         "InputProductReference": input_product_reference,
         "WorkflowOptions": workflow_options,
         "WorkflowId": workflow_id,
     }
-    return future.key
+    return build_transformation_order(TRANSFORMATION_ORDERS[future.key])
