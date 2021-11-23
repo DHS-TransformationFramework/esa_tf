@@ -140,6 +140,7 @@ def run_workflow(
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
+    output_owner=-1,
 ):
     """
     Run the workflow defined by 'workflow_id':
@@ -160,9 +161,11 @@ def run_workflow(
         working_dir = os.getenv("WORKING_DIR", "./working_dir")
     if output_dir is None:
         output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
+    if output_owner == -1:
+        output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
     if hubs_credentials_file is None:
         hubs_credentials_file = os.getenv(
-            "HUBS_CREDENTIALS_FILE", "./hubs_credential.yaml"
+            "HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml"
         )
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
@@ -175,7 +178,7 @@ def run_workflow(
 
     # download
     product = product_reference["Reference"]
-    hub_name = product_reference.get("api_hub", "scihub")
+    hub_name = product_reference.get("DataSourceName", "scihub")
     product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
@@ -197,7 +200,10 @@ def run_workflow(
         workflow_options=workflow_options,
     )
 
-    # delete workflow processing dir
+    # re-package the ouput
     output_zip_file = zip_product(output, output_dir)
+    shutil.chown(output_zip_file, user=output_owner)
+
+    # delete workflow processing dir
     shutil.rmtree(processing_dir, ignore_errors=True)
     return output_zip_file

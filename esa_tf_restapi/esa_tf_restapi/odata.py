@@ -9,7 +9,7 @@ lexer = ODataLexer()
 parser = ODataParser()
 
 
-def parseQS(filter: str = None):
+def parse_qs(filter: str = None):
     od_filter = ODataFilterExpr(None, None, None)
     if filter:
         odata_filter = parser.parse(lexer.tokenize(filter))

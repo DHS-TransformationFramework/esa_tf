@@ -15,6 +15,7 @@ default: fix-code-style test
 fix-code-style:
 	black .
 	isort .
+	mdformat .
 
 test:
 	python -m pytest -v --cov=. --cov-report=$(COV_REPORT) tests/
@@ -27,6 +28,7 @@ code-quality:
 code-style:
 	black --check .
 	isort --check .
+	mdformat --check .
 
 # deploy
 

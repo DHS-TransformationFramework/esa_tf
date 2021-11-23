@@ -1,6 +1,17 @@
 ESACCI_ZIP := ESACCI-LC-L4-ALL-FOR-SEN2COR.zip
 ESACCI_URL := ftp://geo10.elie.ucl.ac.be/CCI/LandCover/$(ESACCI_ZIP)
 ESACCI_TAR := CCI4SEN2COR/ESACCI-LC-L4-ALL-FOR-SEN2COR.tar
+define HUBS_CREDENTIALS
+# example for: config/hubs_credentials.yaml
+scihub:
+  api_url: https://scihub.copernicus.eu/dhus
+  user: my-scihub-username
+  password: my-scihub-password
+apihub:
+  api_url: https://apihub.copernicus.eu/apihub
+  user: my-apihub-username
+  password: my-apihub-password
+endef
 
 $(ESACCI_ZIP):
 	curl -LO $(ESACCI_URL)
@@ -12,7 +23,11 @@ data/land-cover/.timestamp: $(ESACCI_ZIP)
 	$(RM) -r tmp
 	touch data/land-cover/.timestamp
 
-setup:
+export HUBS_CREDENTIALS
+config/hubs_credentials.yaml:
+	echo "$$HUBS_CREDENTIALS" > $@
+
+setup: config/hubs_credentials.yaml
 	make -C ../esa_tf_platform setup
 
 up:

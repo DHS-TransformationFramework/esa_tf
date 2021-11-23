@@ -1,6 +1,6 @@
 [tool.coverage.run]
 branch = true
-omit = ["setup.py"]
+omit = ["setup.py", "tests/test_*.py"]
 
 [tool.isort]
 profile = "black"

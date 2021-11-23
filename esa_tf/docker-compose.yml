@@ -4,7 +4,6 @@ version: '3.8'
 services:
     esa_tf_scheduler:
         image: daskdev/dask:2021.8.1-py3.9
-        hostname: scheduler
         ports:
             - "8786:8786"
             - "8787:8787"
@@ -15,15 +14,19 @@ services:
         build: ../esa_tf_restapi
         ports:
             - "8080:8080"
-        command: make serve PORT=8080 SCHEDULER="tcp://scheduler:8786"
+        command: make serve PORT=8080 SCHEDULER="tcp://esa_tf_scheduler:8786"
 
     esa_tf_worker:
         image: ghcr.io/bopen/esa_tf_worker:${ESA_TF_RELEASE:-latest}
         build: ../esa_tf_platform
+        depends_on:
+            - esa_tf_scheduler
         volumes:
             - "${DATA_DIR:-./data}:/data"
+            - "${OUTPUT_DIR:-./output}:/output"
             - "${CONFIG_DIR:-./config}:/config"
         environment:
-            - HUBS_CREDENTIALS_FILE=/config/hubs_credential.yaml
-            - OUTPUT_DIR=/data/output
-        command: make dask-worker DASKFLAGS="tcp://scheduler:8786"
+            - HUBS_CREDENTIALS_FILE=/config/hubs_credentials.yaml
+            - OUTPUT_DIR=/output
+            - OUTPUT_OWNER_ID=${OUTPUT_OWNER_ID:-0}
+        command: make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"

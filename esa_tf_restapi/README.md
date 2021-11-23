@@ -48,7 +48,7 @@ curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')" | jq
 curl http://localhost:8080/TransformationOrders | jq
 ```
 
-It is also possible to filter accessible orders (**TODO**):
+It is also possible to filter accessible orders:
 
 ```bash
 curl "http://localhost:8080/TransformationOrders?\$filter=`jq -rn --arg x "Status eq 'completed'" '$x|@uri'`" | jq
@@ -56,46 +56,36 @@ curl "http://localhost:8080/TransformationOrders?\$filter=`jq -rn --arg x "Statu
 
 ### Request a new transformation
 
-
 ```bash
-curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"}, "WorkflowOptions": {"aerosol_type": "maritime", "mid_latitude": "auto", "ozone_content": 0, "cirrus_correction": true, "dem_terrain_correction": true, "row0": 600, "col0": 1200, "nrow_win": 600, "ncol_win": 600}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
+curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"Aerosol_Type": "MARITIME", "Mid_Latitude": "AUTO", "Ozone_Content": 0, "Cirrus_Correction": true, "DEM_Terrain_Correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
 ```
 
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('cd1c192c-7dd2-4250-af0f-13528680d371')" | jq # -r '.Id'
+curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')" | jq # -r '.Id'
 ```
 
 To submit a transformation order and monitor it's state, in one shot:
 
+```bash
+curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"Aerosol_Type": "MARITIME", "Mid_Latitude": "AUTO", "Ozone_Content": 0, "Cirrus_Correction": true, "DEM_Terrain_Correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq -r '.Id' | curl "http://localhost:8080/TransformationOrders('`cat -`')" | jq
 ```
-curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"}, "WorkflowOptions": {"aerosol_type": "maritime", "mid_latitude": "auto", "ozone_content": 0, "cirrus_correction": true, "dem_terrain_correction": true, "row0": 600, "col0": 1200, "nrow_win": 600, "ncol_win": 600}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq -r '.Id' | curl "http://localhost:8080/TransformationOrders('`cat -`')" | jq
-```
 
-## Current Limitations
+## License information
 
-* Plugin memory requirements for this release are set to a minimum of 6GB of RAM
-* The activation of ESA-CCI data-package necessary for Sen2Cor plugin 
-  to generate products compatible with L2A Core products is not included in this release
-* SRTM-DEM is currently downloaded in the processing directory 
-  during the transformation, then removed after the end of the processing 
-* The selection of a Region of Interest (ROI) 
-  with Sen2Cor plugin is not yet supported by the REST API
-
-
-# License information
-
+```text
 Copyright 2021-2022, European Space Agency (ESA)
 
 Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-     https://opensource.org/licenses/AGPL-3.0
+    https://opensource.org/licenses/AGPL-3.0
 
 Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, 
+distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+```
