@@ -62,8 +62,9 @@ def build_transformation_order(order):
     transformation_order = {
         "Status": STATUS_DASK_TO_API[future.status],
         "WorkflowId": order["WorkflowId"],
+        "Id": order["Id"],
         "InputProductReference": order["InputProductReference"],
-        "WorkflowOptions": order["WorkflowOptions"]
+        "WorkflowOptions": order["WorkflowOptions"],
     }
 
     if future.status == "finished":
