@@ -1,5 +1,6 @@
 import copy
 import os
+import re
 from datetime import datetime
 
 import dask.distributed
@@ -13,6 +14,37 @@ STATUS_DASK_TO_API = {
     "finished": "completed",
     "error": "failed",
 }
+
+
+SENTINEL1 = [
+    "S1_RAW__0S", "S2_RAW__0S", "S3_RAW__0S", "S4_RAW__0S", "S5_RAW__0S", "S6_RAW__0S",
+    "IW_RAW__0S", "EW_RAW__0S", "WV_RAW__0S", "S1_SLC__1S", "S2_SLC__1S", "S3_SLC__1S",
+    "S4_SLC__1S", "S5_SLC__1S", "S6_SLC__1S", "IW_SLC__1S", "EW_SLC__1S", "WV_SLC__1S",
+    "S1_GRDH_1S", "S2_GRDH_1S", "S3_GRDH_1S", "S4_GRDH_1S", "S5_GRDH_1S", "S6_GRDH_1S",
+    "IW_GRDH_1S", "EW_GRDH_1S", "S1_GRDM_1S", "S2_GRDM_1S", "S3_GRDM_1S", "S4_GRDM_1S",
+    "S5_GRDM_1S", "S6_GRDM_1S", "IW_GRDM_1S", "EW_GRDM_1S", "S1_OCN__2S", "S2_OCN__2S",
+    "S3_OCN__2S", "S4_OCN__2S", "S5_OCN__2S", "S6_OCN__2S","IW_OCN__2S", "EW_OCN__2S",
+    "WV_OCN__2S"
+]
+
+SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
+
+
+def check_products_consistency(workflow_id, input_product_reference):
+    from . import workflows
+    workflow = workflows[workflow_id]
+    product_type = workflow["InputProductType"]
+
+    if product_type in SENTINEL1:
+        exp = f"^S1[AB]_{product_type}"
+    elif product_type in SENTINEL2:
+        exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
+    else:
+        ValueError(f"Workflow {workflow_id} Product_Type not recognized. Product_Type shall"
+                   f"one of the following {SENTINEL1}, {SENTINEL2}")
+
+    if not re.match(exp, input_product_reference):
+        raise ValueError(f"Input Product Reference not compliant with product type {product_type}")
 
 
 def instantiate_client(scheduler_addr=None):
