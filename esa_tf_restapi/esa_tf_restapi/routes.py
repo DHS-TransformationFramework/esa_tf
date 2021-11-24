@@ -83,15 +83,13 @@ async def get_transformation_order(request: Request, id: str):
 async def transformation_order_create(
     request: Request, response: Response, data: models.TranformationOrder,
 ):
-    id = api.submit_workflow(
+    running_tranformation = api.submit_workflow(
         data.workflow_id,
         input_product_reference=data.product_reference.dict(
             by_alias=True, exclude_unset=True
         ),
         workflow_options=data.workflow_options,
     )
-    url = request.url_for("transformation_order", id=id)
+    url = request.url_for("transformation_order", id=running_tranformation.get("Id"))
     response.headers["Location"] = url
-    return {
-        "Id": id,
-    }
+    return {**running_tranformation}

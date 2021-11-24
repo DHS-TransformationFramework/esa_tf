@@ -38,7 +38,17 @@ def to_payload():
     orig = api.submit_workflow
 
     def submit_workflow(id, **kwargs):
-        return "foo-bar-baz"
+        return {
+            "Id": "foo-bar-baz",
+            "SubmissionDate": "2021-11-24T15:11:38",
+            "InputProductReference": {
+                "Reference": "S2B_MSIL1C_20211109T110159_N0301_R094_T29QQB_20211109T114303.zip",
+                "DataSourceName": "scihub",
+            },
+            "WorkflowOptions": {"Aerosol_Type": "RURAL"},
+            "WorkflowId": "sen2cor_l1c_l2a",
+            "Status": "in_progress",
+        }
 
     api.submit_workflow = submit_workflow
     yield
