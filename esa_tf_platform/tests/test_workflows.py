@@ -1,6 +1,6 @@
 import os
-from unittest import mock
 import zipfile
+from unittest import mock
 
 import pkg_resources
 import pytest
