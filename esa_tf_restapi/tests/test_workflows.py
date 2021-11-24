@@ -1,8 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from .test_models import register_workflows
 from esa_tf_restapi import api, app
+
+from .test_models import register_workflows
 
 client = TestClient(app)
 

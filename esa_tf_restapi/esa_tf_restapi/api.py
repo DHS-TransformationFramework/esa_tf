@@ -1,6 +1,6 @@
 import copy
-import os
 import functools
+import os
 
 import dask.distributed
 

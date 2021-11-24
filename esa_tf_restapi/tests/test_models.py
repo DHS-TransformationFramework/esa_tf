@@ -1,8 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from esa_tf_restapi import api
-from esa_tf_restapi import models
+from esa_tf_restapi import api, models
 
 
 @pytest.fixture()

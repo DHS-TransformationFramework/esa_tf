@@ -1,6 +1,7 @@
 from typing import Optional
 
 from pydantic import BaseModel, Field, validator
+
 from . import api
 
 TYPES = {
