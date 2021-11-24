@@ -1,3 +1,5 @@
+import os
+import zipfile
 from unittest import mock
 
 import pkg_resources
@@ -66,3 +68,19 @@ def test_load_workflows_configurations():
     entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
     wk = workflows.load_workflows_configurations(entrypoints)
     assert len(wk) == 2
+
+
+def test_zip_product(tmpdir):
+    output_folder_name = (
+        "S2A_MSIL2A_20211117T093251_N9999_R136_T33NTF_20211124T093440.SAFE"
+    )
+    output = tmpdir.join(output_folder_name).strpath
+    os.mkdir(output)
+    zip_path = workflows.zip_product(output, tmpdir.strpath)
+
+    assert os.path.isfile(zip_path) is True
+
+    with zipfile.ZipFile(zip_path, "r") as product_zip:
+        product_folder = product_zip.infolist()[0].filename
+
+    assert product_folder.rstrip("/") == output_folder_name

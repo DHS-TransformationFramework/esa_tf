@@ -122,9 +122,17 @@ def unzip_product(product_zip_file, processing_dir):
 
 
 def zip_product(output, output_dir):
+    """Zip the workflow output folder and return the zip file path.
+
+    :param str output: full path of the workflow output folder
+    :param str output_dir: path of the folder in which the zip file will be created
+    :return str:
+    """
     basename = os.path.basename(output.rstrip("/"))
     dirname = os.path.dirname(output.rstrip("/"))
-    output_zip_path = os.path.join(output_dir, basename)
+    # remove the ".SAFE" string (if present) from the workflow output folder
+    zip_basename = basename.rsplit(".SAFE")[0]
+    output_zip_path = os.path.join(output_dir, zip_basename)
     output_file = shutil.make_archive(
         base_name=output_zip_path, format="zip", root_dir=dirname, base_dir=basename,
     )

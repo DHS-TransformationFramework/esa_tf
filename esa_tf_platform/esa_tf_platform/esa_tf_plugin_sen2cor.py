@@ -1,5 +1,6 @@
 import glob
 import os
+import pprint
 import subprocess
 from xml.etree import ElementTree
 
@@ -200,11 +201,25 @@ def check_options(options):
     return True
 
 
-def rename_output(output_dir):
-    """Rename the Sen2Cor output folder removing the ".SAFE" string (if present) from the default
-    output name and return the new output product path.
+def print_options(workflow_options):
+    """Print the required Sen2Cor options (user desiderata + default values).
 
-    :param str output_dir: the folder path in which the Sen2Cor output is saved
+    :param workflow_options: the user's options dictionary
+    :return:
+    """
+    applied_options = {
+        option["Name"]: option.get("Default")
+        for option in sen2cor_l1c_l2a["WorkflowOptions"]
+    }
+    applied_options.update(workflow_options)
+    print("Sen2Cor options:")
+    pprint.pprint(applied_options)
+
+
+def find_output(output_dir):
+    """Return the output product path.
+
+    :param str output_dir: the folder path in which the Sen2Cor output has been saved
     :return str:
     """
     sen2cor_output = None
@@ -217,9 +232,7 @@ def rename_output(output_dir):
         raise RuntimeError(
             f"no Sen2Cor output product dir has been found in {output_dir}"
         )
-    # remove the ".SAFE" string (if present) from the output Sen2Cor folder
-    output_path = os.path.join(output_dir, os.path.splitext(sen2cor_output)[0])
-    os.rename(os.path.join(output_dir, sen2cor_output), output_path)
+    output_path = os.path.join(output_dir, sen2cor_output)
     return output_path
 
 
@@ -247,8 +260,9 @@ def run_processing(
     in the ``processing_dir`` will be created.
     :return str:
     """
+    print("\n**** Sen2Cor Workflow ****\n")
     if sen2cor_script_file is None:
-        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process",)
+        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
     if srtm_dir is None:
         srtm_dir = os.getenv("SRTM_DIR", None)
     output_dir = os.path.abspath(output_dir)
@@ -268,6 +282,7 @@ def run_processing(
 
     check_input_consistency(product_path)
     check_options(workflow_options)
+    print_options(workflow_options)
 
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
@@ -275,11 +290,10 @@ def run_processing(
     cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
     if "resolution" in workflow_options:
         cmd += f" --resolution {workflow_options['resolution']}"
-    print(f"the following Sen2Cor command will be executed:\n    {cmd}\n")
+    print(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
     process = subprocess.run(cmd, shell=True)
     process.check_returncode()
-    # creation of the output archive file
-    output_path = rename_output(output_dir)
+    output_path = find_output(output_dir)
     return output_path
 
 
