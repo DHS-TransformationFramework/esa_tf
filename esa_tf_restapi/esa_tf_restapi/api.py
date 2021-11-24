@@ -137,6 +137,7 @@ def submit_workflow(
             hubs_credentials_file=hubs_credentials_file,
         )
 
+    workflow_name = get_workflows()[workflow_id]["WorkflowName"]
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
     current_time = datetime.now()
@@ -147,5 +148,6 @@ def submit_workflow(
         "InputProductReference": input_product_reference,
         "WorkflowOptions": workflow_options,
         "WorkflowId": workflow_id,
+        "WorkflowName": workflow_name,
     }
     return build_transformation_order(TRANSFORMATION_ORDERS[future.key])
