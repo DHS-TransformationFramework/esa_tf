@@ -1,35 +1,41 @@
 import pytest
 from pydantic import ValidationError
 
-import esa_tf_restapi
+from esa_tf_restapi import api
 from esa_tf_restapi import models
 
 
 @pytest.fixture()
 def register_workflows():
-    workflows = {
-        "workflow_1": {
-            "Name": "Workflow 1",
-            "WorkflowOptions": [
-                {
-                    "Name": "Case 1",
-                    "Type": "string",
-                    "Default": "foo",
-                    "Enum": ["foo", "bar"],
-                },
-                {"Name": "Case 2", "Type": "boolean", "Default": False,},
-                {
-                    "Name": "Case 3",
-                    "Type": "integer",
-                    "Default": 331,
-                    "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
-                },
-                {"Name": "Case 4", "Type": "integer", "Default": 331,},
-            ],
-            "Id": "workflow_1",
+    def get_workflows(*args, **kwargs):
+        workflows = {
+            "workflow_1": {
+                "Name": "Workflow 1",
+                "WorkflowOptions": [
+                    {
+                        "Name": "Case 1",
+                        "Type": "string",
+                        "Default": "foo",
+                        "Enum": ["foo", "bar"],
+                    },
+                    {"Name": "Case 2", "Type": "boolean", "Default": False,},
+                    {
+                        "Name": "Case 3",
+                        "Type": "integer",
+                        "Default": 331,
+                        "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
+                    },
+                    {"Name": "Case 4", "Type": "integer", "Default": 331,},
+                ],
+                "Id": "workflow_1",
+            }
         }
-    }
-    esa_tf_restapi.workflows = workflows
+        return workflows
+
+    orig = api.get_workflows
+    api.get_workflows = get_workflows
+    yield
+    api.get_workflows = orig
 
 
 def test_type_checking():

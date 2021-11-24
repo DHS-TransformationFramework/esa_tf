@@ -1,5 +1,6 @@
 import copy
 import os
+import functools
 
 import dask.distributed
 
@@ -44,6 +45,7 @@ def get_workflow_by_id(workflow_id, scheduler=None):
     return client.gather(future)
 
 
+@functools.lru_cache()
 def get_workflows(product=None, scheduler=None):
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
