@@ -119,6 +119,9 @@ def filter_by_product_type(workflows, product_type=None):
 
 @functools.lru_cache()
 def get_all_workflows(scheduler=None):
+    """
+    Returns the workflows configurations installed in the workers.
+    """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     def task():
@@ -135,6 +138,9 @@ def get_all_workflows(scheduler=None):
 
 
 def get_workflow_by_id(workflow_id, scheduler=None):
+    """
+    Returns the workflow configuration corresponding to the workflow_id.
+    """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     workflows = get_all_workflows()
@@ -148,6 +154,10 @@ def get_workflow_by_id(workflow_id, scheduler=None):
 
 
 def get_workflows(product=None, scheduler=None):
+    """
+    Returns the workflows configurations installed in the workers.
+    They may be filtered using the product type
+    """
     workflows = get_all_workflows()
     if product:
         workflows = filter_by_product_type(workflows, product)
@@ -167,6 +177,9 @@ def build_transformation_order(order):
 
 
 def get_transformation_order(order_id):
+    """
+    Returns the transformation order corresponding to the order_id
+    """
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
         raise KeyError(f"transformation Order {order_id} not found")
@@ -175,6 +188,10 @@ def get_transformation_order(order_id):
 
 
 def get_transformation_orders(status=None, workflow_id=None):
+    """
+    Returns the all the transformation orders.
+    The can be filtered by the status and the workflow_id
+    """
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
         transformation_order = build_transformation_order(order)
