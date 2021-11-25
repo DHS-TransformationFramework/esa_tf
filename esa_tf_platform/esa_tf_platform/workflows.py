@@ -25,6 +25,9 @@ add_stderr_handler(logger)
 
 
 def remove_duplicates(pkg_entrypoints):
+    """
+    Remove entrypoints with the same name, keeping only the first one.
+    """
     # sort and group entrypoints by name
     pkg_entrypoints = sorted(pkg_entrypoints, key=lambda ep: ep.name)
     pkg_entrypoints_grouped = itertools.groupby(pkg_entrypoints, key=lambda ep: ep.name)
@@ -46,6 +49,9 @@ def remove_duplicates(pkg_entrypoints):
 
 
 def workflow_dict_from_pkg(pkg_entrypoints):
+    """
+    Load the entrypoints and store them in a dictionary
+    """
     workflow_entrypoints = {}
     for pkg_ep in pkg_entrypoints:
         name = pkg_ep.name
@@ -58,6 +64,9 @@ def workflow_dict_from_pkg(pkg_entrypoints):
 
 
 def load_workflows_configurations(pkg_entrypoints):
+    """
+    Create the dictionary containing all the workflows configuration installed
+    """
     pkg_entrypoints = remove_duplicates(pkg_entrypoints)
     workflow_entrypoints = workflow_dict_from_pkg(pkg_entrypoints)
     return {
@@ -66,56 +75,69 @@ def load_workflows_configurations(pkg_entrypoints):
     }
 
 
-def filter_by_product_type(workflows, product_type=None):
-    filtered_workflows = {}
-    for name in workflows:
-        if product_type == workflows[name]["InputProductType"]:
-            filtered_workflows[name] = workflows[name]
-    return filtered_workflows
-
-
 def get_all_workflows():
     """
-    Returns the list of all available workflows.
+    Return the list of all available workflows.
     """
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
     workflows = load_workflows_configurations(pkg_entrypoints)
     return workflows
 
 
-def create_directories(*directory_list):
-    for directory in directory_list:
-        os.makedirs(directory, exist_ok=True)
-
-
-def read_hub_credentials(
-    hubs_credential_file, hub_name="scihub",
-):
+def read_hub_credentials(hubs_credential_file,):
+    """
+    Read credentials from the hubs_credential_file.
+    """
     with open(hubs_credential_file) as file:
         hubs_credentials = yaml.load(file, Loader=yaml.FullLoader)
-    return hubs_credentials[hub_name]
+    return hubs_credentials
 
 
-def download_product(
-    product, *, processing_dir, hubs_credentials_file, hub_name="scihub",
+def download_product_from_hub(
+    product, *, processing_dir, hub_credentials,
 ):
-    hub_credentials = read_hub_credentials(hubs_credentials_file, hub_name)
+    """
+    Download the product from the selected hub
+    """
     api = sentinelsat.SentinelAPI(**hub_credentials)
     uuid_products = api.query(identifier=product.strip(".zip"))
     if len(uuid_products) == 0:
         raise ValueError(f"{product} not found in hub: {hub_credentials['api_url']}")
-    if len(uuid_products) > 1:
-        raise ValueError(
-            f"for {product} multiple uuid found: {list(uuid_products.keys())}"
-        )
-    uuid_product = list(uuid_products.keys())[0]
+    uuid_product = list(uuid_products)[0]
     product_info = api.download(
         uuid_product, directory_path=processing_dir, checksum=True, nodefilter=None
     )
     return product_info["path"]
 
 
+def download_product(product, *, processing_dir, hubs_credentials_file, hub_name=None):
+    """
+    Download the product from the first hub in the hubs_credentials_file that publishes the product
+    """
+    hubs_credentials = read_hub_credentials(hubs_credentials_file)
+    if hub_name:
+        hubs_credentials = {hub_name: hubs_credentials[hub_name]}
+    product_path = None
+    for hub_name in hubs_credentials:
+        try:
+            product_path = download_product_from_hub(
+                product,
+                processing_dir=processing_dir,
+                hub_credentials=hubs_credentials[hub_name],
+            )
+        except Exception as ex:
+            logging.info(f"{ex}")
+        if product_path:
+            break
+    if product_path is None:
+        raise ValueError(f"could not download product from {list(hubs_credentials)}")
+    return product_path
+
+
 def unzip_product(product_zip_file, processing_dir):
+    """
+    Unzip the product in the processing dir
+    """
     with zipfile.ZipFile(product_zip_file, "r") as product_zip:
         product_folder = product_zip.infolist()[0].filename
         product_zip.extractall(processing_dir)
@@ -183,11 +205,12 @@ def run_workflow(
         )
     processing_dir = os.path.join(working_dir, order_id)
     output_binder_dir = os.path.join(working_dir, order_id, "output_binder_dir")
-    create_directories(working_dir, output_dir, processing_dir, output_binder_dir)
+    for directory in [working_dir, output_dir, processing_dir, output_binder_dir]:
+        os.makedirs(directory, exist_ok=True)
 
     # download
     product = product_reference["Reference"]
-    hub_name = product_reference.get("DataSourceName", "scihub")
+    hub_name = product_reference.get("DataSourceName")
     logger.info("download input product: %r", product)
     product_zip_file = download_product(
         product=product,
