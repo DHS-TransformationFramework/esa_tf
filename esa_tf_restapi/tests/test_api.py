@@ -121,15 +121,9 @@ def test_extract_worflow_options_defaults():
 
 def test_fill_with_defaults():
 
-    workflow_options = {
-        "Mid_Latitude": "WINTER",
-        "DEM_Terrain_Correction": False
-    }
+    workflow_options = {"Mid_Latitude": "WINTER", "DEM_Terrain_Correction": False}
 
-    res = esa_tf_restapi.api.fill_with_defaults(
-        workflow_options,
-        WORKFLOW_OPTIONS
-    )
+    res = esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
 
     assert "Aerosol_Type" in res
     assert res["Aerosol_Type"] == "RURAL"
@@ -145,4 +139,3 @@ def test_fill_with_defaults():
 
     assert "DEM_Terrain_Correction" in res
     assert not res["DEM_Terrain_Correction"]
-
