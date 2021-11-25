@@ -3,12 +3,25 @@ import itertools
 import logging
 import os
 import shutil
+import sys
 import warnings
 import zipfile
 
 import pkg_resources
 import sentinelsat
 import yaml
+
+from . import logger
+
+
+# FIXME: where should you configure the log handler in a dask distributed application?
+def add_stderr_handler(logger):
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+
+
+add_stderr_handler(logger)
 
 
 def remove_duplicates(pkg_entrypoints):
@@ -187,7 +200,7 @@ def run_workflow(
         )
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
-            f"{hubs_credentials_file} not not found, please define it using 'hubs_credentials_file' "
+            f"{hubs_credentials_file} not found, please define it using 'hubs_credentials_file' "
             "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
         )
     processing_dir = os.path.join(working_dir, order_id)
@@ -198,12 +211,14 @@ def run_workflow(
     # download
     product = product_reference["Reference"]
     hub_name = product_reference.get("DataSourceName")
+    logger.info("download input product: %r", product)
     product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
         processing_dir=processing_dir,
         hub_name=hub_name,
     )
+    logger.info("unpack input product: %r", product_zip_file)
     product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
@@ -212,6 +227,7 @@ def run_workflow(
     module = importlib.import_module(module_name)
     workflow_runner = getattr(module, "run_processing")
 
+    logger.info("run workflow: %r, %r", workflow_id, workflow_options)
     output = workflow_runner(
         product_path,
         processing_dir=processing_dir,
@@ -220,6 +236,7 @@ def run_workflow(
     )
 
     # re-package the ouput
+    logger.info("package output product: %r", output)
     output_zip_file = zip_product(output, output_dir)
     shutil.chown(output_zip_file, user=output_owner)
 

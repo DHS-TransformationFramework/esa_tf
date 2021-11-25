@@ -216,7 +216,7 @@ def print_options(workflow_options):
     """Print the required Sen2Cor options (user desiderata + default values).
 
     :param workflow_options: the user's options dictionary
-    :return:
+    :return dict:
     """
     applied_options = {
         option["Name"]: option.get("Default")
@@ -225,6 +225,7 @@ def print_options(workflow_options):
     applied_options.update(workflow_options)
     print("Sen2Cor options:")
     pprint.pprint(applied_options)
+    return applied_options
 
 
 def find_output(output_dir):
@@ -288,7 +289,7 @@ def run_processing(
         srtm_dir = os.path.abspath(srtm_dir)
     if srtm_dir and not os.path.isdir(srtm_dir):
         raise ValueError(
-            f"{srtm_dir} not not found, please define it using the environment variable 'SRTM_DIR'"
+            f"{srtm_dir} not found, please define it using the environment variable 'SRTM_DIR'"
         )
 
     check_input_consistency(product_path)
