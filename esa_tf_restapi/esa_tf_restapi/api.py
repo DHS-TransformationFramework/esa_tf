@@ -1,5 +1,6 @@
 import copy
 import os
+import re
 from datetime import datetime
 
 import dask.distributed
@@ -13,6 +14,81 @@ STATUS_DASK_TO_API = {
     "finished": "completed",
     "error": "failed",
 }
+
+
+SENTINEL1 = [
+    "S1_RAW__0S",
+    "S2_RAW__0S",
+    "S3_RAW__0S",
+    "S4_RAW__0S",
+    "S5_RAW__0S",
+    "S6_RAW__0S",
+    "IW_RAW__0S",
+    "EW_RAW__0S",
+    "WV_RAW__0S",
+    "S1_SLC__1S",
+    "S2_SLC__1S",
+    "S3_SLC__1S",
+    "S4_SLC__1S",
+    "S5_SLC__1S",
+    "S6_SLC__1S",
+    "IW_SLC__1S",
+    "EW_SLC__1S",
+    "WV_SLC__1S",
+    "S1_GRDH_1S",
+    "S2_GRDH_1S",
+    "S3_GRDH_1S",
+    "S4_GRDH_1S",
+    "S5_GRDH_1S",
+    "S6_GRDH_1S",
+    "IW_GRDH_1S",
+    "EW_GRDH_1S",
+    "S1_GRDM_1S",
+    "S2_GRDM_1S",
+    "S3_GRDM_1S",
+    "S4_GRDM_1S",
+    "S5_GRDM_1S",
+    "S6_GRDM_1S",
+    "IW_GRDM_1S",
+    "EW_GRDM_1S",
+    "S1_OCN__2S",
+    "S2_OCN__2S",
+    "S3_OCN__2S",
+    "S4_OCN__2S",
+    "S5_OCN__2S",
+    "S6_OCN__2S",
+    "IW_OCN__2S",
+    "EW_OCN__2S",
+    "WV_OCN__2S",
+]
+
+SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
+
+
+def check_products_consistency(
+    product_type, input_product_reference_name, workflow_id=None
+):
+    """
+    Check if the workflow product type is consistent with the product name.
+    The check is done on the first characters of `input_product_reference_name`.
+    Currently are supported only Sentinel1 nd Sentinel2 products.
+    """
+
+    if product_type in SENTINEL1:
+        exp = f"^S1[AB]_{product_type}"
+    elif product_type in SENTINEL2:
+        exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
+    else:
+        raise ValueError(
+            f"workflow {workflow_id} product type not recognized. product type shall"
+            f"one of the following {SENTINEL1}, {SENTINEL2}"
+        )
+
+    if not re.match(exp, str(input_product_reference_name)):
+        raise ValueError(
+            f"the input product reference name {input_product_reference_name}"
+            f"is not compliant with product type {product_type}"
+        )
 
 
 def instantiate_client(scheduler_addr=None):
@@ -117,6 +193,15 @@ def submit_workflow(
     :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
     the value of environment variable SCHEDULER.
     """
+
+    workflow = get_workflows().get(workflow_id)
+    if workflow is None:
+        raise ValueError(f"Workflow id {workflow_id} not found.")
+    product_type = workflow["InputProductType"]
+    check_products_consistency(
+        product_type, input_product_reference["Reference"], workflow_id=workflow_id
+    )
+
     if not order_id:
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
@@ -137,7 +222,6 @@ def submit_workflow(
             hubs_credentials_file=hubs_credentials_file,
         )
 
-    workflow_name = get_workflows()[workflow_id]["WorkflowName"]
     client = instantiate_client(scheduler)
     future = client.submit(task, key=order_id)
     current_time = datetime.now()
@@ -148,6 +232,6 @@ def submit_workflow(
         "InputProductReference": input_product_reference,
         "WorkflowOptions": workflow_options,
         "WorkflowId": workflow_id,
-        "WorkflowName": workflow_name,
+        "WorkflowName": workflow["WorkflowName"],
     }
     return build_transformation_order(TRANSFORMATION_ORDERS[future.key])
