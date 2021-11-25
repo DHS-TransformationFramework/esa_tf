@@ -13,6 +13,10 @@ apihub:
   password: my-apihub-password
 endef
 
+# default target
+build: setup
+	docker-compose build
+
 $(ESACCI_ZIP):
 	curl -LO $(ESACCI_URL)
 
