@@ -74,7 +74,7 @@ def check_products_consistency(
     elif product_type in SENTINEL2:
         exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
     else:
-        ValueError(
+        raise ValueError(
             f"Workflow {workflow_id} Product_Type not recognized. Product_Type shall"
             f"one of the following {SENTINEL1}, {SENTINEL2}"
         )
