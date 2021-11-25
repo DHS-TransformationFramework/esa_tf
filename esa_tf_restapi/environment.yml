@@ -5,19 +5,19 @@ channels:
 dependencies:
   - black
   - cloudpickle = 1.6.0
-  - dask = 2021.8.1
+  - dask-core = 2021.8.1
   - distributed
   - fastapi
   - flake8
+  - gunicorn
   - isort
   - make
   - nomkl
+  - pip
   - pytest
   - pytest-cov
   - python = 3.9.7
   - uvicorn
-  - gunicorn
-  - pip
   - pip:
     - mdformat-gfm
     - odata-query
