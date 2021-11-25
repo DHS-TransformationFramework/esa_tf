@@ -14,8 +14,8 @@ apihub:
 endef
 
 # default target
-build: setup
-	docker-compose build
+default:
+	echo No default target
 
 $(ESACCI_ZIP):
 	curl -LO $(ESACCI_URL)
@@ -32,7 +32,10 @@ config/hubs_credentials.yaml:
 	echo "$$HUBS_CREDENTIALS" > $@
 
 setup: config/hubs_credentials.yaml
-	make -C ../esa_tf_platform setup
+
+build: setup
+	make -C ../esa_tf_restapi image
+	make -C ../esa_tf_platform image
 
 up:
 	docker-compose up
