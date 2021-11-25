@@ -2,7 +2,6 @@ import pytest
 
 import esa_tf_restapi
 
-
 WORKFLOW_OPTIONS = [
     {
         "Name": "Aerosol_Type",
