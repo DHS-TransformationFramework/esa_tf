@@ -65,8 +65,10 @@ def test_load_workflows_configurations():
         "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2a",
         "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2b",
     ]
-    entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
-    wk = workflows.load_workflows_configurations(entrypoints)
+    with pytest.warns(RuntimeWarning) as record:
+        entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
+        wk = workflows.load_workflows_configurations(entrypoints)
+    assert len(record) == 1
     assert len(wk) == 2
 
 
