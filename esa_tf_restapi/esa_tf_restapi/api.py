@@ -128,7 +128,10 @@ def get_all_workflows(scheduler=None):
 
     client = instantiate_client(scheduler)
     future = client.submit(task, priority=10)
-    return client.gather(future)
+    workflows = client.gather(future)
+    for name in workflows:
+        workflows[name].pop("Execute")
+    return workflows
 
 
 def get_workflow_by_id(workflow_id, scheduler=None):
