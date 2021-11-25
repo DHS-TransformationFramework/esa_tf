@@ -128,9 +128,7 @@ def test_check_ozone_content_valid_summer():
         "Ozone_Content": 370,
         "Cirrus_Correction": True,
     }
-    assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options) is True
-    )
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
 
 
 def test_check_ozone_content_invalid_summer():
@@ -149,9 +147,7 @@ def test_check_ozone_content_valid_winter():
         "Ozone_Content": 420,
         "Cirrus_Correction": True,
     }
-    assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options) is True
-    )
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
 
 
 def test_check_ozone_content_invalid_winter():
@@ -170,9 +166,7 @@ def test_check_ozone_content_valid_auto():
         "Ozone_Content": 290,
         "Cirrus_Correction": True,
     }
-    assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options) is True
-    )
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
 
 
 def test_check_ozone_content_invalid_auto():
