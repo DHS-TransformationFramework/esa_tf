@@ -182,7 +182,7 @@ def get_transformation_orders(status=None, workflow_id=None):
     return transformation_orders
 
 
-def extract_worflow_options_default(config_workflow_options):
+def extract_workflow_defaults(config_workflow_options):
     """
     Extract default values from plugin workflow declaration
     """
@@ -197,7 +197,7 @@ def fill_with_defaults(workflow_options, config_workflow_options):
     """
     Fill the missing workflow options with the defaults values declared in the plugin
     """
-    default_options = extract_worflow_options_default(config_workflow_options)
+    default_options = extract_workflow_defaults(config_workflow_options)
     workflow_options = {**default_options, **workflow_options}
     return workflow_options
 
