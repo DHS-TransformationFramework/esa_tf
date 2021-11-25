@@ -24,7 +24,7 @@ def remove_duplicates(pkg_entrypoints):
             selected_module_name = matches[0].module_name
             all_module_names = [e.module_name for e in matches]
             warnings.warn(
-                f"Found {matches_len} entrypoints for the workflow name {name}:"
+                f"found {matches_len} entrypoints for the workflow name {name}:"
                 f"\n {all_module_names}.\n It will be used: {selected_module_name}.",
                 RuntimeWarning,
             )
@@ -39,7 +39,7 @@ def workflow_dict_from_pkg(pkg_entrypoints):
             workflow_config = pkg_ep.load()
             workflow_entrypoints[name] = workflow_config
         except Exception as ex:
-            warnings.warn(f"Workflow {name!r} loading failed:\n{ex}", RuntimeWarning)
+            warnings.warn(f"workflow {name!r} loading failed:\n{ex}", RuntimeWarning)
     return workflow_entrypoints
 
 
@@ -109,9 +109,17 @@ def unzip_product(product_zip_file, processing_dir):
 
 
 def zip_product(output, output_dir):
+    """Zip the workflow output folder and return the zip file path.
+
+    :param str output: full path of the workflow output folder
+    :param str output_dir: path of the folder in which the zip file will be created
+    :return str:
+    """
     basename = os.path.basename(output.rstrip("/"))
     dirname = os.path.dirname(output.rstrip("/"))
-    output_zip_path = os.path.join(output_dir, basename)
+    # remove the ".SAFE" string (if present) from the workflow output folder
+    zip_basename = basename.rsplit(".SAFE")[0]
+    output_zip_path = os.path.join(output_dir, zip_basename)
     output_file = shutil.make_archive(
         base_name=output_zip_path, format="zip", root_dir=dirname, base_dir=basename,
     )

@@ -1,5 +1,6 @@
 import glob
 import os
+import pprint
 import subprocess
 from xml.etree import ElementTree
 
@@ -11,6 +12,9 @@ SRTM_DOWNLOAD_ADDRESS = (
 )
 MTD_FILENAME = "MTD_MSIL1C.xml"
 ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
+
+OZONE_WINTER_VALUES = (0, 250, 290, 330, 377, 420, 460)
+OZONE_SUMMER_VALUES = (0, 250, 290, 331, 370, 410, 450)
 
 
 def set_sen2cor_options(etree, options, srtm_dir):
@@ -96,27 +100,33 @@ def find_option_definition(option_name):
     return None
 
 
-def check_ozone_content(options, valid_ozone_values):
+def check_ozone_content(options):
     """Check the validity of the ozone content option values.
 
     :param dict options: dictionary of the asked user options
-    :param list_or_tuple valid_ozone_values: valid ozone content values as in the workflow description
-    :return:
+    :return bool:
     """
-    ozone_winter_values = (0, 250, 290, 330, 377, 420, 460)
-    ozone_summer_values = (0, 250, 290, 331, 370, 410, 450)
-    ozone_content_value = options["ozone_content"]
-    mid_latitude_value = options["mid_latitude"]
-    if mid_latitude_value == "AUTO" and (ozone_content_value not in valid_ozone_values):
-        raise ValueError()
-    elif mid_latitude_value == "WINTER" and (
-        ozone_content_value not in ozone_winter_values
+    ozone_content_value = options["Ozone_Content"]
+    mid_latitude_value = options.get(
+        "Mid_Latitude", find_option_definition("Mid_Latitude").get("Default")
+    )
+    valid_ozone_values = find_option_definition("Ozone_Content")["Enum"]
+    if ozone_content_value not in valid_ozone_values:
+        raise ValueError(
+            f"valid ozone content values are {valid_ozone_values}, given {ozone_content_value}"
+        )
+    if mid_latitude_value == "WINTER" and (
+        ozone_content_value not in OZONE_WINTER_VALUES
     ):
-        raise ValueError()
+        raise ValueError(
+            f"when 'Mid_Latitude=WINTER' the allowed ozone content values are {OZONE_WINTER_VALUES}"
+        )
     elif mid_latitude_value == "SUMMER" and (
-        ozone_content_value not in ozone_summer_values
+        ozone_content_value not in OZONE_SUMMER_VALUES
     ):
-        raise ValueError()
+        raise ValueError(
+            f"when 'Mid_Latitude=SUMMER' the allowed ozone content values are {OZONE_SUMMER_VALUES}"
+        )
     return True
 
 
@@ -185,10 +195,12 @@ def check_options(options):
     other_options = {k: v for k, v in options.items() if k not in ROI_OPTIONS_NAMES}
     valid_names = [option["Name"] for option in sen2cor_l1c_l2a["WorkflowOptions"]]
     for oname, ovalue in other_options.items():
-        if oname == "ozone_content":
-            check_ozone_content(
-                options, find_option_definition("ozone_content")["Enum"]
+        if oname == "Ozone_Content":
+            ozone_content_value = options["Ozone_Content"]
+            mid_latitude_value = options.get(
+                "Mid_Latitude", find_option_definition("Mid_Latitude").get("Default")
             )
+            check_ozone_content(options)
         elif oname in valid_names:
             valid_values = find_option_definition(oname).get("Enum")
             if valid_values and (ovalue not in valid_values):
@@ -200,11 +212,25 @@ def check_options(options):
     return True
 
 
-def rename_output(output_dir):
-    """Rename the Sen2Cor output folder removing the ".SAFE" string (if present) from the default
-    output name and return the new output product path.
+def print_options(workflow_options):
+    """Print the required Sen2Cor options (user desiderata + default values).
 
-    :param str output_dir: the folder path in which the Sen2Cor output is saved
+    :param workflow_options: the user's options dictionary
+    :return:
+    """
+    applied_options = {
+        option["Name"]: option.get("Default")
+        for option in sen2cor_l1c_l2a["WorkflowOptions"]
+    }
+    applied_options.update(workflow_options)
+    print("Sen2Cor options:")
+    pprint.pprint(applied_options)
+
+
+def find_output(output_dir):
+    """Return the output product path.
+
+    :param str output_dir: the folder path in which the Sen2Cor output has been saved
     :return str:
     """
     sen2cor_output = None
@@ -217,9 +243,7 @@ def rename_output(output_dir):
         raise RuntimeError(
             f"no Sen2Cor output product dir has been found in {output_dir}"
         )
-    # remove the ".SAFE" string (if present) from the output Sen2Cor folder
-    output_path = os.path.join(output_dir, os.path.splitext(sen2cor_output)[0])
-    os.rename(os.path.join(output_dir, sen2cor_output), output_path)
+    output_path = os.path.join(output_dir, sen2cor_output)
     return output_path
 
 
@@ -247,8 +271,9 @@ def run_processing(
     in the ``processing_dir`` will be created.
     :return str:
     """
+    print("\n**** Sen2Cor Workflow ****\n")
     if sen2cor_script_file is None:
-        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process",)
+        sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
     if srtm_dir is None:
         srtm_dir = os.getenv("SRTM_DIR", None)
     output_dir = os.path.abspath(output_dir)
@@ -268,6 +293,7 @@ def run_processing(
 
     check_input_consistency(product_path)
     check_options(workflow_options)
+    print_options(workflow_options)
 
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
@@ -275,19 +301,18 @@ def run_processing(
     cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
     if "resolution" in workflow_options:
         cmd += f" --resolution {workflow_options['resolution']}"
-    print(f"the following Sen2Cor command will be executed:\n    {cmd}\n")
+    print(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
     process = subprocess.run(cmd, shell=True)
     process.check_returncode()
-    # creation of the output archive file
-    output_path = rename_output(output_dir)
+    output_path = find_output(output_dir)
     return output_path
 
 
 sen2cor_l1c_l2a = {
-    "Name": "Sen2Cor_L1C_L2A",
+    "WorkflowName": "Sen2Cor_L1C_L2A",
     "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
     "Execute": "esa_tf_platform.esa_tf_plugin_sen2cor.run_processing",
-    "InputProductType": "S2MSILC",
+    "InputProductType": "S2MSI1C",
     "OutputProductType": "S2MSI2A",
     "WorkflowVersion": "0.1",
     "WorkflowOptions": [

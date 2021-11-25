@@ -39,7 +39,7 @@ class TranformationOrder(BaseModel):
 
         if v not in workflows_ids:
             raise ValueError(
-                f"Unknown workflow: {v}. Registered workflows are: {', '.join(workflows_ids)}"
+                f"unknown workflow: {v}. Registered workflows are: {', '.join(workflows_ids)}"
             )
         return v
 
@@ -64,7 +64,7 @@ class TranformationOrder(BaseModel):
             current_option = workflow_options[key]
             if not type_checking(type(value), current_option["Type"]):
                 raise ValueError(
-                    f"Wrong type for {key}. "
+                    f"wrong type for {key}. "
                     f"Param type should be {current_option['Type']} "
                     f"while {repr(value)} (of type {type(value).__name__}) provided"
                 )
@@ -76,7 +76,7 @@ class TranformationOrder(BaseModel):
                 continue
             if value not in current_option["Enum"]:
                 raise ValueError(
-                    f"Disallowed value for {key}: "
+                    f"disallowed value for {key}: "
                     f"{value} has been provided while possible values are "
                     f"{', '.join([str(x) for x in current_option['Enum']])}"
                 )
