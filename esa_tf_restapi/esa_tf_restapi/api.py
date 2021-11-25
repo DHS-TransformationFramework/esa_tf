@@ -156,10 +156,16 @@ def build_transformation_order(order):
     transformation_order.pop("future")
     future = order["future"]
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
+    workflow_options = get_workflow_by_id(order["WorkflowId"])["WorkflowOptions"]
+    passed_options = transformation_order["WorkflowOptions"]
+    passed_options_ids = list(passed_options.keys())
+    for option in workflow_options:
+        if option["Name"] not in passed_options_ids and "Default" in option:
+            passed_options[option["Name"]] = option["Default"]
+    transformation_order["WorkflowOptions"] = passed_options
 
     if future.status == "finished":
         transformation_order["OutputFile"] = os.path.basename(future.result())
-
     return transformation_order
 
 
