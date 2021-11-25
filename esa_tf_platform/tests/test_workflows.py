@@ -86,8 +86,13 @@ def test_zip_product(tmpdir):
     assert product_folder.rstrip("/") == output_folder_name
 
 
-@mock.patch("sentinelsat.SentinelAPI.download", mock.MagicMock(return_value={"path": "product_path"}))
-@mock.patch("sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={"uuid": "uuid"}))
+@mock.patch(
+    "sentinelsat.SentinelAPI.download",
+    mock.MagicMock(return_value={"path": "product_path"}),
+)
+@mock.patch(
+    "sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={"uuid": "uuid"})
+)
 def test_fake_download_product_from_hub():
 
     path = workflows.download_product_from_hub(
@@ -102,13 +107,14 @@ def test_fake_download_product_from_hub():
     assert path == "product_path"
 
 
-@mock.patch("sentinelsat.SentinelAPI.download", mock.MagicMock(return_value={"path": "product_path"}))
+@mock.patch(
+    "sentinelsat.SentinelAPI.download",
+    mock.MagicMock(return_value={"path": "product_path"}),
+)
 @mock.patch("sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={}))
 def test_error_download_product_from_hub():
 
-    with pytest.raises(
-        ValueError, match=f"product not found"
-    ):
+    with pytest.raises(ValueError, match=f"product not found"):
         workflows.download_product_from_hub(
             product="product",
             processing_dir="processing_dir",
@@ -121,11 +127,13 @@ def test_error_download_product_from_hub():
 
 
 @mock.patch(
-    'esa_tf_platform.workflows.read_hub_credentials',
-    mock.MagicMock(side_effect=[{"hub1": {}, "hub2": {}, "hub3": {}}]))
+    "esa_tf_platform.workflows.read_hub_credentials",
+    mock.MagicMock(side_effect=[{"hub1": {}, "hub2": {}, "hub3": {}}]),
+)
 @mock.patch(
-    'esa_tf_platform.workflows.download_product_from_hub',
-    mock.MagicMock(side_effect=[ValueError(), ValueError(), "product_path"]))
+    "esa_tf_platform.workflows.download_product_from_hub",
+    mock.MagicMock(side_effect=[ValueError(), ValueError(), "product_path"]),
+)
 def test_error_download_product_from_hub():
 
     product_path = workflows.download_product(

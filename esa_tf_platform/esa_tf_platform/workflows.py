@@ -10,6 +10,7 @@ import pkg_resources
 import sentinelsat
 import yaml
 
+
 def remove_duplicates(pkg_entrypoints):
     """
     Remove entrypoints with the same name, keeping only the first one.
@@ -70,9 +71,7 @@ def get_all_workflows():
     return workflows
 
 
-def read_hub_credentials(
-    hubs_credential_file,
-):
+def read_hub_credentials(hubs_credential_file,):
     """
     Read credentials from the hubs_credential_file.
     """
@@ -111,7 +110,7 @@ def download_product(product, *, processing_dir, hubs_credentials_file, hub_name
             product_path = download_product_from_hub(
                 product,
                 processing_dir=processing_dir,
-                hub_credentials=hubs_credentials[hub_name]
+                hub_credentials=hubs_credentials[hub_name],
             )
         except Exception as ex:
             logging.info(f"{ex}")
