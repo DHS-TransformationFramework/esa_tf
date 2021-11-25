@@ -36,7 +36,7 @@ def test_check_products_consistency_wrong_product(
     product_type, input_product_reference_name
 ):
 
-    with pytest.raises(ValueError, match=r"Input Product Reference"):
+    with pytest.raises(ValueError, match=r"input product reference"):
         esa_tf_restapi.api.check_products_consistency(
             product_type, input_product_reference_name, workflow_id="sen2cor_l1c_l2a"
         )
@@ -49,7 +49,7 @@ def test_check_products_consistency_wrong_product_type():
         "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"
     )
     with pytest.raises(
-        ValueError, match=f"Workflow {workflow_id} Product_Type not recognized"
+        ValueError, match=f"workflow {workflow_id} product type not recognized"
     ):
         esa_tf_restapi.api.check_products_consistency(
             product_type, input_product_reference_name, workflow_id=workflow_id

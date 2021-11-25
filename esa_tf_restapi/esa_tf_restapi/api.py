@@ -68,6 +68,11 @@ SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 def check_products_consistency(
     product_type, input_product_reference_name, workflow_id=None
 ):
+    """
+    Check if the workflow product type is consistent with the product name.
+    The check is done on the first characters of `input_product_reference_name`.
+    Currently are supported only Sentinel1 nd Sentinel2 products.
+    """
 
     if product_type in SENTINEL1:
         exp = f"^S1[AB]_{product_type}"
@@ -75,13 +80,14 @@ def check_products_consistency(
         exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
     else:
         raise ValueError(
-            f"Workflow {workflow_id} Product_Type not recognized. Product_Type shall"
+            f"workflow {workflow_id} product type not recognized. product type shall"
             f"one of the following {SENTINEL1}, {SENTINEL2}"
         )
 
     if not re.match(exp, str(input_product_reference_name)):
         raise ValueError(
-            f"Input Product Reference {input_product_reference_name} not compliant with product type {product_type}"
+            f"the input product reference name {input_product_reference_name}"
+            f"is not compliant with product type {product_type}"
         )
 
 
