@@ -64,7 +64,7 @@ def test_transformation_order_missing_params(register_workflows):
             WorkflowId="workflow_xxxx", InputProductReference={"Reference": "Ref a"},
         )
     assert (
-        "WorkflowId\n  Unknown workflow: workflow_xxxx. Registered workflows are: workflow_1 (type=value_error)"
+        "WorkflowId\n  unknown workflow: workflow_xxxx. Registered workflows are: workflow_1 (type=value_error)"
         in str(excinfo.value)
     )
 
@@ -99,7 +99,7 @@ def test_transformation_order_validate_workflow_options(register_workflows):
             WorkflowOptions={"Case 1": "baz"},
         )
     assert (
-        "WorkflowOptions\n  Disallowed value for Case 1: baz has been provided while possible values are foo, bar (type=value_error)"
+        "WorkflowOptions\n  disallowed value for Case 1: baz has been provided while possible values are foo, bar (type=value_error)"
         in str(excinfo.value)
     )
 
@@ -120,7 +120,7 @@ def test_transformation_order_validate_workflow_options(register_workflows):
             WorkflowOptions={"Case 2": "foo"},
         )
     assert (
-        "WorkflowOptions\n  Wrong type for Case 2. Param type should be boolean while 'foo' (of type str) provided (type=value_error)"
+        "WorkflowOptions\n  wrong type for Case 2. Param type should be boolean while 'foo' (of type str) provided (type=value_error)"
         in str(excinfo.value)
     )
 
@@ -141,7 +141,7 @@ def test_transformation_order_validate_workflow_options(register_workflows):
             WorkflowOptions={"Case 3": 999},
         )
     assert (
-        "WorkflowOptions\n  Disallowed value for Case 3: 999 has been provided while possible values are 0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460 (type=value_error)"
+        "WorkflowOptions\n  disallowed value for Case 3: 999 has been provided while possible values are 0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460 (type=value_error)"
         in str(excinfo.value)
     )
 
