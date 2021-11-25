@@ -24,7 +24,7 @@ def remove_duplicates(pkg_entrypoints):
             selected_module_name = matches[0].module_name
             all_module_names = [e.module_name for e in matches]
             warnings.warn(
-                f"Found {matches_len} entrypoints for the workflow name {name}:"
+                f"found {matches_len} entrypoints for the workflow name {name}:"
                 f"\n {all_module_names}.\n It will be used: {selected_module_name}.",
                 RuntimeWarning,
             )
@@ -39,7 +39,7 @@ def workflow_dict_from_pkg(pkg_entrypoints):
             workflow_config = pkg_ep.load()
             workflow_entrypoints[name] = workflow_config
         except Exception as ex:
-            warnings.warn(f"Workflow {name!r} loading failed:\n{ex}", RuntimeWarning)
+            warnings.warn(f"workflow {name!r} loading failed:\n{ex}", RuntimeWarning)
     return workflow_entrypoints
 
 
@@ -77,7 +77,7 @@ def get_workflow_by_id(workflow_id=None):
         workflow = workflows[workflow_id]
     except KeyError:
         raise KeyError(
-            f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
+            f"workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
         )
     return workflow
 
