@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
@@ -314,3 +315,48 @@ def test_check_options_invalid_with_roi2():
     }
     with pytest.raises(ValueError):
         assert esa_tf_plugin_sen2cor.check_options(options)
+
+
+def test_print_options():
+    workflow_options = {}
+    assert esa_tf_plugin_sen2cor.print_options(workflow_options)
+
+    workflow_options = {"Ozone_Content": 9999}
+    assert (
+        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        == workflow_options["Ozone_Content"]
+    )
+
+    workflow_options = {"Ozone_Content": 9999, "dummy": -9999}
+    assert (
+        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        == workflow_options["Ozone_Content"]
+    )
+    assert (
+        esa_tf_plugin_sen2cor.print_options(workflow_options)["dummy"]
+        == workflow_options["dummy"]
+    )
+
+
+def test_find_output_error(tmpdir):
+    output_dir = tmpdir.join("output_dir").strpath
+    os.mkdir(output_dir)
+
+    dummy_file_path = os.path.join(output_dir, ".dummy_file.txt")
+    Path(dummy_file_path).touch()
+    with pytest.raises(RuntimeError):
+        assert esa_tf_plugin_sen2cor.find_output(output_dir)
+
+
+def test_find_output(tmpdir):
+    output_dir = tmpdir.join("output_dir").strpath
+    os.mkdir(output_dir)
+    sen2cor_output_dir = os.path.join(
+        output_dir, "S2A_MSIL2A_20211117T093251_N9999_R136_T33NTF_20211124T093440.SAFE"
+    )
+    os.mkdir(sen2cor_output_dir)
+    dummy_file_path = os.path.join(output_dir, ".dummy_file.txt")
+    Path(dummy_file_path).touch()
+    output_path = esa_tf_plugin_sen2cor.find_output(output_dir)
+
+    assert output_path == sen2cor_output_dir

@@ -216,7 +216,7 @@ def print_options(workflow_options):
     """Print the required Sen2Cor options (user desiderata + default values).
 
     :param workflow_options: the user's options dictionary
-    :return:
+    :return dict:
     """
     applied_options = {
         option["Name"]: option.get("Default")
@@ -225,6 +225,7 @@ def print_options(workflow_options):
     applied_options.update(workflow_options)
     print("Sen2Cor options:")
     pprint.pprint(applied_options)
+    return applied_options
 
 
 def find_output(output_dir):
