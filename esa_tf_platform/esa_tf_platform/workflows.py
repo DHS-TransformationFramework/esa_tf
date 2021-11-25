@@ -60,26 +60,13 @@ def filter_by_product_type(workflows, product_type=None):
     return filtered_workflows
 
 
-def get_workflows(product_type=None):
+def get_all_workflows():
     """
-    Returns the list of available workflows that can process a 'product_type' products.
+    Returns the list of all available workflows.
     """
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
     workflows = load_workflows_configurations(pkg_entrypoints)
-    if product_type:
-        workflows = filter_by_product_type(workflows, product_type)
     return workflows
-
-
-def get_workflow_by_id(workflow_id=None):
-    workflows = get_workflows()
-    try:
-        workflow = workflows[workflow_id]
-    except KeyError:
-        raise KeyError(
-            f"workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
-        )
-    return workflow
 
 
 def create_directories(*directory_list):
@@ -196,7 +183,7 @@ def run_workflow(
     product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
-    workflow_runner_name = get_workflow_by_id(workflow_id)["Execute"]
+    workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
     module_name, function_name = workflow_runner_name.rsplit(".", 1)
     module = importlib.import_module(module_name)
     workflow_runner = getattr(module, "run_processing")
