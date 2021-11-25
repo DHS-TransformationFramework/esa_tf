@@ -24,7 +24,7 @@ def instantiate_client(scheduler_addr=None):
     if scheduler_addr is None:
         scheduler_addr = os.getenv("SCHEDULER")
     if scheduler_addr is None:
-        raise ValueError("Scheduler not defined")
+        raise ValueError("scheduler not defined")
 
     if not CLIENT or CLIENT.scheduler.addr != scheduler_addr:
         CLIENT = dask.distributed.Client(scheduler_addr)
@@ -73,7 +73,7 @@ def build_transformation_order(order):
 def get_transformation_order(order_id):
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
-        raise KeyError(f"Transformation Order {order_id} not found")
+        raise KeyError(f"transformation Order {order_id} not found")
     transformation_order = build_transformation_order(order)
     return transformation_order
 
