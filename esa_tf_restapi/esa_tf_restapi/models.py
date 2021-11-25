@@ -1,7 +1,8 @@
 from typing import Optional
 
 from pydantic import BaseModel, Field, validator
-from pydantic.errors import MissingError
+
+from . import api
 
 TYPES = {
     "boolean": bool,
@@ -33,8 +34,7 @@ class TranformationOrder(BaseModel):
 
     @validator("workflow_id", always=True)
     def validate_wf_id(cls, v, values):
-        from . import workflows
-
+        workflows = api.get_workflows()
         workflows_ids = workflows.keys()
 
         if v not in workflows_ids:
@@ -45,8 +45,7 @@ class TranformationOrder(BaseModel):
 
     @validator("workflow_options")
     def validate_wf_options(cls, v, values):
-        from . import workflows
-
+        workflows = api.get_workflows()
         workflow_id = values.get("workflow_id")
         workflow = workflows.get(workflow_id, {})
         workflow_options = {opt["Name"]: opt for opt in workflow.get("WorkflowOptions")}

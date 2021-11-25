@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .workflows import get_workflow_by_id, get_workflows, run_workflow
+from .workflows import get_all_workflows, run_workflow

@@ -1,4 +1,5 @@
 import copy
+import functools
 import os
 import re
 from datetime import datetime
@@ -108,30 +109,46 @@ def instantiate_client(scheduler_addr=None):
     return CLIENT
 
 
+def filter_by_product_type(workflows, product_type=None):
+    filtered_workflows = {}
+    for name in workflows:
+        if product_type == workflows[name]["InputProductType"]:
+            filtered_workflows[name] = workflows[name]
+    return filtered_workflows
+
+
+@functools.lru_cache()
+def get_all_workflows(scheduler=None):
+    # definition of the task must be internal
+    # to avoid dask to import esa_tf_restapi in the workers
+    def task():
+        import esa_tf_platform
+
+        return esa_tf_platform.get_all_workflows()
+
+    client = instantiate_client(scheduler)
+    future = client.submit(task, priority=10)
+    return client.gather(future)
+
+
 def get_workflow_by_id(workflow_id, scheduler=None):
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
-    def task():
-        import esa_tf_platform
-
-        return esa_tf_platform.get_workflow_by_id(workflow_id)
-
-    client = instantiate_client(scheduler)
-    future = client.submit(task, priority=10)
-    return client.gather(future)
+    workflows = get_all_workflows()
+    try:
+        workflow = workflows[workflow_id]
+    except KeyError:
+        raise KeyError(
+            f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
+        )
+    return workflow
 
 
 def get_workflows(product=None, scheduler=None):
-    # definition of the task must be internal
-    # to avoid dask to import esa_tf_restapi in the workers
-    def task():
-        import esa_tf_platform
-
-        return esa_tf_platform.get_workflows(product)
-
-    client = instantiate_client(scheduler)
-    future = client.submit(task, priority=10)
-    return client.gather(future)
+    workflows = get_all_workflows()
+    if product:
+        workflows = filter_by_product_type(workflows, product)
+    return workflows
 
 
 def build_transformation_order(order):
