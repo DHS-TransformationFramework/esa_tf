@@ -5,8 +5,6 @@ import pytest
 
 from esa_tf_platform import esa_tf_plugin_sen2cor
 
-VALID_OZONE_VALUES = [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460]
-
 
 def test_set_sen2cor_options():
     sample_config_path = os.path.join(
@@ -126,65 +124,65 @@ def test_find_option_definition():
 
 def test_check_ozone_content_valid_summer():
     options = {
-        "mid_latitude": "SUMMER",
-        "ozone_content": 370,
-        "cirrus_correction": True,
+        "Mid_Latitude": "SUMMER",
+        "Ozone_Content": 370,
+        "Cirrus_Correction": True,
     }
     assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES) is True
+        esa_tf_plugin_sen2cor.check_ozone_content(options) is True
     )
 
 
 def test_check_ozone_content_invalid_summer():
     options = {
-        "mid_latitude": "SUMMER",
-        "ozone_content": 377,
-        "cirrus_correction": True,
+        "Mid_Latitude": "SUMMER",
+        "Ozone_Content": 377,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES)
+        esa_tf_plugin_sen2cor.check_ozone_content(options)
 
 
 def test_check_ozone_content_valid_winter():
     options = {
-        "mid_latitude": "WINTER",
-        "ozone_content": 420,
-        "cirrus_correction": True,
+        "Mid_Latitude": "WINTER",
+        "Ozone_Content": 420,
+        "Cirrus_Correction": True,
     }
     assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES) is True
+        esa_tf_plugin_sen2cor.check_ozone_content(options) is True
     )
 
 
 def test_check_ozone_content_invalid_winter():
     options = {
-        "mid_latitude": "WINTER",
-        "ozone_content": 410,
-        "cirrus_correction": True,
+        "Mid_Latitude": "WINTER",
+        "Ozone_Content": 410,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES)
+        esa_tf_plugin_sen2cor.check_ozone_content(options)
 
 
 def test_check_ozone_content_valid_auto():
     options = {
-        "mid_latitude": "AUTO",
-        "ozone_content": 290,
-        "cirrus_correction": True,
+        "Mid_Latitude": "AUTO",
+        "Ozone_Content": 290,
+        "Cirrus_Correction": True,
     }
     assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES) is True
+        esa_tf_plugin_sen2cor.check_ozone_content(options) is True
     )
 
 
 def test_check_ozone_content_invalid_auto():
     options = {
-        "mid_latitude": "AUTO",
-        "ozone_content": 1000,
-        "cirrus_correction": True,
+        "Mid_Latitude": "AUTO",
+        "Ozone_Content": 1000,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES)
+        esa_tf_plugin_sen2cor.check_ozone_content(options)
 
 
 def test_check_roi_options_missing_valid():
@@ -250,7 +248,7 @@ def test_check_roi_options_int_invalid_centre():
         "col0": 1200,
         "nrow_win": 650,
         "ncol_win": 600,
-        "cirrus_correction": True,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
         assert esa_tf_plugin_sen2cor.check_roi_options(options)
@@ -262,7 +260,7 @@ def test_check_roi_options_int_invalid_win():
         "col0": 1200,
         "nrow_win": 650,  # wrong value, it is not divisible by 6
         "ncol_win": 600,
-        "cirrus_correction": True,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
         assert esa_tf_plugin_sen2cor.check_roi_options(options)
@@ -296,10 +294,10 @@ def test_check_options_invalid_no_roi():
 
 def test_check_options_invalid_with_roi():
     options = {
-        "aerosol_type": "MARITIME",
-        "mid_latitude": "DUMMY",
-        "ozone_content": 0,
-        "cirrus_correction": True,
+        "Aerosol_Type": "MARITIME",
+        "Mid_Latitude": "DUMMY",
+        "Ozone_Content": 0,
+        "Cirrus_Correction": True,
         "row0": 600,
         "col0": 1200,
         "nrow_win": 600,
@@ -311,10 +309,10 @@ def test_check_options_invalid_with_roi():
 
 def test_check_options_invalid_with_roi2():
     options = {
-        "aerosol_type": "MARITIME",
-        "mid_latitude": "DUMMY",
-        "ozone_content": 0,
-        "cirrus_correction": True,
+        "Aerosol_Type": "MARITIME",
+        "Mid_Latitude": "DUMMY",
+        "Ozone_Content": 0,
+        "Cirrus_Correction": True,
         "row0": "OFF",
         "col0": 1200,
         "nrow_win": 600,

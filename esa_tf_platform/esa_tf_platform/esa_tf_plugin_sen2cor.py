@@ -13,6 +13,9 @@ SRTM_DOWNLOAD_ADDRESS = (
 MTD_FILENAME = "MTD_MSIL1C.xml"
 ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
 
+OZONE_WINTER_VALUES = (0, 250, 290, 330, 377, 420, 460)
+OZONE_SUMMER_VALUES = (0, 250, 290, 331, 370, 410, 450)
+
 
 def set_sen2cor_options(etree, options, srtm_dir):
     """Replace in the input ElementTree object (representing the parsed default L2A_GIPP.xml
@@ -97,27 +100,33 @@ def find_option_definition(option_name):
     return None
 
 
-def check_ozone_content(options, valid_ozone_values):
+def check_ozone_content(options):
     """Check the validity of the ozone content option values.
 
     :param dict options: dictionary of the asked user options
-    :param list_or_tuple valid_ozone_values: valid ozone content values as in the workflow description
-    :return:
+    :return bool:
     """
-    ozone_winter_values = (0, 250, 290, 330, 377, 420, 460)
-    ozone_summer_values = (0, 250, 290, 331, 370, 410, 450)
-    ozone_content_value = options["ozone_content"]
-    mid_latitude_value = options["mid_latitude"]
-    if mid_latitude_value == "AUTO" and (ozone_content_value not in valid_ozone_values):
-        raise ValueError()
-    elif mid_latitude_value == "WINTER" and (
-        ozone_content_value not in ozone_winter_values
+    ozone_content_value = options["Ozone_Content"]
+    mid_latitude_value = options.get(
+        "Mid_Latitude", find_option_definition("Mid_Latitude").get("Default")
+    )
+    valid_ozone_values = find_option_definition("Ozone_Content")["Enum"]
+    if ozone_content_value not in valid_ozone_values:
+        raise ValueError(
+            f"valid ozone content values are {valid_ozone_values}, given {ozone_content_value}"
+        )
+    if mid_latitude_value == "WINTER" and (
+        ozone_content_value not in OZONE_WINTER_VALUES
     ):
-        raise ValueError()
+        raise ValueError(
+            f"when 'Mid_Latitude=WINTER' the allowed ozone content values are {OZONE_WINTER_VALUES}"
+        )
     elif mid_latitude_value == "SUMMER" and (
-        ozone_content_value not in ozone_summer_values
+        ozone_content_value not in OZONE_SUMMER_VALUES
     ):
-        raise ValueError()
+        raise ValueError(
+            f"when 'Mid_Latitude=SUMMER' the allowed ozone content values are {OZONE_SUMMER_VALUES}"
+        )
     return True
 
 
@@ -186,10 +195,12 @@ def check_options(options):
     other_options = {k: v for k, v in options.items() if k not in ROI_OPTIONS_NAMES}
     valid_names = [option["Name"] for option in sen2cor_l1c_l2a["WorkflowOptions"]]
     for oname, ovalue in other_options.items():
-        if oname == "ozone_content":
-            check_ozone_content(
-                options, find_option_definition("ozone_content")["Enum"]
+        if oname == "Ozone_Content":
+            ozone_content_value = options["Ozone_Content"]
+            mid_latitude_value = options.get(
+                "Mid_Latitude", find_option_definition("Mid_Latitude").get("Default")
             )
+            check_ozone_content(options)
         elif oname in valid_names:
             valid_values = find_option_definition(oname).get("Enum")
             if valid_values and (ovalue not in valid_values):
