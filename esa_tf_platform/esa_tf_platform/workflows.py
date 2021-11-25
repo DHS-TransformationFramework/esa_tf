@@ -178,7 +178,7 @@ def run_workflow(
         )
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
-            f"{hubs_credentials_file} not not found, please define it using 'hubs_credentials_file' "
+            f"{hubs_credentials_file} not found, please define it using 'hubs_credentials_file' "
             "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
         )
     processing_dir = os.path.join(working_dir, order_id)

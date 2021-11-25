@@ -289,7 +289,7 @@ def run_processing(
         srtm_dir = os.path.abspath(srtm_dir)
     if srtm_dir and not os.path.isdir(srtm_dir):
         raise ValueError(
-            f"{srtm_dir} not not found, please define it using the environment variable 'SRTM_DIR'"
+            f"{srtm_dir} not found, please define it using the environment variable 'SRTM_DIR'"
         )
 
     check_input_consistency(product_path)
