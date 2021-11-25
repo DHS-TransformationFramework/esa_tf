@@ -142,3 +142,22 @@ def test_error_download_product_from_hub():
         hubs_credentials_file="hubs_credentials_file",
     )
     assert product_path == "product_path"
+
+
+@mock.patch(
+    "esa_tf_platform.workflows.read_hub_credentials",
+    mock.MagicMock(side_effect=[{"hub1": {}, "hub2": {}, "hub3": {}}]),
+)
+@mock.patch(
+    "esa_tf_platform.workflows.download_product_from_hub",
+    mock.MagicMock(side_effect=[ValueError(), "product_path", "product_path"]),
+)
+def test_error_download_product_from_hub():
+
+    product_path = workflows.download_product(
+        "product",
+        processing_dir="processing_dir",
+        hubs_credentials_file="hubs_credentials_file",
+    )
+    assert product_path == "product_path"
+    assert workflows.download_product_from_hub.call_count == 2

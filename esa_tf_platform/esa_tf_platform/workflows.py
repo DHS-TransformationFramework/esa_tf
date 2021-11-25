@@ -114,6 +114,8 @@ def download_product(product, *, processing_dir, hubs_credentials_file, hub_name
             )
         except Exception as ex:
             logging.info(f"{ex}")
+        if product_path:
+            break
     if product_path is None:
         raise ValueError(f"could not download product from {list(hubs_credentials)}")
     return product_path
