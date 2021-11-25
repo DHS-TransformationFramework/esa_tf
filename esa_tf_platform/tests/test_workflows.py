@@ -122,7 +122,7 @@ def test_error_download_product_from_hub():
 
 @mock.patch(
     'esa_tf_platform.workflows.read_hub_credentials',
-    mock.MagicMock(side_effect=[[{}, {}, {}]]))
+    mock.MagicMock(side_effect=[{"hub1": {}, "hub2": {}, "hub3": {}}]))
 @mock.patch(
     'esa_tf_platform.workflows.download_product_from_hub',
     mock.MagicMock(side_effect=[ValueError(), ValueError(), "product_path"]))
