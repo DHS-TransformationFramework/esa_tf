@@ -156,13 +156,6 @@ def build_transformation_order(order):
     transformation_order.pop("future")
     future = order["future"]
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
-    workflow_options = get_workflow_by_id(order["WorkflowId"])["WorkflowOptions"]
-    passed_options = transformation_order["WorkflowOptions"]
-    passed_options_ids = list(passed_options.keys())
-    for option in workflow_options:
-        if option["Name"] not in passed_options_ids and "Default" in option:
-            passed_options[option["Name"]] = option["Default"]
-    transformation_order["WorkflowOptions"] = passed_options
 
     if future.status == "finished":
         transformation_order["OutputFile"] = os.path.basename(future.result())
@@ -187,6 +180,26 @@ def get_transformation_orders(status=None, workflow_id=None):
         if add_order:
             transformation_orders.append(transformation_order)
     return transformation_orders
+
+
+def extract_worflow_options_default(config_workflow_options):
+    """
+    Extract default values from plugin workflow declaration
+    """
+    default_options = {}
+    for option in config_workflow_options:
+        if "Default" in option:
+            default_options[option["Name"]] = option["Default"]
+    return default_options
+
+
+def fill_with_defaults(workflow_options, config_workflow_options):
+    """
+    Fill the missing workflow options with the defaults values declared in the plugin
+    """
+    default_options = extract_worflow_options_default(config_workflow_options)
+    workflow_options = {**default_options, **workflow_options}
+    return workflow_options
 
 
 def submit_workflow(
@@ -224,12 +237,11 @@ def submit_workflow(
     check_products_consistency(
         product_type, input_product_reference["Reference"], workflow_id=workflow_id
     )
-
     if not order_id:
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
-
+    workflow_options = fill_with_defaults(workflow_options, workflow["WorkflowOptions"])
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     def task():
