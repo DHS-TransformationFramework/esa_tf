@@ -1,8 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-import esa_tf_restapi
 from esa_tf_restapi import api, app
+
+from .test_models import register_workflows
 
 client = TestClient(app)
 
@@ -38,7 +39,17 @@ def to_payload():
     orig = api.submit_workflow
 
     def submit_workflow(id, **kwargs):
-        return "foo-bar-baz"
+        return {
+            "Id": "foo-bar-baz",
+            "SubmissionDate": "2021-11-24T15:11:38",
+            "InputProductReference": {
+                "Reference": "S2B_MSIL1C_20211109T110159_N0301_R094_T29QQB_20211109T114303.zip",
+                "DataSourceName": "scihub",
+            },
+            "WorkflowOptions": {"Aerosol_Type": "RURAL"},
+            "WorkflowId": "sen2cor_l1c_l2a",
+            "Status": "in_progress",
+        }
 
     api.submit_workflow = submit_workflow
     yield
@@ -73,26 +84,6 @@ def tr_order():
     api.get_transformation_order = get_transformation_order
     yield
     api.get_transformation_order = orig
-
-
-@pytest.fixture()
-def fake_workflows():
-    workflows = {
-        "sen2cor_l1c_l2a": {
-            "Name": "Sen2Cor_L1C_L2A",
-            "WorkflowOptions": [
-                {
-                    "Name": "Aerosol_Type",
-                    "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
-                    "Type": "string",
-                    "Default": "RURAL",
-                    "Enum": ["MARITIME", "RURAL"],
-                },
-            ],
-            "Id": "workflow_1",
-        }
-    }
-    esa_tf_restapi.workflows = workflows
 
 
 def test_list_workflows(workflows):
@@ -132,13 +123,13 @@ def test_get_tranformation_order(tr_order):
     assert response.status_code == 404
 
 
-def test_run_tranformation_order(to_payload, fake_workflows):
+def test_run_tranformation_order(to_payload, register_workflows):
     response = client.post(
         "/TransformationOrders",
         json={
-            "WorkflowId": "sen2cor_l1c_l2a",
+            "WorkflowId": "workflow_1",
             "InputProductReference": {"Reference": "foo_bar.zip"},
-            "WorkflowOptions": {"Aerosol_Type": "RURAL"},
+            "WorkflowOptions": {"Case 1": "bar"},
         },
     )
     assert response.status_code == 201

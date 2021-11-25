@@ -1,11 +1,10 @@
 import os
+from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
 
 from esa_tf_platform import esa_tf_plugin_sen2cor
-
-VALID_OZONE_VALUES = [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460]
 
 
 def test_set_sen2cor_options():
@@ -126,65 +125,59 @@ def test_find_option_definition():
 
 def test_check_ozone_content_valid_summer():
     options = {
-        "mid_latitude": "SUMMER",
-        "ozone_content": 370,
-        "cirrus_correction": True,
+        "Mid_Latitude": "SUMMER",
+        "Ozone_Content": 370,
+        "Cirrus_Correction": True,
     }
-    assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES) is True
-    )
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
 
 
 def test_check_ozone_content_invalid_summer():
     options = {
-        "mid_latitude": "SUMMER",
-        "ozone_content": 377,
-        "cirrus_correction": True,
+        "Mid_Latitude": "SUMMER",
+        "Ozone_Content": 377,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES)
+        esa_tf_plugin_sen2cor.check_ozone_content(options)
 
 
 def test_check_ozone_content_valid_winter():
     options = {
-        "mid_latitude": "WINTER",
-        "ozone_content": 420,
-        "cirrus_correction": True,
+        "Mid_Latitude": "WINTER",
+        "Ozone_Content": 420,
+        "Cirrus_Correction": True,
     }
-    assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES) is True
-    )
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
 
 
 def test_check_ozone_content_invalid_winter():
     options = {
-        "mid_latitude": "WINTER",
-        "ozone_content": 410,
-        "cirrus_correction": True,
+        "Mid_Latitude": "WINTER",
+        "Ozone_Content": 410,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES)
+        esa_tf_plugin_sen2cor.check_ozone_content(options)
 
 
 def test_check_ozone_content_valid_auto():
     options = {
-        "mid_latitude": "AUTO",
-        "ozone_content": 290,
-        "cirrus_correction": True,
+        "Mid_Latitude": "AUTO",
+        "Ozone_Content": 290,
+        "Cirrus_Correction": True,
     }
-    assert (
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES) is True
-    )
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
 
 
 def test_check_ozone_content_invalid_auto():
     options = {
-        "mid_latitude": "AUTO",
-        "ozone_content": 1000,
-        "cirrus_correction": True,
+        "Mid_Latitude": "AUTO",
+        "Ozone_Content": 1000,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
-        esa_tf_plugin_sen2cor.check_ozone_content(options, VALID_OZONE_VALUES)
+        esa_tf_plugin_sen2cor.check_ozone_content(options)
 
 
 def test_check_roi_options_missing_valid():
@@ -250,7 +243,7 @@ def test_check_roi_options_int_invalid_centre():
         "col0": 1200,
         "nrow_win": 650,
         "ncol_win": 600,
-        "cirrus_correction": True,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
         assert esa_tf_plugin_sen2cor.check_roi_options(options)
@@ -262,7 +255,7 @@ def test_check_roi_options_int_invalid_win():
         "col0": 1200,
         "nrow_win": 650,  # wrong value, it is not divisible by 6
         "ncol_win": 600,
-        "cirrus_correction": True,
+        "Cirrus_Correction": True,
     }
     with pytest.raises(ValueError):
         assert esa_tf_plugin_sen2cor.check_roi_options(options)
@@ -296,10 +289,10 @@ def test_check_options_invalid_no_roi():
 
 def test_check_options_invalid_with_roi():
     options = {
-        "aerosol_type": "MARITIME",
-        "mid_latitude": "DUMMY",
-        "ozone_content": 0,
-        "cirrus_correction": True,
+        "Aerosol_Type": "MARITIME",
+        "Mid_Latitude": "DUMMY",
+        "Ozone_Content": 0,
+        "Cirrus_Correction": True,
         "row0": 600,
         "col0": 1200,
         "nrow_win": 600,
@@ -311,10 +304,10 @@ def test_check_options_invalid_with_roi():
 
 def test_check_options_invalid_with_roi2():
     options = {
-        "aerosol_type": "MARITIME",
-        "mid_latitude": "DUMMY",
-        "ozone_content": 0,
-        "cirrus_correction": True,
+        "Aerosol_Type": "MARITIME",
+        "Mid_Latitude": "DUMMY",
+        "Ozone_Content": 0,
+        "Cirrus_Correction": True,
         "row0": "OFF",
         "col0": 1200,
         "nrow_win": 600,
@@ -322,3 +315,48 @@ def test_check_options_invalid_with_roi2():
     }
     with pytest.raises(ValueError):
         assert esa_tf_plugin_sen2cor.check_options(options)
+
+
+def test_print_options():
+    workflow_options = {}
+    assert esa_tf_plugin_sen2cor.print_options(workflow_options)
+
+    workflow_options = {"Ozone_Content": 9999}
+    assert (
+        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        == workflow_options["Ozone_Content"]
+    )
+
+    workflow_options = {"Ozone_Content": 9999, "dummy": -9999}
+    assert (
+        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        == workflow_options["Ozone_Content"]
+    )
+    assert (
+        esa_tf_plugin_sen2cor.print_options(workflow_options)["dummy"]
+        == workflow_options["dummy"]
+    )
+
+
+def test_find_output_error(tmpdir):
+    output_dir = tmpdir.join("output_dir").strpath
+    os.mkdir(output_dir)
+
+    dummy_file_path = os.path.join(output_dir, ".dummy_file.txt")
+    Path(dummy_file_path).touch()
+    with pytest.raises(RuntimeError):
+        assert esa_tf_plugin_sen2cor.find_output(output_dir)
+
+
+def test_find_output(tmpdir):
+    output_dir = tmpdir.join("output_dir").strpath
+    os.mkdir(output_dir)
+    sen2cor_output_dir = os.path.join(
+        output_dir, "S2A_MSIL2A_20211117T093251_N9999_R136_T33NTF_20211124T093440.SAFE"
+    )
+    os.mkdir(sen2cor_output_dir)
+    dummy_file_path = os.path.join(output_dir, ".dummy_file.txt")
+    Path(dummy_file_path).touch()
+    output_path = esa_tf_plugin_sen2cor.find_output(output_dir)
+
+    assert output_path == sen2cor_output_dir

@@ -1,13 +1,27 @@
 import importlib
 import itertools
+import logging
 import os
 import shutil
+import sys
 import warnings
 import zipfile
 
 import pkg_resources
 import sentinelsat
 import yaml
+
+from . import logger
+
+
+# FIXME: where should you configure the log handler in a dask distributed application?
+def add_stderr_handler(logger):
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+
+
+add_stderr_handler(logger)
 
 
 def remove_duplicates(pkg_entrypoints):
@@ -24,7 +38,7 @@ def remove_duplicates(pkg_entrypoints):
             selected_module_name = matches[0].module_name
             all_module_names = [e.module_name for e in matches]
             warnings.warn(
-                f"Found {matches_len} entrypoints for the workflow name {name}:"
+                f"found {matches_len} entrypoints for the workflow name {name}:"
                 f"\n {all_module_names}.\n It will be used: {selected_module_name}.",
                 RuntimeWarning,
             )
@@ -39,7 +53,7 @@ def workflow_dict_from_pkg(pkg_entrypoints):
             workflow_config = pkg_ep.load()
             workflow_entrypoints[name] = workflow_config
         except Exception as ex:
-            warnings.warn(f"Workflow {name!r} loading failed:\n{ex}", RuntimeWarning)
+            warnings.warn(f"workflow {name!r} loading failed:\n{ex}", RuntimeWarning)
     return workflow_entrypoints
 
 
@@ -60,26 +74,13 @@ def filter_by_product_type(workflows, product_type=None):
     return filtered_workflows
 
 
-def get_workflows(product_type=None):
+def get_all_workflows():
     """
-    Returns the list of available workflows that can process a 'product_type' products.
+    Returns the list of all available workflows.
     """
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
     workflows = load_workflows_configurations(pkg_entrypoints)
-    if product_type:
-        workflows = filter_by_product_type(workflows, product_type)
     return workflows
-
-
-def get_workflow_by_id(workflow_id=None):
-    workflows = get_workflows()
-    try:
-        workflow = workflows[workflow_id]
-    except KeyError:
-        raise KeyError(
-            f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
-        )
-    return workflow
 
 
 def create_directories(*directory_list):
@@ -122,9 +123,17 @@ def unzip_product(product_zip_file, processing_dir):
 
 
 def zip_product(output, output_dir):
+    """Zip the workflow output folder and return the zip file path.
+
+    :param str output: full path of the workflow output folder
+    :param str output_dir: path of the folder in which the zip file will be created
+    :return str:
+    """
     basename = os.path.basename(output.rstrip("/"))
     dirname = os.path.dirname(output.rstrip("/"))
-    output_zip_path = os.path.join(output_dir, basename)
+    # remove the ".SAFE" string (if present) from the workflow output folder
+    zip_basename = basename.rsplit(".SAFE")[0]
+    output_zip_path = os.path.join(output_dir, zip_basename)
     output_file = shutil.make_archive(
         base_name=output_zip_path, format="zip", root_dir=dirname, base_dir=basename,
     )
@@ -169,7 +178,7 @@ def run_workflow(
         )
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
-            f"{hubs_credentials_file} not not found, please define it using 'hubs_credentials_file' "
+            f"{hubs_credentials_file} not found, please define it using 'hubs_credentials_file' "
             "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
         )
     processing_dir = os.path.join(working_dir, order_id)
@@ -179,20 +188,23 @@ def run_workflow(
     # download
     product = product_reference["Reference"]
     hub_name = product_reference.get("DataSourceName", "scihub")
+    logger.info("download input product: %r", product)
     product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
         processing_dir=processing_dir,
         hub_name=hub_name,
     )
+    logger.info("unpack input product: %r", product_zip_file)
     product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
-    workflow_runner_name = get_workflow_by_id(workflow_id)["Execute"]
+    workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
     module_name, function_name = workflow_runner_name.rsplit(".", 1)
     module = importlib.import_module(module_name)
     workflow_runner = getattr(module, "run_processing")
 
+    logger.info("run workflow: %r, %r", workflow_id, workflow_options)
     output = workflow_runner(
         product_path,
         processing_dir=processing_dir,
@@ -201,6 +213,7 @@ def run_workflow(
     )
 
     # re-package the ouput
+    logger.info("package output product: %r", output)
     output_zip_file = zip_product(output, output_dir)
     shutil.chown(output_zip_file, user=output_owner)
 
