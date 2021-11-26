@@ -267,6 +267,6 @@ def submit_workflow(
         "InputProductReference": input_product_reference,
         "WorkflowOptions": workflow_options,
         "WorkflowId": workflow_id,
-        "WorkflowName": workflow["WorkflowName"],
+        "WorkflowName": workflow["Name"],
     }
     return build_transformation_order(TRANSFORMATION_ORDERS[future.key])
