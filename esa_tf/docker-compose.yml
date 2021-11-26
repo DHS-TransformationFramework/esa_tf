@@ -10,15 +10,13 @@ services:
         command: dask-scheduler
 
     esa_tf_restapi:
-        image: ghcr.io/bopen/esa_tf_restapi:${ESA_TF_RELEASE:-latest}
-        build: ../esa_tf_restapi
+        image: nexus-repository.onda-dias.eu/dhs/esa_tf/esa_tf_restapi:${ESA_TF_RELEASE:-latest}
         ports:
             - "8080:8080"
         command: make serve PORT=8080 SCHEDULER="tcp://esa_tf_scheduler:8786"
 
     esa_tf_worker:
-        image: ghcr.io/bopen/esa_tf_worker:${ESA_TF_RELEASE:-latest}
-        build: ../esa_tf_platform
+        image: nexus-repository.onda-dias.eu/dhs/esa_tf/esa_tf_worker:${ESA_TF_RELEASE:-latest}
         depends_on:
             - esa_tf_scheduler
         volumes:

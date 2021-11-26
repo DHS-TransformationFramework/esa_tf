@@ -119,6 +119,9 @@ def filter_by_product_type(workflows, product_type=None):
 
 @functools.lru_cache()
 def get_all_workflows(scheduler=None):
+    """
+    Return the workflows configurations installed in the workers.
+    """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     def task():
@@ -128,10 +131,16 @@ def get_all_workflows(scheduler=None):
 
     client = instantiate_client(scheduler)
     future = client.submit(task, priority=10)
-    return client.gather(future)
+    workflows = client.gather(future)
+    for name in workflows:
+        workflows[name].pop("Execute")
+    return workflows
 
 
 def get_workflow_by_id(workflow_id, scheduler=None):
+    """
+    Return the workflow configuration corresponding to the workflow_id.
+    """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     workflows = get_all_workflows()
@@ -145,6 +154,10 @@ def get_workflow_by_id(workflow_id, scheduler=None):
 
 
 def get_workflows(product=None, scheduler=None):
+    """
+    Return the workflows configurations installed in the workers.
+    They may be filtered using the product type
+    """
     workflows = get_all_workflows()
     if product:
         workflows = filter_by_product_type(workflows, product)
@@ -158,11 +171,13 @@ def build_transformation_order(order):
 
     if future.status == "finished":
         transformation_order["OutputFile"] = os.path.basename(future.result())
-
     return transformation_order
 
 
 def get_transformation_order(order_id):
+    """
+    Return the transformation order corresponding to the order_id
+    """
     order = TRANSFORMATION_ORDERS.get(order_id, None)
     if order is None:
         raise KeyError(f"transformation Order {order_id} not found")
@@ -171,6 +186,10 @@ def get_transformation_order(order_id):
 
 
 def get_transformation_orders(status=None, workflow_id=None):
+    """
+    Return the all the transformation orders.
+    The can be filtered by the status and the workflow_id
+    """
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
         transformation_order = build_transformation_order(order)
@@ -180,6 +199,26 @@ def get_transformation_orders(status=None, workflow_id=None):
         if add_order:
             transformation_orders.append(transformation_order)
     return transformation_orders
+
+
+def extract_workflow_defaults(config_workflow_options):
+    """
+    Extract default values from plugin workflow declaration
+    """
+    default_options = {}
+    for option in config_workflow_options:
+        if "Default" in option:
+            default_options[option["Name"]] = option["Default"]
+    return default_options
+
+
+def fill_with_defaults(workflow_options, config_workflow_options):
+    """
+    Fill the missing workflow options with the defaults values declared in the plugin
+    """
+    default_options = extract_workflow_defaults(config_workflow_options)
+    workflow_options = {**default_options, **workflow_options}
+    return workflow_options
 
 
 def submit_workflow(
@@ -217,12 +256,11 @@ def submit_workflow(
     check_products_consistency(
         product_type, input_product_reference["Reference"], workflow_id=workflow_id
     )
-
     if not order_id:
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
-
+    workflow_options = fill_with_defaults(workflow_options, workflow["WorkflowOptions"])
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     def task():

@@ -65,8 +65,10 @@ def test_load_workflows_configurations():
         "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2a",
         "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2b",
     ]
-    entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
-    wk = workflows.load_workflows_configurations(entrypoints)
+    with pytest.warns(RuntimeWarning) as record:
+        entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
+        wk = workflows.load_workflows_configurations(entrypoints)
+    assert len(record) == 1
     assert len(wk) == 2
 
 
@@ -84,3 +86,80 @@ def test_zip_product(tmpdir):
         product_folder = product_zip.infolist()[0].filename
 
     assert product_folder.rstrip("/") == output_folder_name
+
+
+@mock.patch(
+    "sentinelsat.SentinelAPI.download",
+    mock.MagicMock(return_value={"path": "product_path"}),
+)
+@mock.patch(
+    "sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={"uuid": "uuid"})
+)
+def test_fake_download_product_from_hub():
+
+    path = workflows.download_product_from_hub(
+        product="product",
+        processing_dir="processing_dir",
+        hub_credentials={
+            "api_url": "https:/apihub.copernicus.eu/apihub",
+            "user": "user",
+            "password": "password",
+        },
+    )
+    assert path == "product_path"
+
+
+@mock.patch(
+    "sentinelsat.SentinelAPI.download",
+    mock.MagicMock(return_value={"path": "product_path"}),
+)
+@mock.patch("sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={}))
+def test_error_download_product_from_hub():
+
+    with pytest.raises(ValueError, match=f"product not found"):
+        workflows.download_product_from_hub(
+            product="product",
+            processing_dir="processing_dir",
+            hub_credentials={
+                "api_url": "https:/apihub.copernicus.eu/apihub",
+                "user": "user",
+                "password": "password",
+            },
+        )
+
+
+@mock.patch(
+    "esa_tf_platform.workflows.read_hub_credentials",
+    mock.MagicMock(side_effect=[{"hub1": {}, "hub2": {}, "hub3": {}}]),
+)
+@mock.patch(
+    "esa_tf_platform.workflows.download_product_from_hub",
+    mock.MagicMock(side_effect=[ValueError(), ValueError(), "product_path"]),
+)
+def test_error_download_product_from_hub():
+
+    product_path = workflows.download_product(
+        "product",
+        processing_dir="processing_dir",
+        hubs_credentials_file="hubs_credentials_file",
+    )
+    assert product_path == "product_path"
+
+
+@mock.patch(
+    "esa_tf_platform.workflows.read_hub_credentials",
+    mock.MagicMock(side_effect=[{"hub1": {}, "hub2": {}, "hub3": {}}]),
+)
+@mock.patch(
+    "esa_tf_platform.workflows.download_product_from_hub",
+    mock.MagicMock(side_effect=[ValueError(), "product_path", "product_path"]),
+)
+def test_error_download_product_from_hub():
+
+    product_path = workflows.download_product(
+        "product",
+        processing_dir="processing_dir",
+        hubs_credentials_file="hubs_credentials_file",
+    )
+    assert product_path == "product_path"
+    assert workflows.download_product_from_hub.call_count == 2
