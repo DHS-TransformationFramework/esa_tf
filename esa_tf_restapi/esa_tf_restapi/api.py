@@ -293,7 +293,7 @@ def submit_workflow(
             "InputProductReference": input_product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
-            "WorkflowName": workflow["WorkflowName"],
+            "WorkflowName": workflow["Name"],
         }
         TRANSFORMATION_ORDERS[order_id] = order
 
