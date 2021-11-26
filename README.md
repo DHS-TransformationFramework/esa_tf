@@ -52,6 +52,12 @@ Required software on the VM:
 - `unzip`
 - `tar`
 
+Required is read access to the Docker Registry on the ONDA DIAS:
+
+```bash
+docker login nexus-repository.onda-dias.eu
+```
+
 Change folder to `esa_tf` and download the external resources:
 
 ```bash
