@@ -164,6 +164,7 @@ def test_error_download_product():
     assert product_path == "product_path"
     assert workflows.download_product_from_hub.call_count == 2
 
+
 def test_check_workflow():
     workflow = {
         "Name": "Name",
@@ -187,7 +188,6 @@ def test_check_workflow():
                 "Default": 3,
                 "Enum": [1, 2],
             },
-
         ],
     }
     workflows.check_workflow(workflow)
@@ -212,7 +212,7 @@ def test_error_check_mandatory_option_keys():
         "Description": "Description",
         "Default": "Default",
         "Type": "string",
-        "Enum": ["A", "B"]
+        "Enum": ["A", "B"],
     }
     with pytest.raises(ValueError) as ex:
         workflows.check_mandatory_option_keys(option)
@@ -225,7 +225,7 @@ def test_error_check_valid_declared_type():
         "Description": "Description",
         "Default": "Default",
         "Type": "type",
-        "Enum": ["A", "B"]
+        "Enum": ["A", "B"],
     }
     with pytest.raises(ValueError) as ex:
         workflows.check_valid_declared_type(option)
@@ -238,7 +238,7 @@ def test_error_check_default_type():
         "Description": "Description",
         "Default": 1,
         "Type": "string",
-        "Enum": ["A", "B"]
+        "Enum": ["A", "B"],
     }
     with pytest.raises(ValueError) as ex:
         workflows.check_default_type(option)
@@ -251,7 +251,7 @@ def test_error_check_enum_type():
         "Description": "Description",
         "Default": "A",
         "Type": "string",
-        "Enum": ["A", 1]
+        "Enum": ["A", 1],
     }
     with pytest.raises(ValueError) as ex:
         workflows.check_enum_type(option)
