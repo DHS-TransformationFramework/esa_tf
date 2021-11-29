@@ -15,7 +15,7 @@ dummy_workflow_config3b = {"conf": "3b"}
 
 WORKFLOWS1 = {
     "wokflow1": {
-        "Name": "Name",
+        "WorkflowName": "Name",
         "Execute": "Execute",
         "Description": "Description",
         "InputProductType": "S2MSI1C",
@@ -24,7 +24,7 @@ WORKFLOWS1 = {
         "WorkflowOptions": [],
     },
     "wokflow2": {
-        "Name": "Name",
+        "WorkflowName": "Name",
         "Execute": "Execute",
         "Description": "Description",
         "InputProductType": "S2MSI1C",
@@ -36,7 +36,7 @@ WORKFLOWS1 = {
 
 WORKFLOWS2 = {
     "wokflow1": {
-        "Name": "Name",
+        "WorkflowName": "Name",
         "Execute": "Execute",
         "Description": "Description",
         "InputProductType": "S2MSI1C",
@@ -44,13 +44,13 @@ WORKFLOWS2 = {
         "WorkflowVersion": "1.0",
         "WorkflowOptions": [],
     },
-    "wokflow2": {"Name": "Name", "Description": "Description",},
+    "wokflow2": {"WorkflowName": "Name", "Description": "Description",},
 }
 
 
 WORKFLOWS3 = {
     "wokflow1": {
-        "Name": "Name",
+        "WorkflowName": "Name",
         "Execute": "Execute",
         "Description": "Description",
         "InputProductType": "InputProductType",
@@ -214,7 +214,7 @@ def test_error_download_product():
 
 def test_check_workflow():
     workflow = {
-        "Name": "Name",
+        "WorkflowName": "Name",
         "Description": "Description",
         "Execute": "Execute",
         "InputProductType": "S2MSI1C",
@@ -242,7 +242,7 @@ def test_check_workflow():
 
 def test_error_check_mandatory_workflow_keys():
     workflow = {
-        "Name": "Name",
+        "WorkflowName": "Name",
         "Description": "Description",
         "InputProductType": "S1_SLC__1S",
         "OutputProductType": "OutputProductType",
