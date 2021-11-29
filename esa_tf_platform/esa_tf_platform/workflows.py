@@ -24,6 +24,96 @@ def add_stderr_handler(logger):
 add_stderr_handler(logger)
 
 
+TYPES = {
+    "boolean": bool,
+    "number": float,
+    "integer": int,
+    "string": str,
+}
+
+MANDATORY_WORKFLOWS_KEYS = [
+    "Name",
+    "Description",
+    "Execute",
+    "InputProductType",
+    "OutputProductType",
+    "WorkflowVersion",
+    "WorkflowOptions",
+]
+
+MANDATORY_OPTIONS_KEYS = [
+    "Name",
+    "Description",
+    "Type",
+]
+
+
+def check_mandatory_workflow_keys(workflow, workflow_id=None):
+    for key in MANDATORY_WORKFLOWS_KEYS:
+        if key not in workflow:
+            raise ValueError(f"missing key {key} in workflow definition")
+
+
+def check_mandatory_option_keys(option, workflow_id=None):
+
+    option_name = option.get("Name")
+    for key in MANDATORY_OPTIONS_KEYS:
+        if key not in option:
+            raise ValueError(
+                f"workflow_id {workflow_id}: missing key "
+                f"{key} in workflow {option_name} definition"
+            )
+
+
+def check_valid_declared_type(option, workflow_id=None):
+    option_type = option["Type"]
+    option_name = option.get("Name")
+
+    if option_type not in TYPES:
+        raise ValueError(
+            f"workflow_id {workflow_id}: {option_type} type in {option_name} "
+            f"not recognized. The type shall be one of the following: {TYPES}"
+        )
+
+
+def check_default_type(option, workflow_id=None):
+    default = option.get("Default")
+    if default is None:
+        return
+    option_type = option["Type"]
+    option_name = option["Name"]
+
+    if not isinstance(default, TYPES[option_type]):
+        raise ValueError(
+            f"workflow_id {workflow_id}: {option_name} Default {default} type is not align "
+            f"with declared type {option_type}"
+        )
+
+
+def check_enum_type(option, workflow_id=None):
+    enum = option.get("Enum", None)
+    if enum is None:
+        return
+    option_type = option["Type"]
+    option_name = option["Name"]
+
+    for value in enum:
+        if not isinstance(value, TYPES[option_type]):
+            raise ValueError(
+                f"workflow_id {workflow_id}: {option_name} Enum value "
+                f"{value} type is not align with declared type {option_type}"
+            )
+
+
+def check_workflow(workflow, workflow_id=None):
+    # Note: the order of the checks can't be modified
+    check_mandatory_workflow_keys(workflow)
+    for option in workflow["WorkflowOptions"]:
+        check_mandatory_option_keys(option, workflow_id=workflow_id)
+        check_default_type(option, workflow_id=workflow_id)
+        check_enum_type(option, workflow_id=workflow_id)
+
+
 def remove_duplicates(pkg_entrypoints):
     """
     Remove entrypoints with the same name, keeping only the first one.
@@ -81,6 +171,8 @@ def get_all_workflows():
     """
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
     workflows = load_workflows_configurations(pkg_entrypoints)
+    for workflow in workflows:
+        check_workflow(workflow)
     return workflows
 
 
@@ -137,6 +229,9 @@ def download_product(product, *, processing_dir, hubs_credentials_file, hub_name
 def unzip_product(product_zip_file, processing_dir):
     """
     Unzip the product in the processing dir
+
+    :param str product_zip_file: path to product zip file
+    :param str processing_dir: directory where to unzip the product zip
     """
     with zipfile.ZipFile(product_zip_file, "r") as product_zip:
         product_folder = product_zip.infolist()[0].filename
@@ -160,6 +255,19 @@ def zip_product(output, output_dir):
         base_name=output_zip_path, format="zip", root_dir=dirname, base_dir=basename,
     )
     return output_file
+
+
+def load_workflow_runner(workflow_id):
+    """Loads workflow runnaer function
+
+    :param str workflow_id: workflow_id
+    """
+    # run workflow
+    workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
+    module_name, function_name = workflow_runner_name.rsplit(".", 1)
+    module = importlib.import_module(module_name)
+    workflow_runner = getattr(module, "run_processing")
+    return workflow_runner
 
 
 def run_workflow(
@@ -222,10 +330,7 @@ def run_workflow(
     product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
-    workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
-    module_name, function_name = workflow_runner_name.rsplit(".", 1)
-    module = importlib.import_module(module_name)
-    workflow_runner = getattr(module, "run_processing")
+    workflow_runner = load_workflow_runner(workflow_id)
 
     logger.info("run workflow: %r, %r", workflow_id, workflow_options)
     output = workflow_runner(
