@@ -143,6 +143,7 @@ def check_workflow(workflow, workflow_id=None):
     check_mandatory_workflow_keys(workflow)
     for option in workflow["WorkflowOptions"]:
         check_mandatory_option_keys(option, workflow_id=workflow_id)
+        check_valid_declared_type(option, workflow_id=workflow_id)
         check_default_type(option, workflow_id=workflow_id)
         check_enum_type(option, workflow_id=workflow_id)
 
@@ -204,8 +205,8 @@ def get_all_workflows():
     """
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
     workflows = load_workflows_configurations(pkg_entrypoints)
-    for workflow in workflows:
-        check_workflow(workflow)
+    for workflow_id, workflow in workflows.items():
+        check_workflow(workflow, workflow_id=workflow_id)
     return workflows
 
 
