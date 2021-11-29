@@ -31,7 +31,7 @@ WORKFLOWS1 = {
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
         "WorkflowOptions": [],
-    }
+    },
 }
 
 WORKFLOWS2 = {
@@ -43,11 +43,9 @@ WORKFLOWS2 = {
         "WorkflowVersion": "1.0",
         "WorkflowOptions": [],
     },
-    "wokflow2": {
-        "Name": "Name",
-        "Description": "Description",
-    }
+    "wokflow2": {"Name": "Name", "Description": "Description",},
 }
+
 
 @pytest.fixture
 def dummy_duplicated_entrypoints():
