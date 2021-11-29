@@ -95,7 +95,7 @@ def test_zip_product(tmpdir):
 @mock.patch(
     "sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={"uuid": "uuid"})
 )
-def test_fake_download_product_from_hub():
+def test_download_product_from_hub():
 
     path = workflows.download_product_from_hub(
         product="product",
@@ -136,7 +136,7 @@ def test_error_download_product_from_hub():
     "esa_tf_platform.workflows.download_product_from_hub",
     mock.MagicMock(side_effect=[ValueError(), ValueError(), "product_path"]),
 )
-def test_error_download_product_from_hub():
+def test_error_download_product():
 
     product_path = workflows.download_product(
         "product",
@@ -154,7 +154,7 @@ def test_error_download_product_from_hub():
     "esa_tf_platform.workflows.download_product_from_hub",
     mock.MagicMock(side_effect=[ValueError(), "product_path", "product_path"]),
 )
-def test_error_download_product_from_hub():
+def test_error_download_product():
 
     product_path = workflows.download_product(
         "product",
@@ -163,3 +163,96 @@ def test_error_download_product_from_hub():
     )
     assert product_path == "product_path"
     assert workflows.download_product_from_hub.call_count == 2
+
+
+def test_check_workflow():
+    workflow = {
+        "Name": "Name",
+        "Description": "Description",
+        "Execute": "Execute",
+        "InputProductType": "InputProductType",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [
+            {
+                "Name": "Option1",
+                "Description": "Description",
+                "Type": "string",
+                "Default": "Default",
+                "Enum": ["A", "B"],
+            },
+            {
+                "Name": "Option2",
+                "Description": "Description",
+                "Type": "integer",
+                "Default": 3,
+                "Enum": [1, 2],
+            },
+        ],
+    }
+    workflows.check_workflow(workflow)
+
+
+def test_error_check_mandatory_workflow_keys():
+    workflow = {
+        "Name": "Name",
+        "Description": "Description",
+        "InputProductType": "InputProductType",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    }
+    with pytest.raises(ValueError) as ex:
+        workflows.check_mandatory_workflow_keys(workflow)
+    assert "missing key" in str(ex.value)
+
+
+def test_error_check_mandatory_option_keys():
+    option = {
+        "Description": "Description",
+        "Default": "Default",
+        "Type": "string",
+        "Enum": ["A", "B"],
+    }
+    with pytest.raises(ValueError) as ex:
+        workflows.check_mandatory_option_keys(option)
+    assert "missing key" in str(ex.value)
+
+
+def test_error_check_valid_declared_type():
+    option = {
+        "Name": "Option1",
+        "Description": "Description",
+        "Default": "Default",
+        "Type": "type",
+        "Enum": ["A", "B"],
+    }
+    with pytest.raises(ValueError) as ex:
+        workflows.check_valid_declared_type(option)
+    assert "not recognized" in str(ex.value)
+
+
+def test_error_check_default_type():
+    option = {
+        "Name": "Option1",
+        "Description": "Description",
+        "Default": 1,
+        "Type": "string",
+        "Enum": ["A", "B"],
+    }
+    with pytest.raises(ValueError) as ex:
+        workflows.check_default_type(option)
+    assert "Default" in str(ex.value)
+
+
+def test_error_check_enum_type():
+    option = {
+        "Name": "Option1",
+        "Description": "Description",
+        "Default": "A",
+        "Type": "string",
+        "Enum": ["A", 1],
+    }
+    with pytest.raises(ValueError) as ex:
+        workflows.check_enum_type(option)
+    assert "Enum" in str(ex.value)
