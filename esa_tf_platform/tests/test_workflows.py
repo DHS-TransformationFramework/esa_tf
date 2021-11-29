@@ -13,6 +13,53 @@ dummy_workflow_config2b = {"conf": "2b"}
 dummy_workflow_config3a = {"conf": "3a"}
 dummy_workflow_config3b = {"conf": "3b"}
 
+WORKFLOWS1 = {
+    "wokflow1": {
+        "Name": "Name",
+        "Execute": "Execute",
+        "Description": "Description",
+        "InputProductType": "S2MSI1C",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    },
+    "wokflow2": {
+        "Name": "Name",
+        "Execute": "Execute",
+        "Description": "Description",
+        "InputProductType": "S2MSI1C",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    },
+}
+
+WORKFLOWS2 = {
+    "wokflow1": {
+        "Name": "Name",
+        "Execute": "Execute",
+        "Description": "Description",
+        "InputProductType": "S2MSI1C",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    },
+    "wokflow2": {"Name": "Name", "Description": "Description",},
+}
+
+
+WORKFLOWS3 = {
+    "wokflow1": {
+        "Name": "Name",
+        "Execute": "Execute",
+        "Description": "Description",
+        "InputProductType": "InputProductType",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    },
+}
+
 
 @pytest.fixture
 def dummy_duplicated_entrypoints():
@@ -170,7 +217,7 @@ def test_check_workflow():
         "Name": "Name",
         "Description": "Description",
         "Execute": "Execute",
-        "InputProductType": "InputProductType",
+        "InputProductType": "S2MSI1C",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
         "WorkflowOptions": [
@@ -197,14 +244,13 @@ def test_error_check_mandatory_workflow_keys():
     workflow = {
         "Name": "Name",
         "Description": "Description",
-        "InputProductType": "InputProductType",
+        "InputProductType": "S1_SLC__1S",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
         "WorkflowOptions": [],
     }
-    with pytest.raises(ValueError) as ex:
+    with pytest.raises(ValueError, match=f"missing key"):
         workflows.check_mandatory_workflow_keys(workflow)
-    assert "missing key" in str(ex.value)
 
 
 def test_error_check_mandatory_option_keys():
@@ -214,9 +260,8 @@ def test_error_check_mandatory_option_keys():
         "Type": "string",
         "Enum": ["A", "B"],
     }
-    with pytest.raises(ValueError) as ex:
+    with pytest.raises(ValueError, match=f"missing key"):
         workflows.check_mandatory_option_keys(option)
-    assert "missing key" in str(ex.value)
 
 
 def test_error_check_valid_declared_type():
@@ -227,9 +272,8 @@ def test_error_check_valid_declared_type():
         "Type": "type",
         "Enum": ["A", "B"],
     }
-    with pytest.raises(ValueError) as ex:
+    with pytest.raises(ValueError, match=f"not recognized"):
         workflows.check_valid_declared_type(option)
-    assert "not recognized" in str(ex.value)
 
 
 def test_error_check_default_type():
@@ -240,9 +284,8 @@ def test_error_check_default_type():
         "Type": "string",
         "Enum": ["A", "B"],
     }
-    with pytest.raises(ValueError) as ex:
+    with pytest.raises(ValueError, match=f"Default"):
         workflows.check_default_type(option)
-    assert "Default" in str(ex.value)
 
 
 def test_error_check_enum_type():
@@ -253,6 +296,29 @@ def test_error_check_enum_type():
         "Type": "string",
         "Enum": ["A", 1],
     }
-    with pytest.raises(ValueError) as ex:
+    with pytest.raises(ValueError, match=f"Enum"):
         workflows.check_enum_type(option)
-    assert "Enum" in str(ex.value)
+
+
+@mock.patch(
+    "esa_tf_platform.workflows.load_workflows_configurations",
+    mock.MagicMock(side_effect=[WORKFLOWS1, WORKFLOWS2]),
+)
+def test_get_all_workflows():
+    workflows.get_all_workflows()
+    with pytest.raises(ValueError, match=f"missing key"):
+        workflows.get_all_workflows()
+
+
+@mock.patch(
+    "esa_tf_platform.workflows.load_workflows_configurations",
+    mock.MagicMock(side_effect=[WORKFLOWS1, WORKFLOWS2, WORKFLOWS3]),
+)
+def test_get_all_workflows():
+    workflows.get_all_workflows()
+
+    with pytest.raises(ValueError, match=f"missing key"):
+        workflows.get_all_workflows()
+
+    with pytest.raises(ValueError, match=f"product type"):
+        workflows.get_all_workflows()
