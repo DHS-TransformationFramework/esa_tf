@@ -48,6 +48,64 @@ MANDATORY_OPTIONS_KEYS = [
 ]
 
 
+SENTINEL1 = [
+    "S1_RAW__0S",
+    "S2_RAW__0S",
+    "S3_RAW__0S",
+    "S4_RAW__0S",
+    "S5_RAW__0S",
+    "S6_RAW__0S",
+    "IW_RAW__0S",
+    "EW_RAW__0S",
+    "WV_RAW__0S",
+    "S1_SLC__1S",
+    "S2_SLC__1S",
+    "S3_SLC__1S",
+    "S4_SLC__1S",
+    "S5_SLC__1S",
+    "S6_SLC__1S",
+    "IW_SLC__1S",
+    "EW_SLC__1S",
+    "WV_SLC__1S",
+    "S1_GRDH_1S",
+    "S2_GRDH_1S",
+    "S3_GRDH_1S",
+    "S4_GRDH_1S",
+    "S5_GRDH_1S",
+    "S6_GRDH_1S",
+    "IW_GRDH_1S",
+    "EW_GRDH_1S",
+    "S1_GRDM_1S",
+    "S2_GRDM_1S",
+    "S3_GRDM_1S",
+    "S4_GRDM_1S",
+    "S5_GRDM_1S",
+    "S6_GRDM_1S",
+    "IW_GRDM_1S",
+    "EW_GRDM_1S",
+    "S1_OCN__2S",
+    "S2_OCN__2S",
+    "S3_OCN__2S",
+    "S4_OCN__2S",
+    "S5_OCN__2S",
+    "S6_OCN__2S",
+    "IW_OCN__2S",
+    "EW_OCN__2S",
+    "WV_OCN__2S",
+]
+
+SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
+
+
+def check_valid_product_type(workflow, workflow_id=None):
+    product_type = workflow["InputProductType"]
+    if (product_type not in SENTINEL1) and (product_type not in SENTINEL2):
+        raise ValueError(
+            f"error in workflow plugin {workflow_id}: product type {product_type} not recognized; "
+            f"product type shall be one of the following {[*SENTINEL1, *SENTINEL2]}"
+        )
+
+
 def check_mandatory_workflow_keys(workflow, workflow_id=None):
     """
     Check if all mandatory keys are in the workflow.
@@ -140,7 +198,8 @@ def check_workflow(workflow, workflow_id=None):
     :param str workflow_id: workflow is needed for the error message
     """
     # Note: the order of the checks can't be modified
-    check_mandatory_workflow_keys(workflow)
+    check_mandatory_workflow_keys(workflow, workflow_id=workflow_id)
+    check_valid_product_type(workflow, workflow_id=workflow_id)
     for option in workflow["WorkflowOptions"]:
         check_mandatory_option_keys(option, workflow_id=workflow_id)
         check_valid_declared_type(option, workflow_id=workflow_id)
