@@ -272,6 +272,9 @@ def run_processing(
     in the ``processing_dir`` will be created.
     :return str:
     """
+    resolution = workflow_options.get("Resolution", None)
+    if resolution is None:
+        workflow_options.pop("Resolution")
     print("\n**** Sen2Cor Workflow ****\n")
     if sen2cor_script_file is None:
         sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
@@ -355,6 +358,7 @@ sen2cor_l1c_l2a = {
             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
             "Type": "integer",
             "Enum": [10, 20, 60],
+            "Default": None,
         },
     ],
 }
