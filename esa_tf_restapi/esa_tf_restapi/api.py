@@ -222,9 +222,7 @@ def extract_config_options_names(config_workflow_options):
     return options_names
 
 
-def fill_with_defaults(
-    workflow_options, config_workflow_options, workflow_id=None
-):
+def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=None):
     """
     Fill the missing workflow options with the defaults values declared in the plugin
     """
@@ -281,9 +279,7 @@ def submit_workflow(
             workflow_id, input_product_reference, workflow_options,
         )
     workflow_options = fill_with_defaults(
-        workflow_options,
-        workflow["WorkflowOptions"],
-        workflow_id=workflow_id,
+        workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
