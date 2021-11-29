@@ -4,43 +4,29 @@ import esa_tf_restapi
 
 WORKFLOW_OPTIONS = [
     {
-        "Name": "Aerosol_Type",
-        "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
+        "Name": "Name1",
+        "Description": "",
         "Type": "string",
-        "Default": "RURAL",
-        "Enum": ["MARITIME", "RURAL"],
+        "Default": "VALUE1",
+        "Enum": ["VALUE1", "VALUE2"],
     },
     {
-        "Name": "Mid_Latitude",
-        "Description": "If  'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
-        "Type": "string",
-        "Default": "SUMMER",
-        "Enum": ["SUMMER", "WINTER", "AUTO"],
-    },
-    {
-        "Name": "Ozone_Content",
-        "Description": "0: to get the best approximation from metadata (this is the smallest difference between metadata and column DU), else select for midlatitude summer (MS) atmosphere: 250, 290, 331 (standard MS), 370, 410, 450; for midlatitude winter (MW) atmosphere: 250, 290, 330, 377 (standard MW), 420, 460",
+        "Name": "Name2",
+        "Description": "",
         "Type": "integer",
-        "Default": 331,
-        "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
+        "Default": 1,
+        "Enum": [1, 2, 3, 4],
     },
     {
-        "Name": "Cirrus_Correction",
-        "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
+        "Name": "Name3",
+        "Description": "",
         "Type": "boolean",
-        "Default": False,
+        "Default": True
     },
     {
-        "Name": "DEM_Terrain_Correction",
-        "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
-        "Type": "boolean",
-        "Default": True,
-    },
-    {
-        "Name": "Resolution",
-        "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
-        "Type": "integer",
-        "Enum": [10, 20, 60],
+        "Name": "Name4",
+        "Description": "",
+        "Type": "number",
     },
 ]
 
@@ -91,7 +77,7 @@ def test_check_products_consistency_wrong_product_type():
         "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"
     )
     with pytest.raises(
-        ValueError, match=f"workflow {workflow_id} product type not recognized"
+        ValueError, match=f"product type not recognized"
     ):
         esa_tf_restapi.api.check_products_consistency(
             product_type, input_product_reference_name, workflow_id=workflow_id
@@ -102,39 +88,38 @@ def test_extract_worflow_options_defaults():
 
     res = esa_tf_restapi.api.extract_workflow_defaults(WORKFLOW_OPTIONS)
 
-    assert "Aerosol_Type" in res
-    assert res["Aerosol_Type"] == "RURAL"
+    assert "Name1" in res
+    assert res["Name1"] == "VALUE1"
 
-    assert "Mid_Latitude" in res
-    assert res["Mid_Latitude"] == "SUMMER"
+    assert "Name2" in res
+    assert res["Name2"] == 1
 
-    assert "Ozone_Content" in res
-    assert res["Ozone_Content"] == 331
-
-    assert "Cirrus_Correction" in res
-    assert not res["Cirrus_Correction"]
-
-    assert "DEM_Terrain_Correction" in res
-    assert res["DEM_Terrain_Correction"]
+    assert "Name3" in res
+    assert res["Name3"]
 
 
 def test_fill_with_defaults():
 
-    workflow_options = {"Mid_Latitude": "WINTER", "DEM_Terrain_Correction": False}
+    workflow_options = {"Name3": False, "Name4": 1.4}
 
     res = esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
 
-    assert "Aerosol_Type" in res
-    assert res["Aerosol_Type"] == "RURAL"
+    assert "Name1" in res
+    assert res["Name1"] == "VALUE1"
 
-    assert "Mid_Latitude" in res
-    assert res["Mid_Latitude"] == "WINTER"
+    assert "Name2" in res
+    assert res["Name2"] == 1
 
-    assert "Ozone_Content" in res
-    assert res["Ozone_Content"] == 331
+    assert "Name3" in res
+    assert not res["Name3"]
 
-    assert "Cirrus_Correction" in res
-    assert not res["Cirrus_Correction"]
+    assert "Name3" in res
+    assert res["Name4"] == 1.4
 
-    assert "DEM_Terrain_Correction" in res
-    assert not res["DEM_Terrain_Correction"]
+
+def test_error_fill_with_defaults():
+
+    workflow_options = {"Name3": False}
+    with pytest.raises(ValueError, match=r"are missing"):
+        esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
+

@@ -214,12 +214,33 @@ def extract_workflow_defaults(config_workflow_options):
     return default_options
 
 
-def fill_with_defaults(workflow_options, config_workflow_options):
+def extract_config_options_names(config_workflow_options):
+    """extract options names from config_workflow_options"""
+    options_names = []
+    for option in config_workflow_options:
+        options_names.append(option["Name"])
+    return options_names
+
+
+def fill_with_defaults(
+        workflow_options,
+        config_workflow_options,
+        order_id=None,
+        workflow_id=None
+):
     """
     Fill the missing workflow options with the defaults values declared in the plugin
     """
     default_options = extract_workflow_defaults(config_workflow_options)
     workflow_options = {**default_options, **workflow_options}
+    config_options_names = extract_config_options_names(config_workflow_options)
+
+    missing_options_values = set(config_options_names) - set(workflow_options.keys())
+    if len(missing_options_values):
+        raise ValueError(
+            f"order {order_id}: the following mandatory options of workflow"
+            f" {workflow_id} are missing {list(missing_options_values)}"
+        )
     return workflow_options
 
 
@@ -262,7 +283,12 @@ def submit_workflow(
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
-    workflow_options = fill_with_defaults(workflow_options, workflow["WorkflowOptions"])
+    workflow_options = fill_with_defaults(
+        workflow_options,
+        workflow["WorkflowOptions"],
+        order_id=order_id,
+        workflow_id=workflow_id,
+    )
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     def task():
