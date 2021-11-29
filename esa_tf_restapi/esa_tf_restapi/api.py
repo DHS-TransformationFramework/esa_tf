@@ -165,9 +165,10 @@ def get_workflows(product=None, scheduler=None):
 
 
 def build_transformation_order(order):
+    # Note: the future must be extracted from the original order. The deepcopy breaks the future
+    future = order["future"]
     transformation_order = copy.deepcopy(order)
     transformation_order.pop("future")
-    future = order["future"]
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
 
     if future.status == "finished":
@@ -278,15 +279,24 @@ def submit_workflow(
         )
 
     client = instantiate_client(scheduler)
-    future = client.submit(task, key=order_id)
-    current_time = datetime.now()
-    TRANSFORMATION_ORDERS[future.key] = {
-        "future": future,
-        "Id": future.key,
-        "SubmissionDate": current_time.strftime("%Y-%m-%dT%H:%m:%S"),
-        "InputProductReference": input_product_reference,
-        "WorkflowOptions": workflow_options,
-        "WorkflowId": workflow_id,
-        "WorkflowName": workflow["Name"],
-    }
-    return build_transformation_order(TRANSFORMATION_ORDERS[future.key])
+
+    if order_id in TRANSFORMATION_ORDERS:
+        order = TRANSFORMATION_ORDERS[order_id]
+        future = order["future"]
+        if future.status == "error":
+            client.retry(future)
+            order["SubmissionDate"] = datetime.now().strftime("%Y-%m-%dT%H:%m:%S")
+    else:
+        future = client.submit(task, key=order_id)
+        order = {
+            "future": future,
+            "Id": order_id,
+            "SubmissionDate": datetime.now().strftime("%Y-%m-%dT%H:%m:%S"),
+            "InputProductReference": input_product_reference,
+            "WorkflowOptions": workflow_options,
+            "WorkflowId": workflow_id,
+            "WorkflowName": workflow["Name"],
+        }
+        TRANSFORMATION_ORDERS[order_id] = order
+
+    return build_transformation_order(order)
