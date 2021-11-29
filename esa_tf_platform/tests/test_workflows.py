@@ -13,6 +13,41 @@ dummy_workflow_config2b = {"conf": "2b"}
 dummy_workflow_config3a = {"conf": "3a"}
 dummy_workflow_config3b = {"conf": "3b"}
 
+WORKFLOWS1 = {
+    "wokflow1": {
+        "Name": "Name",
+        "Execute": "Execute",
+        "Description": "Description",
+        "InputProductType": "InputProductType",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    },
+    "wokflow2": {
+        "Name": "Name",
+        "Execute": "Execute",
+        "Description": "Description",
+        "InputProductType": "InputProductType",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    }
+}
+
+WORKFLOWS2 = {
+    "wokflow1": {
+        "Name": "Name",
+        "Execute": "Execute",
+        "Description": "Description",
+        "OutputProductType": "OutputProductType",
+        "WorkflowVersion": "1.0",
+        "WorkflowOptions": [],
+    },
+    "wokflow2": {
+        "Name": "Name",
+        "Description": "Description",
+    }
+}
 
 @pytest.fixture
 def dummy_duplicated_entrypoints():
@@ -256,3 +291,13 @@ def test_error_check_enum_type():
     with pytest.raises(ValueError) as ex:
         workflows.check_enum_type(option)
     assert "Enum" in str(ex.value)
+
+
+@mock.patch(
+    "esa_tf_platform.workflows.load_workflows_configurations",
+    mock.MagicMock(side_effect=[WORKFLOWS1, WORKFLOWS2]),
+)
+def test_get_all_workflows():
+    workflows.get_all_workflows()
+    with pytest.raises(ValueError, match=f"missing key"):
+        workflows.get_all_workflows()
