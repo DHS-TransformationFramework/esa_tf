@@ -96,7 +96,7 @@ def check_valid_declared_type(option, workflow_id=None):
 
 def check_default_type(option, workflow_id=None):
     """
-    Check if option default type in line with declared option type.
+    Check if option default type is in line with declared option type.
     :param dict option: workflow option configuration dictionary
     :param str workflow_id: workflow is needed for the error message
     """
@@ -115,7 +115,7 @@ def check_default_type(option, workflow_id=None):
 
 def check_enum_type(option, workflow_id=None):
     """
-    Check if option enum type in line with declared option type.
+    Check if option enum type is in line with declared option type.
     :param dict option: workflow option configuration dictionary
     :param str workflow_id: workflow is needed for the error message
     """
