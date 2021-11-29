@@ -272,6 +272,9 @@ def run_processing(
     in the ``processing_dir`` will be created.
     :return str:
     """
+    resolution = workflow_options.get("Resolution", None)
+    if resolution is None:
+        workflow_options.pop("Resolution")
     print("\n**** Sen2Cor Workflow ****\n")
     if sen2cor_script_file is None:
         sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
@@ -310,7 +313,7 @@ def run_processing(
 
 
 sen2cor_l1c_l2a = {
-    "Name": "Sen2Cor_L1C_L2A",
+    "WorkflowName": "Sen2Cor_L1C_L2A",
     "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
     "Execute": "esa_tf_platform.esa_tf_plugin_sen2cor.run_processing",
     "InputProductType": "S2MSI1C",
@@ -355,6 +358,7 @@ sen2cor_l1c_l2a = {
             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
             "Type": "integer",
             "Enum": [10, 20, 60],
+            "Default": None,
         },
     ],
 }

@@ -222,9 +222,7 @@ def extract_config_options_names(config_workflow_options):
     return options_names
 
 
-def fill_with_defaults(
-    workflow_options, config_workflow_options, order_id=None, workflow_id=None
-):
+def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=None):
     """
     Fill the missing workflow options with the defaults values declared in the plugin
     """
@@ -235,8 +233,8 @@ def fill_with_defaults(
     missing_options_values = set(config_options_names) - set(workflow_options.keys())
     if len(missing_options_values):
         raise ValueError(
-            f"order {order_id}: the following mandatory options of workflow"
-            f" {workflow_id} are missing {list(missing_options_values)}"
+            f"{list(missing_options_values)} are mandatory options for workflow {workflow_id}, "
+            f"but they are missing in order definition "
         )
     return workflow_options
 
@@ -281,10 +279,7 @@ def submit_workflow(
             workflow_id, input_product_reference, workflow_options,
         )
     workflow_options = fill_with_defaults(
-        workflow_options,
-        workflow["WorkflowOptions"],
-        order_id=order_id,
-        workflow_id=workflow_id,
+        workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
@@ -318,7 +313,7 @@ def submit_workflow(
             "InputProductReference": input_product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
-            "WorkflowName": workflow["Name"],
+            "WorkflowName": workflow["WorkflowName"],
         }
         TRANSFORMATION_ORDERS[order_id] = order
 

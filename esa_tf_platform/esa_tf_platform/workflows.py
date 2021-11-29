@@ -32,7 +32,7 @@ TYPES = {
 }
 
 MANDATORY_WORKFLOWS_KEYS = [
-    "Name",
+    "WorkflowName",
     "Description",
     "Execute",
     "InputProductType",
@@ -127,12 +127,11 @@ def check_mandatory_option_keys(option, workflow_id=None):
     :param dict option: workflow option configuration dictionary
     :param str workflow_id: workflow is needed for the error message
     """
-    option_name = option.get("Name")
     for key in MANDATORY_OPTIONS_KEYS:
         if key not in option:
             raise ValueError(
                 f"workflow_id {workflow_id}: missing key "
-                f"{key} in workflow {option_name} definition"
+                f"{key} in {workflow_id} workflow definition"
             )
 
 
