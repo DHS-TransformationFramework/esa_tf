@@ -49,13 +49,26 @@ MANDATORY_OPTIONS_KEYS = [
 
 
 def check_mandatory_workflow_keys(workflow, workflow_id=None):
+    """
+    Check if all mandatory keys are in the workflow.
+    :param dict workflow: workflow configuration dictionary
+    :param str workflow_id: workflow is needed for the error message
+    """
+
     for key in MANDATORY_WORKFLOWS_KEYS:
         if key not in workflow:
-            raise ValueError(f"missing key {key} in workflow definition")
+            raise ValueError(
+                f"workflow_id {workflow_id}: missing key {key} "
+                f"in workflow definition"
+            )
 
 
 def check_mandatory_option_keys(option, workflow_id=None):
-
+    """
+    Check if all mandatory keys are in the workflow option dictionary.
+    :param dict option: workflow option configuration dictionary
+    :param str workflow_id: workflow is needed for the error message
+    """
     option_name = option.get("Name")
     for key in MANDATORY_OPTIONS_KEYS:
         if key not in option:
@@ -66,6 +79,11 @@ def check_mandatory_option_keys(option, workflow_id=None):
 
 
 def check_valid_declared_type(option, workflow_id=None):
+    """
+    Check if the declared type option is a valid one.
+    :param dict option: workflow option configuration dictionary
+    :param str workflow_id: workflow is needed for the error message
+    """
     option_type = option["Type"]
     option_name = option.get("Name")
 
@@ -77,6 +95,11 @@ def check_valid_declared_type(option, workflow_id=None):
 
 
 def check_default_type(option, workflow_id=None):
+    """
+    Check if option default type in line with declared option type.
+    :param dict option: workflow option configuration dictionary
+    :param str workflow_id: workflow is needed for the error message
+    """
     default = option.get("Default")
     if default is None:
         return
@@ -91,6 +114,11 @@ def check_default_type(option, workflow_id=None):
 
 
 def check_enum_type(option, workflow_id=None):
+    """
+    Check if option enum type in line with declared option type.
+    :param dict option: workflow option configuration dictionary
+    :param str workflow_id: workflow is needed for the error message
+    """
     enum = option.get("Enum", None)
     if enum is None:
         return
@@ -106,6 +134,11 @@ def check_enum_type(option, workflow_id=None):
 
 
 def check_workflow(workflow, workflow_id=None):
+    """
+    Check if workflow keys, options keys and types.
+    :param dict workflow: workflow configuration dictionary
+    :param str workflow_id: workflow is needed for the error message
+    """
     # Note: the order of the checks can't be modified
     check_mandatory_workflow_keys(workflow)
     for option in workflow["WorkflowOptions"]:
@@ -258,8 +291,7 @@ def zip_product(output, output_dir):
 
 
 def load_workflow_runner(workflow_id):
-    """Loads workflow runnaer function
-
+    """Loads workflow runner function
     :param str workflow_id: workflow_id
     """
     # run workflow
