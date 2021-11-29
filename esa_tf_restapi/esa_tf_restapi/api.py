@@ -223,10 +223,7 @@ def extract_config_options_names(config_workflow_options):
 
 
 def fill_with_defaults(
-        workflow_options,
-        config_workflow_options,
-        order_id=None,
-        workflow_id=None
+    workflow_options, config_workflow_options, order_id=None, workflow_id=None
 ):
     """
     Fill the missing workflow options with the defaults values declared in the plugin
