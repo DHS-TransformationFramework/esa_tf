@@ -22,56 +22,6 @@ Remember to define the `WEB_CONCURRENCY` envvar (default is 1).
 make test
 ```
 
-## Endpoints
-
-### Common Schema Definition Language (CSDL)
-
-```bash
-curl "http://localhost:8080/\$metadata"
-```
-
-### List of plugins
-
-```bash
-curl http://localhost:8080/Workflows | jq
-```
-
-### Access a plugin definition
-
-```bash
-curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')" | jq
-```
-
-### List of transformation orders
-
-```bash
-curl http://localhost:8080/TransformationOrders | jq
-```
-
-It is also possible to filter accessible orders:
-
-```bash
-curl "http://localhost:8080/TransformationOrders?\$filter=`jq -rn --arg x "Status eq 'completed'" '$x|@uri'`" | jq
-```
-
-### Request a new transformation
-
-```bash
-curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"Aerosol_Type": "MARITIME", "Mid_Latitude": "AUTO", "Ozone_Content": 0, "Cirrus_Correction": true, "DEM_Terrain_Correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
-```
-
-### Monitoring status of a transformation order
-
-```bash
-curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')" | jq # -r '.Id'
-```
-
-To submit a transformation order and monitor it's state, in one shot:
-
-```bash
-curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"Aerosol_Type": "MARITIME", "Mid_Latitude": "AUTO", "Ozone_Content": 0, "Cirrus_Correction": true, "DEM_Terrain_Correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq -r '.Id' | curl "http://localhost:8080/TransformationOrders('`cat -`')" | jq
-```
-
 ## License information
 
 ```text
