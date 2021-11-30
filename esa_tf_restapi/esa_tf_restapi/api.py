@@ -87,7 +87,7 @@ def check_products_consistency(
 
     if not re.match(exp, str(input_product_reference_name)):
         raise ValueError(
-            f"the input product reference name {input_product_reference_name}"
+            f"the input product reference name {input_product_reference_name} "
             f"is not compliant with product type {product_type} in workflow {workflow_id}"
         )
 
