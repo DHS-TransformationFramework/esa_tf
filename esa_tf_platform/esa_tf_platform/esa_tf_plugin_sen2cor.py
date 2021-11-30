@@ -88,18 +88,6 @@ def check_input_consistency(product_folder_path):
         raise ValueError(msg)
 
 
-def find_option_definition(option_name):
-    """Find in the workflow description the option definition by its name.
-
-    :param str option_name: the name of the input option
-    :return dict:
-    """
-    for option_def in sen2cor_l1c_l2a["WorkflowOptions"]:
-        if option_def["Name"] == option_name:
-            return option_def
-    return None
-
-
 def check_ozone_content(options):
     """Check the validity of the ozone content option values.
 
@@ -108,9 +96,9 @@ def check_ozone_content(options):
     """
     ozone_content_value = options["Ozone_Content"]
     mid_latitude_value = options.get(
-        "Mid_Latitude", find_option_definition("Mid_Latitude").get("Default")
+        "Mid_Latitude", sen2cor_l1c_l2a["WorkflowOptions"]["Mid_Latitude"]["Default"]
     )
-    valid_ozone_values = find_option_definition("Ozone_Content")["Enum"]
+    valid_ozone_values = sen2cor_l1c_l2a["WorkflowOptions"]["Ozone_Content"]["Enum"]
     if ozone_content_value not in valid_ozone_values:
         raise ValueError(
             f"valid ozone content values are {valid_ozone_values}, given {ozone_content_value}"
@@ -193,16 +181,17 @@ def check_options(options):
 
     # check the validity of non-ROI options
     other_options = {k: v for k, v in options.items() if k not in ROI_OPTIONS_NAMES}
-    valid_names = [option["Name"] for option in sen2cor_l1c_l2a["WorkflowOptions"]]
+    valid_names = list(sen2cor_l1c_l2a["WorkflowOptions"])
     for oname, ovalue in other_options.items():
         if oname == "Ozone_Content":
             ozone_content_value = options["Ozone_Content"]
             mid_latitude_value = options.get(
-                "Mid_Latitude", find_option_definition("Mid_Latitude").get("Default")
+                "Mid_Latitude",
+                sen2cor_l1c_l2a["WorkflowOptions"]["Mid_Latitude"]["Default"],
             )
             check_ozone_content(options)
         elif oname in valid_names:
-            valid_values = find_option_definition(oname).get("Enum")
+            valid_values = sen2cor_l1c_l2a["WorkflowOptions"][oname].get("Enum")
             if valid_values and (ovalue not in valid_values):
                 raise ValueError(
                     f"invalid value '{ovalue}'' for '{oname}': valid values are {valid_values}"
@@ -219,8 +208,8 @@ def print_options(workflow_options):
     :return dict:
     """
     applied_options = {
-        option["Name"]: option.get("Default")
-        for option in sen2cor_l1c_l2a["WorkflowOptions"]
+        option_name: option.get("Default")
+        for option_name, option in sen2cor_l1c_l2a["WorkflowOptions"].items()
     }
     applied_options.update(workflow_options)
     print("Sen2Cor options:")
@@ -319,46 +308,40 @@ sen2cor_l1c_l2a = {
     "InputProductType": "S2MSI1C",
     "OutputProductType": "S2MSI2A",
     "WorkflowVersion": "0.1",
-    "WorkflowOptions": [
-        {
-            "Name": "Aerosol_Type",
+    "WorkflowOptions": {
+        "Aerosol_Type": {
             "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
             "Type": "string",
             "Default": "RURAL",
             "Enum": ["MARITIME", "RURAL"],
         },
-        {
-            "Name": "Mid_Latitude",
+        "Mid_Latitude": {
             "Description": "If  'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
             "Type": "string",
             "Default": "SUMMER",
             "Enum": ["SUMMER", "WINTER", "AUTO"],
         },
-        {
-            "Name": "Ozone_Content",
+        "Ozone_Content": {
             "Description": "0: to get the best approximation from metadata (this is the smallest difference between metadata and column DU), else select for midlatitude summer (MS) atmosphere: 250, 290, 331 (standard MS), 370, 410, 450; for midlatitude winter (MW) atmosphere: 250, 290, 330, 377 (standard MW), 420, 460",
             "Type": "integer",
             "Default": 331,
             "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
         },
-        {
-            "Name": "Cirrus_Correction",
+        "Cirrus_Correction": {
             "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
             "Type": "boolean",
             "Default": False,
         },
-        {
-            "Name": "DEM_Terrain_Correction",
+        "DEM_Terrain_Correction": {
             "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
             "Type": "boolean",
             "Default": True,
         },
-        {
-            "Name": "Resolution",
+        "Resolution": {
             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
             "Type": "integer",
             "Enum": [10, 20, 60],
             "Default": None,
         },
-    ],
+    },
 }

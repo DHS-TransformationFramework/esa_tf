@@ -2,24 +2,22 @@ import pytest
 
 import esa_tf_restapi
 
-WORKFLOW_OPTIONS = [
-    {
-        "Name": "Name1",
+WORKFLOW_OPTIONS = {
+    "Name1": {
         "Description": "",
         "Type": "string",
         "Default": "VALUE1",
         "Enum": ["VALUE1", "VALUE2"],
     },
-    {
-        "Name": "Name2",
+    "Name2": {
         "Description": "",
         "Type": "integer",
         "Default": 1,
         "Enum": [1, 2, 3, 4],
     },
-    {"Name": "Name3", "Description": "", "Type": "boolean", "Default": True},
-    {"Name": "Name4", "Description": "", "Type": "number",},
-]
+    "Name3": {"Description": "", "Type": "boolean", "Default": True},
+    "Name4": {"Description": "", "Type": "number"},
+}
 
 
 @pytest.mark.parametrize(

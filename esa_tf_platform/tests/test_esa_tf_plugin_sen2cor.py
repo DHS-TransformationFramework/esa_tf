@@ -108,21 +108,6 @@ def test_create_sen2cor_confile_with_options(tmpdir):
     assert et.findall(".//Cirrus_Correction")[0].text == "TRUE"
 
 
-def test_find_option_definition():
-    options_names = [
-        "Aerosol_Type",
-        "Mid_Latitude",
-        "Ozone_Content",
-        "Cirrus_Correction",
-        "DEM_Terrain_Correction",
-        "Resolution",
-    ]
-    for oname in options_names:
-        odef = esa_tf_plugin_sen2cor.find_option_definition(oname)
-        assert type(odef) is dict
-        assert odef["Name"] == oname
-
-
 def test_check_ozone_content_valid_summer():
     options = {
         "Mid_Latitude": "SUMMER",
