@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import sys
+import warnings
 import zipfile
 
 import pkg_resources
@@ -27,9 +28,12 @@ class ContextFilter(logging.Filter):
 # FIXME: where should you configure the log handler in a dask distributed application?
 def add_stderr_handler(logger):
     handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(logging.Formatter(
-        "%(name)s - order_id %(oder_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ", datefmt='%d/%m/%Y %H:%M:%S'
-    ))
+    handler.setFormatter(
+        logging.Formatter(
+            "%(name)s - order_id %(oder_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
+            datefmt="%d/%m/%Y %H:%M:%S",
+        )
+    )
     logger.addHandler(handler)
     logger.addFilter(ContextFilter())
 
@@ -235,7 +239,7 @@ def remove_duplicates(pkg_entrypoints):
         if matches_len > 1:
             selected_module_name = matches[0].module_name
             all_module_names = [e.module_name for e in matches]
-            logger.warnining(
+            warnings.warn(
                 f"found {matches_len} entrypoints for the workflow name {name}:"
                 f"\n {all_module_names}.\n It will be used: {selected_module_name}.",
                 RuntimeWarning,
@@ -314,7 +318,9 @@ def download_product_from_hub(
     return product_info["path"]
 
 
-def download_product(product, *, processing_dir, hubs_credentials_file, hub_name=None, order_id=None):
+def download_product(
+    product, *, processing_dir, hubs_credentials_file, hub_name=None, order_id=None
+):
     """
     Download the product from the first hub in the hubs_credentials_file that publishes the product
     """
@@ -330,11 +336,15 @@ def download_product(product, *, processing_dir, hubs_credentials_file, hub_name
                 hub_credentials=hubs_credentials[hub_name],
             )
         except Exception:
-            logger.exception(f"not able to download from {hub_name}, an error occurred:")
+            logger.exception(
+                f"not able to download from {hub_name}, an error occurred:"
+            )
         if product_path:
             break
     if product_path is None:
-        raise ValueError(f"order_id {order_id}: could not download product from {list(hubs_credentials)}")
+        raise ValueError(
+            f"order_id {order_id}: could not download product from {list(hubs_credentials)}"
+        )
     return product_path
 
 

@@ -1,3 +1,4 @@
+import logging
 import os
 import zipfile
 from unittest import mock
@@ -314,11 +315,13 @@ def test_get_all_workflows():
     "esa_tf_platform.workflows.load_workflows_configurations",
     mock.MagicMock(side_effect=[WORKFLOWS1, WORKFLOWS2, WORKFLOWS3]),
 )
-def test_get_all_workflows():
+def test_get_all_workflows(caplog):
     workflows.get_all_workflows()
 
-    with pytest.raises(ValueError, match=f"missing key"):
+    with caplog.at_level(logging.INFO):
         workflows.get_all_workflows()
+    assert "missing key" in caplog.text
 
-    with pytest.raises(ValueError, match=f"product type"):
+    with caplog.at_level(logging.INFO):
         workflows.get_all_workflows()
+    assert "product type" in caplog.text
