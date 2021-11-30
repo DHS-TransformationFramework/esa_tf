@@ -28,7 +28,7 @@ class ContextFilter(logging.Filter):
 def add_stderr_handler(logger):
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(logging.Formatter(
-        "%(name)s - order_id %(oder_id)s - %(asctime)s - %(levelname)s - %(message)s ", datefmt='%d/%m/%Y %H:%M:%S'
+        "%(name)s - order_id %(oder_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ", datefmt='%d/%m/%Y %H:%M:%S'
     ))
     logger.addHandler(handler)
     logger.addFilter(ContextFilter())
