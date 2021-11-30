@@ -80,28 +80,19 @@ def test_transformation_order_missing_params(register_workflows):
 
 
 def test_transformation_order_validate_workflow_options(register_workflows):
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValueError, match=f"is an unknown name"):
         models.TranformationOrder(
             WorkflowId="workflow_1",
             InputProductReference={"Reference": "Ref a"},
             WorkflowOptions={"Case 99": "foo"},
         )
-    assert (
-        "WorkflowOptions\n  Case 99 is an unknown name for workflow_1 plugin. "
-        "Possible names are Case 1, Case 2, Case 3, Case 4 (type=value_error)"
-        in str(excinfo.value)
-    )
 
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValueError, match=f"disallowed value"):
         models.TranformationOrder(
             WorkflowId="workflow_1",
             InputProductReference={"Reference": "Ref a"},
             WorkflowOptions={"Case 1": "baz"},
         )
-    assert (
-        "WorkflowOptions\n  disallowed value for Case 1: baz has been provided while possible values are foo, bar (type=value_error)"
-        in str(excinfo.value)
-    )
 
     # Valid Case 1
     try:
