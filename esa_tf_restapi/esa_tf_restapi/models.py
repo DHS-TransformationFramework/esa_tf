@@ -32,7 +32,7 @@ class TranformationOrder(BaseModel):
     product_reference: ProductReference = Field(alias="InputProductReference")
     workflow_options: Optional[dict] = Field(alias="WorkflowOptions")
 
-    @validator("workflow_id", always=True)
+    @validator("workflow_id", always=True, pre=True)
     def validate_wf_id(cls, v, values):
         workflows = api.get_workflows()
         workflows_ids = workflows.keys()
@@ -47,6 +47,11 @@ class TranformationOrder(BaseModel):
     def validate_wf_options(cls, v, values):
         workflows = api.get_workflows()
         workflow_id = values.get("workflow_id")
+        # workflow id check has been done previously
+        # if workflow_id is None there is no point in checking the workflow options.
+        if not workflow_id:
+            return v
+
         workflow = workflows.get(workflow_id, {})
         workflow_options = {opt["Name"]: opt for opt in workflow.get("WorkflowOptions")}
 
@@ -55,7 +60,7 @@ class TranformationOrder(BaseModel):
         for key in v.keys():
             if key not in possible_wo_names:
                 raise ValueError(
-                    f"{key} is an unknown name for {workflow_id} plugin. "
+                    f"{key} is an unknown name for {workflow_id} workflow. "
                     f"Possible names are {', '.join(possible_wo_names)}"
                 )
 
