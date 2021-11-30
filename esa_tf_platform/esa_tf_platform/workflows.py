@@ -4,7 +4,6 @@ import logging
 import os
 import shutil
 import sys
-import warnings
 import zipfile
 
 import pkg_resources
