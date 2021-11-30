@@ -29,15 +29,7 @@ def set_sen2cor_options(etree, options, srtm_dir):
     :return ElementTree.ElementTree:
     """
     for k, v in options.items():
-        if k.lower() in ["row0", "col0", "nrow_win", "ncol_win"]:
-            etree.findall(f".//{k.lower()}")[0].text = str(v).upper()
-        elif k in [
-            "Aerosol_Type",
-            "Mid_Latitude",
-            "Ozone_Content",
-            "Cirrus_Correction",
-            "DEM_Terrain_Correction",
-        ]:
+        if k != "Resolution":
             etree.findall(f".//{k}")[0].text = str(v).upper()
         if srtm_dir:
             etree.findall(".//DEM_Directory")[0].text = srtm_dir
@@ -184,13 +176,10 @@ def check_options(options):
     valid_names = list(sen2cor_l1c_l2a["WorkflowOptions"])
     for oname, ovalue in other_options.items():
         if oname == "Ozone_Content":
-            ozone_content_value = options["Ozone_Content"]
-            mid_latitude_value = options.get(
-                "Mid_Latitude",
-                sen2cor_l1c_l2a["WorkflowOptions"]["Mid_Latitude"]["Default"],
-            )
             check_ozone_content(options)
         elif oname in valid_names:
+            if oname == "Resolution" and ovalue is None:
+                continue
             valid_values = sen2cor_l1c_l2a["WorkflowOptions"][oname].get("Enum")
             if valid_values and (ovalue not in valid_values):
                 raise ValueError(
@@ -261,9 +250,6 @@ def run_processing(
     in the ``processing_dir`` will be created.
     :return str:
     """
-    resolution = workflow_options.get("Resolution")
-    if resolution is None:
-        workflow_options.pop("Resolution")
     print("\n**** Sen2Cor Workflow ****\n")
     if sen2cor_script_file is None:
         sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
@@ -292,8 +278,8 @@ def run_processing(
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
     # running the Sen2Cor script
     cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
-    if "resolution" in workflow_options:
-        cmd += f" --resolution {workflow_options['resolution']}"
+    if workflow_options.get("Resolution"):
+        cmd += f" --resolution {workflow_options.get('Resolution')}"
     print(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
     process = subprocess.run(cmd, shell=True)
     process.check_returncode()

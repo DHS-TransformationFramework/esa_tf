@@ -51,7 +51,7 @@ def test_set_sen2cor_options_dem():
     assert et.findall(".//DEM_Directory")[0].text == "NONE"
     assert et.findall(".//DEM_Reference")[0].text == "NONE"
 
-    options = {"dem_terrain_correction": True}
+    options = {"DEM_Terrain_Correction": True}
     srtm_path = "/dummy_folder/very_dummy_folder"
     et_with_options = esa_tf_plugin_sen2cor.set_sen2cor_options(et, options, srtm_path)
 
