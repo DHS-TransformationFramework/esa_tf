@@ -22,7 +22,7 @@ WORKFLOWS1 = {
         "InputProductType": "S2MSI1C",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
-        "WorkflowOptions": [],
+        "WorkflowOptions": {},
     },
     "wokflow2": {
         "WorkflowName": "Name",
@@ -31,7 +31,7 @@ WORKFLOWS1 = {
         "InputProductType": "S2MSI1C",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
-        "WorkflowOptions": [],
+        "WorkflowOptions": {},
     },
 }
 
@@ -43,7 +43,7 @@ WORKFLOWS2 = {
         "InputProductType": "S2MSI1C",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
-        "WorkflowOptions": [],
+        "WorkflowOptions": {},
     },
     "wokflow2": {"WorkflowName": "Name", "Description": "Description",},
 }
@@ -57,7 +57,7 @@ WORKFLOWS3 = {
         "InputProductType": "InputProductType",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
-        "WorkflowOptions": [],
+        "WorkflowOptions": {},
     },
 }
 
@@ -221,22 +221,20 @@ def test_check_workflow():
         "InputProductType": "S2MSI1C",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
-        "WorkflowOptions": [
-            {
-                "Name": "Option1",
+        "WorkflowOptions": {
+            "Name1": {
                 "Description": "Description",
                 "Type": "string",
                 "Default": "Default",
                 "Enum": ["A", "B"],
             },
-            {
-                "Name": "Option2",
+            "Name2": {
                 "Description": "Description",
                 "Type": "integer",
                 "Default": 3,
                 "Enum": [1, 2],
             },
-        ],
+        },
     }
     workflows.check_workflow(workflow)
 
@@ -248,54 +246,52 @@ def test_error_check_mandatory_workflow_keys():
         "InputProductType": "S1_SLC__1S",
         "OutputProductType": "OutputProductType",
         "WorkflowVersion": "1.0",
-        "WorkflowOptions": [],
+        "WorkflowOptions": {},
     }
     with pytest.raises(ValueError, match=f"missing key"):
         workflows.check_mandatory_workflow_keys(workflow)
 
 
 def test_error_check_mandatory_option_keys():
-    option = {
-        "Description": "Description",
-        "Default": "Default",
-        "Type": "string",
-        "Enum": ["A", "B"],
-    }
+    option = {"Name": {"Default": "Default", "Type": "string", "Enum": ["A", "B"],}}
     with pytest.raises(ValueError, match=f"missing key"):
         workflows.check_mandatory_option_keys(option)
 
 
 def test_error_check_valid_declared_type():
     option = {
-        "Name": "Option1",
-        "Description": "Description",
-        "Default": "Default",
-        "Type": "type",
-        "Enum": ["A", "B"],
+        "Name": {
+            "Description": "Description",
+            "Default": "Default",
+            "Type": "type",
+            "Enum": ["A", "B"],
+        }
     }
     with pytest.raises(ValueError, match=f"not recognized"):
         workflows.check_valid_declared_type(option)
 
 
 def test_error_check_default_type():
-    option = {
-        "Name": "Option1",
-        "Description": "Description",
-        "Default": 1,
-        "Type": "string",
-        "Enum": ["A", "B"],
+    options = {
+        "Name": {
+            "Description": "Description",
+            "Default": 1,
+            "Type": "string",
+            "Enum": ["A", "B"],
+        }
     }
     with pytest.raises(ValueError, match=f"Default"):
-        workflows.check_default_type(option)
+        workflows.check_default_type(options)
 
 
 def test_error_check_enum_type():
     option = {
-        "Name": "Option1",
-        "Description": "Description",
-        "Default": "A",
-        "Type": "string",
-        "Enum": ["A", 1],
+        "Name": {
+            "Description": "Description",
+            "Default": "A",
+            "Type": "string",
+            "Enum": ["A", 1],
+        }
     }
     with pytest.raises(ValueError, match=f"Enum"):
         workflows.check_enum_type(option)

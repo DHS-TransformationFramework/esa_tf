@@ -10,22 +10,20 @@ def register_workflows():
         workflows = {
             "workflow_1": {
                 "Name": "Workflow 1",
-                "WorkflowOptions": [
-                    {
-                        "Name": "Case 1",
+                "WorkflowOptions": {
+                    "Case 1": {
                         "Type": "string",
                         "Default": "foo",
                         "Enum": ["foo", "bar"],
                     },
-                    {"Name": "Case 2", "Type": "boolean", "Default": False,},
-                    {
-                        "Name": "Case 3",
+                    "Case 2": {"Type": "boolean", "Default": False,},
+                    "Case 3": {
                         "Type": "integer",
                         "Default": 331,
                         "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
                     },
-                    {"Name": "Case 4", "Type": "integer", "Default": 331,},
-                ],
+                    "Case 4": {"Type": "integer", "Default": 331,},
+                },
                 "Id": "workflow_1",
             }
         }

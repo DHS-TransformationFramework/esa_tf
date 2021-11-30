@@ -51,7 +51,7 @@ def test_set_sen2cor_options_dem():
     assert et.findall(".//DEM_Directory")[0].text == "NONE"
     assert et.findall(".//DEM_Reference")[0].text == "NONE"
 
-    options = {"dem_terrain_correction": True}
+    options = {"DEM_Terrain_Correction": True}
     srtm_path = "/dummy_folder/very_dummy_folder"
     et_with_options = esa_tf_plugin_sen2cor.set_sen2cor_options(et, options, srtm_path)
 
@@ -106,21 +106,6 @@ def test_create_sen2cor_confile_with_options(tmpdir):
     assert et.findall(".//Mid_Latitude")[0].text == "AUTO"
     assert et.findall(".//Ozone_Content")[0].text == "0"
     assert et.findall(".//Cirrus_Correction")[0].text == "TRUE"
-
-
-def test_find_option_definition():
-    options_names = [
-        "Aerosol_Type",
-        "Mid_Latitude",
-        "Ozone_Content",
-        "Cirrus_Correction",
-        "DEM_Terrain_Correction",
-        "Resolution",
-    ]
-    for oname in options_names:
-        odef = esa_tf_plugin_sen2cor.find_option_definition(oname)
-        assert type(odef) is dict
-        assert odef["Name"] == oname
 
 
 def test_check_ozone_content_valid_summer():
