@@ -94,6 +94,7 @@ def test_remove_duplicates_warnings(dummy_duplicated_entrypoints, caplog):
     assert "found 2 entrypoints" in warnings[0]
     assert "found 2 entrypoints" in warnings[1]
 
+
 @mock.patch("pkg_resources.EntryPoint.load", mock.MagicMock(return_value=None))
 def test_workflows_dict_from_pkg():
     specs = [
