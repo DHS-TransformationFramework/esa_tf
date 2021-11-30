@@ -180,7 +180,7 @@ def get_transformation_order(order_id):
     """
     Return the transformation order corresponding to the order_id
     """
-    order = TRANSFORMATION_ORDERS.get(order_id, None)
+    order = TRANSFORMATION_ORDERS.get(order_id)
     if order is None:
         raise KeyError(f"transformation Order {order_id} not found")
     transformation_order = build_transformation_order(order)

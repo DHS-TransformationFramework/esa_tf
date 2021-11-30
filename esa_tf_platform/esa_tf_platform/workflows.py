@@ -177,7 +177,7 @@ def check_enum_type(worflow_options, workflow_id=None):
     """
 
     for option_name, option in worflow_options.items():
-        enum = option.get("Enum", None)
+        enum = option.get("Enum")
         if enum is None:
             continue
         option_type = option["Type"]

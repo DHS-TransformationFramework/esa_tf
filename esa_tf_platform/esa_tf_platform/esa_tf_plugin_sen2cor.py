@@ -261,7 +261,7 @@ def run_processing(
     in the ``processing_dir`` will be created.
     :return str:
     """
-    resolution = workflow_options.get("Resolution", None)
+    resolution = workflow_options.get("Resolution")
     if resolution is None:
         workflow_options.pop("Resolution")
     print("\n**** Sen2Cor Workflow ****\n")
