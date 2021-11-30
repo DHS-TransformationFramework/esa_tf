@@ -239,10 +239,9 @@ def remove_duplicates(pkg_entrypoints):
         if matches_len > 1:
             selected_module_name = matches[0].module_name
             all_module_names = [e.module_name for e in matches]
-            warnings.warn(
+            logging.warning(
                 f"found {matches_len} entrypoints for the workflow name {name}:"
-                f"\n {all_module_names}.\n It will be used: {selected_module_name}.",
-                RuntimeWarning,
+                f"\n {all_module_names}.\n It will be used: {selected_module_name}."
             )
     return unique_pkg_entrypoints
 
