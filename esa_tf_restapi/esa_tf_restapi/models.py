@@ -48,7 +48,7 @@ class TranformationOrder(BaseModel):
         workflows = api.get_workflows()
         workflow_id = values.get("workflow_id")
         workflow = workflows.get(workflow_id, {})
-        workflow_options = {opt["Name"]: opt for opt in workflow.get("WorkflowOptions")}
+        workflow_options = workflow.get("WorkflowOptions")
 
         # Check for possible W.O. name
         possible_wo_names = workflow_options.keys()

@@ -180,7 +180,7 @@ def get_transformation_order(order_id):
     """
     Return the transformation order corresponding to the order_id
     """
-    order = TRANSFORMATION_ORDERS.get(order_id, None)
+    order = TRANSFORMATION_ORDERS.get(order_id)
     if order is None:
         raise KeyError(f"transformation Order {order_id} not found")
     transformation_order = build_transformation_order(order)
@@ -208,9 +208,9 @@ def extract_workflow_defaults(config_workflow_options):
     Extract default values from plugin workflow declaration
     """
     default_options = {}
-    for option in config_workflow_options:
+    for option_name, option in config_workflow_options.items():
         if "Default" in option:
-            default_options[option["Name"]] = option["Default"]
+            default_options[option_name] = option["Default"]
     return default_options
 
 
@@ -228,9 +228,8 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     """
     default_options = extract_workflow_defaults(config_workflow_options)
     workflow_options = {**default_options, **workflow_options}
-    config_options_names = extract_config_options_names(config_workflow_options)
 
-    missing_options_values = set(config_options_names) - set(workflow_options.keys())
+    missing_options_values = set(config_workflow_options) - set(workflow_options)
     if len(missing_options_values):
         raise ValueError(
             f"{list(missing_options_values)} are mandatory options for workflow {workflow_id}, "

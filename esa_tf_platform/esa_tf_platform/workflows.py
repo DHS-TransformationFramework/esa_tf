@@ -42,7 +42,6 @@ MANDATORY_WORKFLOWS_KEYS = [
 ]
 
 MANDATORY_OPTIONS_KEYS = [
-    "Name",
     "Description",
     "Type",
 ]
@@ -121,73 +120,74 @@ def check_mandatory_workflow_keys(workflow, workflow_id=None):
             )
 
 
-def check_mandatory_option_keys(option, workflow_id=None):
+def check_mandatory_option_keys(worflow_options, workflow_id=None):
     """
     Check if all mandatory keys are in the workflow option dictionary.
-    :param dict option: workflow option configuration dictionary
+    :param dict worflow_options: "WorkflowOptions" configuration dictionary
     :param str workflow_id: workflow is needed for the error message
     """
-    for key in MANDATORY_OPTIONS_KEYS:
-        if key not in option:
-            raise ValueError(
-                f"workflow_id {workflow_id}: missing key "
-                f"{key} in {workflow_id} workflow definition"
-            )
+    for option_name, option in worflow_options.items():
+        for key in MANDATORY_OPTIONS_KEYS:
+            if key not in option:
+                raise ValueError(
+                    f"workflow_id {workflow_id}: missing key "
+                    f"{key} in {workflow_id} workflow definition"
+                )
 
 
-def check_valid_declared_type(option, workflow_id=None):
+def check_valid_declared_type(worflow_options, workflow_id=None):
     """
     Check if the declared type option is a valid one.
-    :param dict option: workflow option configuration dictionary
+    :param dict worflow_options: "WorkflowOptions" configuration dictionary
     :param str workflow_id: workflow is needed for the error message
     """
-    option_type = option["Type"]
-    option_name = option.get("Name")
+    for option_name, option in worflow_options.items():
+        option_type = option["Type"]
+        if option_type not in TYPES:
+            raise ValueError(
+                f"workflow_id {workflow_id}: {option_type} type in {option_name} "
+                f"not recognized. The type shall be one of the following: {TYPES}"
+            )
 
-    if option_type not in TYPES:
-        raise ValueError(
-            f"workflow_id {workflow_id}: {option_type} type in {option_name} "
-            f"not recognized. The type shall be one of the following: {TYPES}"
-        )
 
-
-def check_default_type(option, workflow_id=None):
+def check_default_type(worflow_options, workflow_id=None):
     """
     Check if option default type is in line with declared option type.
-    :param dict option: workflow option configuration dictionary
+    :param dict worflow_options: "WorkflowOptions" configuration dictionary
     :param str workflow_id: workflow is needed for the error message
     """
-    default = option.get("Default")
-    if default is None:
-        return
-    option_type = option["Type"]
-    option_name = option["Name"]
 
-    if not isinstance(default, TYPES[option_type]):
-        raise ValueError(
-            f"workflow_id {workflow_id}: {option_name} Default {default} type is not align "
-            f"with declared type {option_type}"
-        )
+    for option_name, option in worflow_options.items():
+        default = option.get("Default", None)
+        if default is None:
+            continue
+        option_type = option["Type"]
+        if not isinstance(default, TYPES[option_type]):
+            raise ValueError(
+                f"workflow_id {workflow_id}: {option_name} Default {default} type is not align "
+                f"with declared type {option_type}"
+            )
 
 
-def check_enum_type(option, workflow_id=None):
+def check_enum_type(worflow_options, workflow_id=None):
     """
     Check if option enum type is in line with declared option type.
-    :param dict option: workflow option configuration dictionary
+    :param dict worflow_options: "WorkflowOptions" configuration dictionary
     :param str workflow_id: workflow is needed for the error message
     """
-    enum = option.get("Enum", None)
-    if enum is None:
-        return
-    option_type = option["Type"]
-    option_name = option["Name"]
 
-    for value in enum:
-        if not isinstance(value, TYPES[option_type]):
-            raise ValueError(
-                f"workflow_id {workflow_id}: {option_name} Enum value "
-                f"{value} type is not align with declared type {option_type}"
-            )
+    for option_name, option in worflow_options.items():
+        enum = option.get("Enum")
+        if enum is None:
+            continue
+        option_type = option["Type"]
+
+        for value in enum:
+            if not isinstance(value, TYPES[option_type]):
+                raise ValueError(
+                    f"workflow_id {workflow_id}: {option_name} Enum value "
+                    f"{value} type is not align with declared type {option_type}"
+                )
 
 
 def check_workflow(workflow, workflow_id=None):
@@ -199,11 +199,10 @@ def check_workflow(workflow, workflow_id=None):
     # Note: the order of the checks can't be modified
     check_mandatory_workflow_keys(workflow, workflow_id=workflow_id)
     check_valid_product_type(workflow, workflow_id=workflow_id)
-    for option in workflow["WorkflowOptions"]:
-        check_mandatory_option_keys(option, workflow_id=workflow_id)
-        check_valid_declared_type(option, workflow_id=workflow_id)
-        check_default_type(option, workflow_id=workflow_id)
-        check_enum_type(option, workflow_id=workflow_id)
+    check_mandatory_option_keys(workflow["WorkflowOptions"], workflow_id=workflow_id)
+    check_valid_declared_type(workflow["WorkflowOptions"], workflow_id=workflow_id)
+    check_default_type(workflow["WorkflowOptions"], workflow_id=workflow_id)
+    check_enum_type(workflow["WorkflowOptions"], workflow_id=workflow_id)
 
 
 def remove_duplicates(pkg_entrypoints):
