@@ -1,3 +1,4 @@
+import logging
 import os
 import zipfile
 from unittest import mock
@@ -75,22 +76,23 @@ def dummy_duplicated_entrypoints():
 
 
 @pytest.mark.filterwarnings("ignore:Found")
-def test_remove_duplicates(dummy_duplicated_entrypoints):
-    with pytest.warns(RuntimeWarning):
+def test_remove_duplicates(dummy_duplicated_entrypoints, caplog):
+    with caplog.at_level(logging.INFO):
         entrypoints = workflows.remove_duplicates(dummy_duplicated_entrypoints)
+    assert "found 2 entrypoints" in caplog.text
     assert len(entrypoints) == 3
 
 
-def test_remove_duplicates_warnings(dummy_duplicated_entrypoints):
+def test_remove_duplicates_warnings(dummy_duplicated_entrypoints, caplog):
 
-    with pytest.warns(RuntimeWarning) as record:
+    with caplog.at_level(logging.INFO):
         _ = workflows.remove_duplicates(dummy_duplicated_entrypoints)
 
-    assert len(record) == 2
-    message0 = str(record[0].message)
-    message1 = str(record[1].message)
-    assert "entrypoints" in message0
-    assert "entrypoints" in message1
+    warnings = caplog.text.split("WARNING")
+    warnings = [warn for warn in warnings if warn]
+    assert len(warnings) == 2
+    assert "found 2 entrypoints" in warnings[0]
+    assert "found 2 entrypoints" in warnings[1]
 
 
 @mock.patch("pkg_resources.EntryPoint.load", mock.MagicMock(return_value=None))
@@ -106,16 +108,15 @@ def test_workflows_dict_from_pkg():
 
 
 @mock.patch("pkg_resources.EntryPoint.load", mock.MagicMock(return_value={}))
-def test_load_workflows_configurations():
+def test_load_workflows_configurations(caplog):
     specs = [
         "workflow1 = esa_tf_platform.tests.test_workflows:dummy_workflow_config1",
         "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2a",
         "workflow2 = esa_tf_platform.tests.test_workflows:dummy_workflow_config2b",
     ]
-    with pytest.warns(RuntimeWarning) as record:
+    with caplog.at_level(logging.INFO):
         entrypoints = [pkg_resources.EntryPoint.parse(spec) for spec in specs]
         wk = workflows.load_workflows_configurations(entrypoints)
-    assert len(record) == 1
     assert len(wk) == 2
 
 
@@ -310,11 +311,13 @@ def test_get_all_workflows():
     "esa_tf_platform.workflows.load_workflows_configurations",
     mock.MagicMock(side_effect=[WORKFLOWS1, WORKFLOWS2, WORKFLOWS3]),
 )
-def test_get_all_workflows():
+def test_get_all_workflows(caplog):
     workflows.get_all_workflows()
 
-    with pytest.raises(ValueError, match=f"missing key"):
+    with caplog.at_level(logging.INFO):
         workflows.get_all_workflows()
+    assert "missing key" in caplog.text
 
-    with pytest.raises(ValueError, match=f"product type"):
+    with caplog.at_level(logging.INFO):
         workflows.get_all_workflows()
+    assert "product type" in caplog.text

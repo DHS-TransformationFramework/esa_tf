@@ -13,12 +13,30 @@ import yaml
 
 from . import logger
 
+ORDER_ID = None
+
+
+class ContextFilter(logging.Filter):
+    """
+    This is a filter which injects contextual information into the log.
+    """
+
+    def filter(self, record):
+        record.oder_id = ORDER_ID
+        return True
+
 
 # FIXME: where should you configure the log handler in a dask distributed application?
 def add_stderr_handler(logger):
     handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
+    handler.setFormatter(
+        logging.Formatter(
+            "%(name)s - order_id %(oder_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
+            datefmt="%d/%m/%Y %H:%M:%S",
+        )
+    )
     logger.addHandler(handler)
+    logger.addFilter(ContextFilter())
 
 
 add_stderr_handler(logger)
@@ -116,7 +134,7 @@ def check_mandatory_workflow_keys(workflow, workflow_id=None):
         if key not in workflow:
             raise ValueError(
                 f"workflow_id {workflow_id}: missing key {key} "
-                f"in workflow definition"
+                f"in workflow description"
             )
 
 
@@ -131,7 +149,7 @@ def check_mandatory_option_keys(worflow_options, workflow_id=None):
             if key not in option:
                 raise ValueError(
                     f"workflow_id {workflow_id}: missing key "
-                    f"{key} in {workflow_id} workflow definition"
+                    f"{key} in {workflow_id} workflow description"
                 )
 
 
@@ -221,10 +239,9 @@ def remove_duplicates(pkg_entrypoints):
         if matches_len > 1:
             selected_module_name = matches[0].module_name
             all_module_names = [e.module_name for e in matches]
-            warnings.warn(
+            logging.warning(
                 f"found {matches_len} entrypoints for the workflow name {name}:"
-                f"\n {all_module_names}.\n It will be used: {selected_module_name}.",
-                RuntimeWarning,
+                f"\n {all_module_names}.\n It will be used: {selected_module_name}."
             )
     return unique_pkg_entrypoints
 
@@ -239,8 +256,8 @@ def workflow_dict_from_pkg(pkg_entrypoints):
         try:
             workflow_config = pkg_ep.load()
             workflow_entrypoints[name] = workflow_config
-        except Exception as ex:
-            warnings.warn(f"workflow {name!r} loading failed:\n{ex}", RuntimeWarning)
+        except Exception:
+            logger.exception(f"workflow {name!r} registration failed with error:")
     return workflow_entrypoints
 
 
@@ -262,9 +279,16 @@ def get_all_workflows():
     """
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
     workflows = load_workflows_configurations(pkg_entrypoints)
+    valid_workflows = {}
     for workflow_id, workflow in workflows.items():
-        check_workflow(workflow, workflow_id=workflow_id)
-    return workflows
+        try:
+            check_workflow(workflow, workflow_id=workflow_id)
+            valid_workflows[workflow_id] = workflow
+        except ValueError:
+            logger.exception(
+                f"workflow {workflow_id} registration failed; error in workflow description:"
+            )
+    return valid_workflows
 
 
 def read_hub_credentials(hubs_credential_file,):
@@ -293,7 +317,9 @@ def download_product_from_hub(
     return product_info["path"]
 
 
-def download_product(product, *, processing_dir, hubs_credentials_file, hub_name=None):
+def download_product(
+    product, *, processing_dir, hubs_credentials_file, hub_name=None, order_id=None
+):
     """
     Download the product from the first hub in the hubs_credentials_file that publishes the product
     """
@@ -308,12 +334,16 @@ def download_product(product, *, processing_dir, hubs_credentials_file, hub_name
                 processing_dir=processing_dir,
                 hub_credentials=hubs_credentials[hub_name],
             )
-        except Exception as ex:
-            logging.info(f"{ex}")
+        except Exception:
+            logger.exception(
+                f"not able to download from {hub_name}, an error occurred:"
+            )
         if product_path:
             break
     if product_path is None:
-        raise ValueError(f"could not download product from {list(hubs_credentials)}")
+        raise ValueError(
+            f"order_id {order_id}: could not download product from {list(hubs_credentials)}"
+        )
     return product_path
 
 
@@ -386,6 +416,9 @@ def run_workflow(
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
     """
     # define create directories
+    global ORDER_ID
+    ORDER_ID = order_id
+
     if working_dir is None:
         working_dir = os.getenv("WORKING_DIR", "./working_dir")
     if output_dir is None:
@@ -415,6 +448,7 @@ def run_workflow(
         hubs_credentials_file=hubs_credentials_file,
         processing_dir=processing_dir,
         hub_name=hub_name,
+        order_id=order_id,
     )
     logger.info("unpack input product: %r", product_zip_file)
     product_path = unzip_product(product_zip_file, processing_dir)
