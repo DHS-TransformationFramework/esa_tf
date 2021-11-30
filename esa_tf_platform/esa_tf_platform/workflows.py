@@ -13,6 +13,18 @@ import yaml
 
 from . import logger
 
+ORDER_ID = None
+
+
+class ContextFilter(logging.Filter):
+    """
+    This is a filter which injects contextual information into the log.
+    """
+
+    def filter(self, record):
+        record.oder_id = ORDER_ID
+        return True
+
 
 # FIXME: where should you configure the log handler in a dask distributed application?
 def add_stderr_handler(logger):
@@ -48,7 +60,6 @@ MANDATORY_WORKFLOWS_KEYS = [
 ]
 
 MANDATORY_OPTIONS_KEYS = [
-    "Name",
     "Description",
     "Type",
 ]
