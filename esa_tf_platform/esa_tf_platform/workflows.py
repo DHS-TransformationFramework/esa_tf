@@ -20,6 +20,7 @@ class ContextFilter(logging.Filter):
     """
     This is a filter which injects contextual information into the log.
     """
+
     def filter(self, record):
         record.oder_id = ORDER_ID
         return True
