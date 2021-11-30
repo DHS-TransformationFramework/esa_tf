@@ -4,7 +4,6 @@ import logging
 import os
 import shutil
 import sys
-import warnings
 import zipfile
 
 import pkg_resources
@@ -29,7 +28,7 @@ class ContextFilter(logging.Filter):
 def add_stderr_handler(logger):
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(logging.Formatter(
-        "%(name)s - order_id %(oder_id)s - %(asctime)s - %(levelname)s - %(message)s",
+        "%(name)s - order_id %(oder_id)s - %(asctime)s - %(levelname)s - %(message)s ", datefmt='%d/%m/%Y %H:%M:%S'
     ))
     logger.addHandler(handler)
     logger.addFilter(ContextFilter())
@@ -131,7 +130,7 @@ def check_mandatory_workflow_keys(workflow, workflow_id=None):
         if key not in workflow:
             raise ValueError(
                 f"workflow_id {workflow_id}: missing key {key} "
-                f"in workflow definition"
+                f"in workflow description"
             )
 
 
@@ -145,7 +144,7 @@ def check_mandatory_option_keys(option, workflow_id=None):
         if key not in option:
             raise ValueError(
                 f"workflow_id {workflow_id}: missing key "
-                f"{key} in {workflow_id} workflow definition"
+                f"{key} in {workflow_id} workflow description"
             )
 
 
@@ -254,8 +253,8 @@ def workflow_dict_from_pkg(pkg_entrypoints):
         try:
             workflow_config = pkg_ep.load()
             workflow_entrypoints[name] = workflow_config
-        except Exception as ex:
-            logger.warning(f"workflow {name!r} loading failed:\n{ex}")
+        except Exception:
+            logger.exception(f"workflow {name!r} registration failed with error:")
     return workflow_entrypoints
 
 
@@ -282,10 +281,9 @@ def get_all_workflows():
         try:
             check_workflow(workflow, workflow_id=workflow_id)
             valid_workflows[workflow_id] = workflow
-        except ValueError as ex:
-            logger.warning(
-                f"not able to load workflow {workflow_id}, error in workflow description: "
-                + str(ex)
+        except ValueError:
+            logger.exception(
+                f"workflow {workflow_id} registration failed; error in workflow description:"
             )
     return valid_workflows
 
@@ -331,8 +329,8 @@ def download_product(product, *, processing_dir, hubs_credentials_file, hub_name
                 processing_dir=processing_dir,
                 hub_credentials=hubs_credentials[hub_name],
             )
-        except Exception as ex:
-            logger.info(f"{ex}")
+        except Exception:
+            logger.exception(f"not able to download from {hub_name}, an error occurred:")
         if product_path:
             break
     if product_path is None:
