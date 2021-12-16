@@ -2,7 +2,7 @@
 
 ENVIRONMENT := ESA_TF_PLATFORM
 DASKFLAGS :=
-IMAGE_NAME := nexus-repository.onda-dias.eu/dhs/esa_tf/esa_tf_worker
+IMAGE_NAME := collaborativedhs/esa_tf_worker
 SEN2COR_RUN := Sen2Cor-02.09.00-Linux64.run
 SEN2COR_URL := http://step.esa.int/thirdparties/sen2cor/2.9.0/$(SEN2COR_RUN)
 COV_REPORT := html

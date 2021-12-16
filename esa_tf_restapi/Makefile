@@ -2,7 +2,7 @@
 
 PORT := 8080
 ENVIRONMENT := ESA_TF_RESTAPI
-IMAGE_NAME := nexus-repository.onda-dias.eu/dhs/esa_tf/esa_tf_restapi
+IMAGE_NAME := collaborativedhs/esa_tf_restapi
 COV_REPORT := html
 
 .DEFAULT_GOAL := default
