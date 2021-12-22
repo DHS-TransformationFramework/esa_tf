@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from fastapi import HTTPException, Query, Request, Response
@@ -83,13 +84,18 @@ async def get_transformation_order(request: Request, id: str):
 async def transformation_order_create(
     request: Request, response: Response, data: models.TranformationOrder,
 ):
-    running_transformation = api.submit_workflow(
-        data.workflow_id,
-        input_product_reference=data.product_reference.dict(
-            by_alias=True, exclude_unset=True
-        ),
-        workflow_options=data.workflow_options,
-    )
+    running_transformation = None
+    try:
+        running_transformation = api.submit_workflow(
+            data.workflow_id,
+            input_product_reference=data.product_reference.dict(
+                by_alias=True, exclude_unset=True
+            ),
+            workflow_options=data.workflow_options,
+        )
+    except ValueError as exc:
+        logging.exception("Invalid transformation order")
+        raise HTTPException(status_code=422, detail=str(exc))
     url = request.url_for("transformation_order", id=running_transformation.get("Id"))
     response.headers["Location"] = url
     return {**running_transformation}
