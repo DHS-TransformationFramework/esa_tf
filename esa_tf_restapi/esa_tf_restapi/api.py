@@ -81,13 +81,13 @@ def check_products_consistency(
         exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
     else:
         raise ValueError(
-            f"workflow {workflow_id} product type not recognized. product type shall"
+            f"Workflow {workflow_id} product type not recognized. product type shall"
             f"one of the following {SENTINEL1}, {SENTINEL2}"
         )
 
     if not re.match(exp, str(input_product_reference_name)):
         raise ValueError(
-            f"the input product reference name {input_product_reference_name} "
+            f"The input product reference name {input_product_reference_name} "
             f"is not compliant with product type {product_type} in workflow {workflow_id}"
         )
 
@@ -182,7 +182,7 @@ def get_transformation_order(order_id):
     """
     order = TRANSFORMATION_ORDERS.get(order_id)
     if order is None:
-        raise KeyError(f"transformation Order {order_id} not found")
+        raise KeyError(f"Transformation Order {order_id} not found")
     transformation_order = build_transformation_order(order)
     return transformation_order
 
