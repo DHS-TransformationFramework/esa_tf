@@ -66,6 +66,11 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+def add_completed_date(future):
+    order = TRANSFORMATION_ORDERS[future.key]
+    order["CompletedDate"] = datetime.now().isoformat()
+
+
 def check_products_consistency(
     product_type, input_product_reference_name, workflow_id=None
 ):
@@ -260,7 +265,6 @@ def submit_workflow(
     it is used the value of the environment variable "WORKING_DIR".
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
-    :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None it
     is used the value of the environment variable "HUBS_CREDENTIALS_FILE"
     :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
     the value of environment variable SCHEDULER.
@@ -308,12 +312,13 @@ def submit_workflow(
         order = {
             "future": future,
             "Id": order_id,
-            "SubmissionDate": datetime.now().strftime("%Y-%m-%dT%H:%m:%S"),
+            "SubmissionDate": datetime.now().isoformat(),
             "InputProductReference": input_product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
             "WorkflowName": workflow["WorkflowName"],
         }
         TRANSFORMATION_ORDERS[order_id] = order
+        future.add_done_callback(add_completed_date)
 
     return build_transformation_order(order)
