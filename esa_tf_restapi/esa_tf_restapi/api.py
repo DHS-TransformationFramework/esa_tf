@@ -308,7 +308,7 @@ def submit_workflow(
         order = {
             "future": future,
             "Id": order_id,
-            "SubmissionDate": datetime.now().strftime("%Y-%m-%dT%H:%m:%S"),
+            "SubmissionDate": datetime.now().isoformat(),
             "InputProductReference": input_product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
