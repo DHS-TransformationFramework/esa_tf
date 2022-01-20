@@ -306,7 +306,16 @@ def submit_workflow(
         future = order["future"]
         if future.status == "error":
             client.retry(future)
-            order["SubmissionDate"] = datetime.now().strftime("%Y-%m-%dT%H:%m:%S")
+            order = {
+                "future": future,
+                "Id": order_id,
+                "SubmissionDate": datetime.now().isoformat(),
+                "InputProductReference": input_product_reference,
+                "WorkflowOptions": workflow_options,
+                "WorkflowId": workflow_id,
+                "WorkflowName": workflow["WorkflowName"],
+            }
+            TRANSFORMATION_ORDERS[order_id] = order
     else:
         future = client.submit(task, key=order_id)
         order = {
