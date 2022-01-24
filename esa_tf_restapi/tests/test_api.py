@@ -54,12 +54,12 @@ TRANSFORMATION_ORDERS = {
         "WorkflowId": "sen2cor_l1c_l2a",
         "InputProductReference": {
             "Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip",
-            "DataSourceName": "scihub"
+            "DataSourceName": "scihub",
         },
         "WorkflowOptions": {},
         "SubmissionDate": "2022-02-02T16:27:30.000000",
         "Status": "failed",
-    }
+    },
 }
 
 
@@ -179,7 +179,13 @@ def test_get_transformation_orders(function):
     assert set([order["Id"] for order in orders]) == {"Id4"}
 
     orders = esa_tf_restapi.api.get_transformation_orders(
-        {("InputProductReference", "eq", "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip")}
+        {
+            (
+                "InputProductReference",
+                "eq",
+                "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip",
+            )
+        }
     )
     assert set([order["Id"] for order in orders]) == {"Id5"}
 

@@ -1,3 +1,5 @@
+import typing as T
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -60,12 +62,16 @@ def to_payload():
 def tr_orders():
     orig = api.get_transformation_orders
 
-    def get_transformation_orders(status=None):
+    def get_transformation_orders(filters: T.List[T.Tuple[str, str, str]] = [],):
         entries = [
             {"Id": "foo", "Status": "in_progress"},
             {"Id": "bar", "Status": "completed"},
         ]
-        return [e for e in entries if status is None or e["Status"] == status]
+        for filter in filters:
+            name, _op, value = filter
+            if name == "Status":
+                entries = [e for e in entries if e[name] == value]
+        return entries
 
     api.get_transformation_orders = get_transformation_orders
     yield
@@ -112,6 +118,13 @@ def test_list_tranformation_orders(tr_orders):
     assert response.status_code == 200
     result = response.json()
     assert len(result["value"]) == 1
+
+
+def test_list_tranformation_orders_count(tr_orders):
+    response = client.get("/TransformationOrders/$count")
+    assert response.status_code == 200
+    result = response.json()
+    assert result == 2
 
 
 def test_get_tranformation_order(tr_order):
