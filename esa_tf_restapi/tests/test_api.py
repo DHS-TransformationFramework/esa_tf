@@ -28,27 +28,38 @@ TRANSFORMATION_ORDERS = {
         "SubmissionDate": "2022-01-20T16:27:30.000000",
         "CompletedDate": "2022-01-20T16:27:50.000000",
         "Status": "completed",
-        "Reference": {"InputProductReference": "product_b"},
+        "InputProductReference": {"Reference": "product_b"},
     },
     "Id2": {
         "Id": "Id2",
         "SubmissionDate": "2022-01-22T16:27:30.000000",
         "CompletedDate": "2022-01-22T16:27:50.000000",
         "Status": "completed",
-        "Reference": {"InputProductReference": "product_a"},
+        "InputProductReference": {"Reference": "product_a"},
     },
     "Id3": {
         "Id": "Id3",
         "SubmissionDate": "2022-02-01T16:27:30.000000",
         "Status": "in_progress",
-        "Reference": {"InputProductReference": "product_b"},
+        "InputProductReference": {"Reference": "product_b"},
     },
     "Id4": {
         "Id": "Id4",
         "SubmissionDate": "2022-02-02T16:27:30.000000",
         "Status": "in_progress",
-        "Reference": {"InputProductReference": "product_a"},
+        "InputProductReference": {"Reference": "product_a"},
     },
+    "Id5": {
+        "Id": "Id5",
+        "WorkflowId": "sen2cor_l1c_l2a",
+        "InputProductReference": {
+            "Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip",
+            "DataSourceName": "scihub"
+        },
+        "WorkflowOptions": {},
+        "SubmissionDate": "2022-02-02T16:27:30.000000",
+        "Status": "failed",
+    }
 }
 
 
@@ -166,6 +177,11 @@ def test_get_transformation_orders(function):
         {("Status", "eq", "in_progress"), ("InputProductReference", "eq", "product_a")}
     )
     assert set([order["Id"] for order in orders]) == {"Id4"}
+
+    orders = esa_tf_restapi.api.get_transformation_orders(
+        {("InputProductReference", "eq", "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip")}
+    )
+    assert set([order["Id"] for order in orders]) == {"Id5"}
 
     with pytest.raises(ValueError, match=r"allowed key"):
         esa_tf_restapi.api.get_transformation_orders(

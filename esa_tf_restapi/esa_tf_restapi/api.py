@@ -230,7 +230,7 @@ def get_transformation_orders(
                 continue
             op = getattr(operator, op)
             if key == "InputProductReference":
-                order_value = transformation_order["Reference"]["InputProductReference"]
+                order_value = transformation_order["InputProductReference"]["Reference"]
             else:
                 order_value = transformation_order[key]
             if key in {"CompletedDate", "SubmissionDate"}:
