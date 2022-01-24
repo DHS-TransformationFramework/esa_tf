@@ -37,10 +37,13 @@ def _get_operator(op_type):
 
 def _get_inner_expr(all_params: list, expr: BoolOp):
     if hasattr(expr, "op"):
-        return [
-            *_get_inner_expr(all_params, expr.left),
-            *_get_inner_expr(all_params, expr.right),
-        ]
+        if type(expr.op) is And:
+            return [
+                *_get_inner_expr(all_params, expr.left),
+                *_get_inner_expr(all_params, expr.right),
+            ]
+        else:
+            raise NotImplementedError(f"Operator {str(expr.op)} not supported")
     else:
         return [
             *all_params,
