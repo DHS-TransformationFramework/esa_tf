@@ -306,7 +306,8 @@ def submit_workflow(
         future = order["future"]
         if future.status == "error":
             client.retry(future)
-            order["SubmissionDate"] = datetime.now().strftime("%Y-%m-%dT%H:%m:%S")
+            order["SubmissionDate"] = datetime.now().isoformat()
+            order.pop("CompletedDate", None)
     else:
         future = client.submit(task, key=order_id)
         order = {
