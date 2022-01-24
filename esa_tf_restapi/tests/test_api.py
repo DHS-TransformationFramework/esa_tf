@@ -53,7 +53,7 @@ def test_check_products_consistency_wrong_product(
     product_type, input_product_reference_name
 ):
 
-    with pytest.raises(ValueError, match=r"input product reference"):
+    with pytest.raises(ValueError, match=r"input product name"):
         esa_tf_restapi.api.check_products_consistency(
             product_type, input_product_reference_name, workflow_id="sen2cor_l1c_l2a"
         )
@@ -65,7 +65,7 @@ def test_check_products_consistency_wrong_product_type():
     input_product_reference_name = (
         "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"
     )
-    with pytest.raises(ValueError, match=f"product type not recognized"):
+    with pytest.raises(ValueError, match=f"product type"):
         esa_tf_restapi.api.check_products_consistency(
             product_type, input_product_reference_name, workflow_id=workflow_id
         )
@@ -107,5 +107,5 @@ def test_fill_with_defaults():
 def test_error_fill_with_defaults():
 
     workflow_options = {"Name3": False}
-    with pytest.raises(ValueError, match=r"are missing"):
+    with pytest.raises(ValueError, match=r"missing options"):
         esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
