@@ -116,7 +116,6 @@ def test_transformation_order_validate_workflow_options(register_workflows):
             WorkflowOptions={"Case 3": 999},
         )
 
-
     # Valid Case 2
     try:
         models.TranformationOrder(
