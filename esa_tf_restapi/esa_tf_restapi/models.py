@@ -35,11 +35,11 @@ class TranformationOrder(BaseModel):
     @validator("workflow_id", always=True, pre=True)
     def validate_wf_id(cls, v, values):
         workflows = api.get_workflows()
-        workflows_ids = workflows.keys()
+        workflows_ids = list(workflows)
 
         if v not in workflows_ids:
             raise ValueError(
-                f"unknown workflow: {v}. Registered workflows are: {', '.join(workflows_ids)}"
+                f"unknown workflow: {v!r}. Registered workflows are: {workflows_ids!r}"
             )
         return v
 
@@ -60,8 +60,8 @@ class TranformationOrder(BaseModel):
         for key in v.keys():
             if key not in possible_wo_names:
                 raise ValueError(
-                    f"{key} is an unknown name for {workflow_id} workflow. "
-                    f"Possible names are {', '.join(possible_wo_names)}"
+                    f"{key!r} is an unknown name for {workflow_id!r} workflow. "
+                    f"Possible names are {possible_wo_names!r}"
                 )
 
         # Check for proper types (integer, boolean, string, number, …)
@@ -69,9 +69,9 @@ class TranformationOrder(BaseModel):
             current_option = workflow_options[key]
             if not type_checking(type(value), current_option["Type"]):
                 raise ValueError(
-                    f"wrong type for {key}. "
-                    f"Param type should be {current_option['Type']} "
-                    f"while {repr(value)} (of type {type(value).__name__}) provided"
+                    f"wrong type for {key!r}. "
+                    f"Param type should be {current_option['Type']!r} "
+                    f"while {value!r} (of type {type(value).__name__}) provided"
                 )
 
         # Check for one o possible values used (when "Enum" is provided)
@@ -81,8 +81,8 @@ class TranformationOrder(BaseModel):
                 continue
             if value not in current_option["Enum"]:
                 raise ValueError(
-                    f"disallowed value for {key}: "
-                    f"{value} has been provided while possible values are "
-                    f"{', '.join([str(x) for x in current_option['Enum']])}"
+                    f"disallowed value for {key!r}: "
+                    f"{value!r} has been provided while possible values are "
+                    f"{current_option['Enum']!r}"
                 )
         return v
