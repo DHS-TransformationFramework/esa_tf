@@ -68,7 +68,7 @@ def test_transformation_order_missing_params(register_workflows):
 
 
 def test_transformation_order_validate_workflow_options(register_workflows):
-    with pytest.raises(ValueError, match=f"invalid parameter"):
+    with pytest.raises(ValueError, match=f"unknown parameter"):
         models.TranformationOrder(
             WorkflowId="workflow_1",
             InputProductReference={"Reference": "Ref a"},
