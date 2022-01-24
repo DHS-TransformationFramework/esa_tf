@@ -8,7 +8,7 @@ COV_REPORT := html
 .DEFAULT_GOAL := default
 
 start:
-	SCHEDULER=$(SCHEDULER) uvicorn --port $(PORT) esa_tf_restapi:app --reload
+	SCHEDULER=$(SCHEDULER) uvicorn --proxy-headers --forwarded-allow-ips=0.0.0.0 --port $(PORT) esa_tf_restapi:app --reload
 
 default: fix-code-style test
 

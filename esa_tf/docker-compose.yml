@@ -1,19 +1,30 @@
 
 version: '3.8'
 
+networks:
+    main:
+
 services:
     esa_tf_scheduler:
         image: daskdev/dask:2021.8.1-py3.9
-        ports:
-            - "8786:8786"
-            - "8787:8787"
+        # ports:
+        #     - "8786:8786"
+        #     - "8787:8787"
         command: dask-scheduler
+        networks:
+            main:
+                aliases:
+                    - scheduler
 
     esa_tf_restapi:
         image: ${ESA_REGISTRY_PATH:-collaborativedhs}/esa_tf_restapi:${ESA_TF_RELEASE:-latest}
-        ports:
-            - "8080:8080"
+        # ports:
+        #     - "8080:8080"
         command: make serve PORT=8080 SCHEDULER="tcp://esa_tf_scheduler:8786"
+        networks:
+            main:
+                aliases:
+                    - odata_api
 
     esa_tf_worker:
         image: ${ESA_REGISTRY_PATH:-collaborativedhs}/esa_tf_worker:${ESA_TF_RELEASE:-latest}
@@ -28,3 +39,24 @@ services:
             - OUTPUT_DIR=/output
             - OUTPUT_OWNER_ID=${OUTPUT_OWNER_ID:-0}
         command: make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"
+        networks:
+            main:
+                aliases:
+                    - worker
+
+    esa_tf_proxy:
+        hostname: reverse
+        image: nginx:1.21.5
+        volumes:
+            - ./nginx:/etc/nginx/templates
+            - "${LOGS:-./logs}:/var/log/nginx"
+        # command: [nginx-debug, '-g', 'daemon off;']
+        ports:
+            - "80:80"
+        environment:
+            - NGINX_HOST=_
+            - NGINX_PORT=80
+        networks:
+            main:
+                aliases:
+                    - proxy
