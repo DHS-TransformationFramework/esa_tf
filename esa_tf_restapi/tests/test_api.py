@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 import esa_tf_restapi
@@ -17,6 +19,36 @@ WORKFLOW_OPTIONS = {
     },
     "Name3": {"Description": "", "Type": "boolean", "Default": True},
     "Name4": {"Description": "", "Type": "number"},
+}
+
+
+TRANSFORMATION_ORDERS = {
+    "Id1": {
+        "Id": "Id1",
+        "SubmissionDate": "2022-01-20T16:27:30.000000",
+        "CompletedDate": "2022-01-20T16:27:50.000000",
+        "Status": "completed",
+        "Reference": {"InputProductReference": "product_b"},
+    },
+    "Id2": {
+        "Id": "Id2",
+        "SubmissionDate": "2022-01-22T16:27:30.000000",
+        "CompletedDate": "2022-01-22T16:27:50.000000",
+        "Status": "completed",
+        "Reference": {"InputProductReference": "product_a"},
+    },
+    "Id3": {
+        "Id": "Id3",
+        "SubmissionDate": "2022-02-01T16:27:30.000000",
+        "Status": "in_progress",
+        "Reference": {"InputProductReference": "product_b"},
+    },
+    "Id4": {
+        "Id": "Id4",
+        "SubmissionDate": "2022-02-02T16:27:30.000000",
+        "Status": "in_progress",
+        "Reference": {"InputProductReference": "product_a"},
+    },
 }
 
 
@@ -109,3 +141,47 @@ def test_error_fill_with_defaults():
     workflow_options = {"Name3": False}
     with pytest.raises(ValueError, match=r"are missing"):
         esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
+
+
+@mock.patch(
+    "esa_tf_restapi.api.build_transformation_order", side_effect=lambda x: x,
+)
+def test_get_transformation_orders(function):
+    esa_tf_restapi.api.TRANSFORMATION_ORDERS.update(TRANSFORMATION_ORDERS)
+
+    orders = esa_tf_restapi.api.get_transformation_orders([("Id", "eq", "Id1")])
+
+    assert orders == [TRANSFORMATION_ORDERS["Id1"]]
+    orders = esa_tf_restapi.api.get_transformation_orders(
+        {("Status", "eq", "completed"), ("SubmissionDate", "ge", "2022-01-22")}
+    )
+    assert set([order["Id"] for order in orders]) == {"Id2"}
+
+    orders = esa_tf_restapi.api.get_transformation_orders(
+        {("Status", "eq", "completed"), ("CompletedDate", "le", "2022-02-02")}
+    )
+    assert set([order["Id"] for order in orders]) == {"Id1", "Id2"}
+
+    orders = esa_tf_restapi.api.get_transformation_orders(
+        {("Status", "eq", "in_progress"), ("InputProductReference", "eq", "product_a")}
+    )
+    assert set([order["Id"] for order in orders]) == {"Id4"}
+
+    with pytest.raises(ValueError, match=r"allowed key"):
+        esa_tf_restapi.api.get_transformation_orders(
+            {("WrongKey", "op", "value"),}
+        )
+
+    with pytest.raises(ValueError, match=r"allowed operator"):
+        esa_tf_restapi.api.get_transformation_orders(
+            {("Status", "le", "value"),}
+        )
+
+
+def test_check_filter_validity():
+
+    with pytest.raises(ValueError, match=r"allowed key"):
+        esa_tf_restapi.api.check_filter_validity("WrongKey", "op")
+
+    with pytest.raises(ValueError, match=r"allowed operator"):
+        esa_tf_restapi.api.check_filter_validity("Status", "le")
