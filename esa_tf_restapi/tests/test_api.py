@@ -203,7 +203,7 @@ def test_get_transformation_orders(function):
 def test_check_filter_validity():
 
     with pytest.raises(ValueError, match=r"allowed key"):
-        esa_tf_restapi.api.check_filter_validity("WrongKey", "op")
+        esa_tf_restapi.api.check_filter_validity([("WrongKey", "op", "value")])
 
     with pytest.raises(ValueError, match=r"allowed operator"):
-        esa_tf_restapi.api.check_filter_validity("Status", "le")
+        esa_tf_restapi.api.check_filter_validity([("Status", "le", "value")])

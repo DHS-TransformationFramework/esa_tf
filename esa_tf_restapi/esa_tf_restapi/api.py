@@ -194,7 +194,7 @@ def get_transformation_order(order_id):
     return transformation_order
 
 
-def check_filter_validity(key, op):
+def check_filter_validity(filters):
     allowed_filters = {
         "Id": ("eq",),
         "SubmissionDate": ("le", "ge", "lt", "gt", "eq"),
@@ -203,16 +203,17 @@ def check_filter_validity(key, op):
         "Status": ("eq",),
         "InputProductReference": ("eq",),
     }
-    if key not in set(allowed_filters):
-        raise ValueError(
-            f"{key!r} is not an allowed key, Transformation Orders can "
-            f"be filtered using only the following keys: {allowed_filters}"
-        )
-    if op not in allowed_filters[key]:
-        raise ValueError(
-            f"{op!r} is not an allowed operator for key {key!r}; "
-            f"the valid operators are: {allowed_filters[key]!r}"
-        )
+    for key, op, value in filters:
+        if key not in set(allowed_filters):
+            raise ValueError(
+                f"{key!r} is not an allowed key, Transformation Orders can "
+                f"be filtered using only the following keys: {list(allowed_filters)}"
+            )
+        if op not in allowed_filters[key]:
+            raise ValueError(
+                f"{op!r} is not an allowed operator for key {key!r}; "
+                f"the valid operators are: {allowed_filters[key]!r}"
+            )
 
 
 def get_transformation_orders(
@@ -224,13 +225,12 @@ def get_transformation_orders(
     :param T.List[T.Tuple[str, str, str]] filters: list if tuple
     """
     # check filters
-
+    check_filter_validity(filters)
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
         transformation_order = build_transformation_order(order)
         add_order = True
         for key, op, value in filters:
-            check_filter_validity(key, op)
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:
                 continue
             op = getattr(operator, op)

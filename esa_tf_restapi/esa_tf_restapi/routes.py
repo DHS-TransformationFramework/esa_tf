@@ -61,9 +61,14 @@ async def transformation_orders(
 ):
     odata_params = parse_qs(filter=rawfilter)
     filters = odata_params.filter
-    data = api.get_transformation_orders(
-        [(f.name, f.operator, f.value) for f in filters]
-    )
+    try:
+        data = api.get_transformation_orders(
+            [(f.name, f.operator, f.value) for f in filters]
+        )
+    except ValueError as exc:
+        logging.exception("Invalid request")
+        raise HTTPException(status_code=405, detail=str(exc))
+
     root = request.url_for("metadata")
     return {
         "@odata.context": f"{root}#TransformationOrders",
