@@ -153,6 +153,22 @@ A filter request like the following is perfectly valid:
 curl "http://localhost:8080/TransformationOrders?\$filter=CompletedDate%20ge%20'2022-01-01'%20and%20CompletedDate%20lt%20'2022-02-01'" | jq
 ```
 
+#### Count results
+
+You can ask for number of results by using the `$count` parameter:
+
+```bash
+curl "http://localhost:8080/TransformationOrders?\$filter=Status%20eq%20'completed'&\$count=true" | jq
+```
+
+This will add the `odata.count` field to the results set.
+
+To obtain directly the number of transformation you can access, you can use the `$count` path suffix:
+
+```bash
+curl "http://localhost:8080/TransformationOrders/\$count" | jq
+```
+
 ### Request a new transformation
 
 ```bash
