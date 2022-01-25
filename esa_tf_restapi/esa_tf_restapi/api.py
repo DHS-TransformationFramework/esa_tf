@@ -1,7 +1,9 @@
 import copy
 import functools
+import operator
 import os
 import re
+import typing as T
 from datetime import datetime
 
 import dask.distributed
@@ -191,17 +193,59 @@ def get_transformation_order(order_id):
     return transformation_order
 
 
-def get_transformation_orders(status=None, workflow_id=None):
+def check_filter_validity(filters):
+    allowed_filters = {
+        "Id": ("eq",),
+        "SubmissionDate": ("le", "ge", "lt", "gt", "eq"),
+        "CompletedDate": ("le", "ge", "lt", "gt", "eq"),
+        "WorkflowId": ("eq",),
+        "Status": ("eq",),
+        "InputProductReference": ("eq",),
+    }
+    for key, op, value in filters:
+        if key not in set(allowed_filters):
+            raise ValueError(
+                f"{key!r} is not an allowed key, Transformation Orders can "
+                f"be filtered using only the following keys: {list(allowed_filters)}"
+            )
+        if op not in allowed_filters[key]:
+            raise ValueError(
+                f"{op!r} is not an allowed operator for key {key!r}; "
+                f"the valid operators are: {allowed_filters[key]!r}"
+            )
+
+
+def get_transformation_orders(
+    filters: T.List[T.Tuple[str, str, str]] = [],
+) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
-    The can be filtered by the status and the workflow_id
+    They can be filtered by the SubmissionDate, CompletedDate, Status
+    :param T.List[T.Tuple[str, str, str]] filters: list if tuple
     """
+    # check filters
+    check_filter_validity(filters)
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
         transformation_order = build_transformation_order(order)
-        add_order = (not workflow_id or (workflow_id == order["WorkflowId"])) and (
-            not status or (status == transformation_order["Status"])
-        )
+        add_order = True
+        for key, op, value in filters:
+            if key == "CompletedDate" and "CompletedDate" not in transformation_order:
+                continue
+            op = getattr(operator, op)
+            if key == "InputProductReference":
+                order_value = transformation_order["InputProductReference"]["Reference"]
+            else:
+                order_value = transformation_order[key]
+            if key in {"CompletedDate", "SubmissionDate"}:
+                order_value = datetime.fromisoformat(order_value)
+                try:
+                    value = datetime.fromisoformat(value)
+                except ValueError:
+                    raise ValueError(
+                        f"{key!r} is not a valid isoformat string: {value}"
+                    )
+            add_order = add_order and op(order_value, value)
         if add_order:
             transformation_orders.append(transformation_order)
     return transformation_orders
