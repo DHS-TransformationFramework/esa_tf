@@ -67,7 +67,7 @@ async def transformation_orders(
         )
     except ValueError as exc:
         logging.exception("Invalid request")
-        raise HTTPException(status_code=405, detail=str(exc))
+        raise HTTPException(status_code=422, detail=str(exc))
 
     root = request.url_for("metadata")
     return {
