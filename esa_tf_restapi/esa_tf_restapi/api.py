@@ -86,14 +86,14 @@ def check_products_consistency(
         exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
     else:
         raise ValueError(
-            f"Workflow {workflow_id} product type not recognized. product type shall"
-            f"one of the following {SENTINEL1}, {SENTINEL2}"
+            f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"
         )
 
     if not re.match(exp, str(input_product_reference_name)):
         raise ValueError(
-            f"The input product reference name {input_product_reference_name} "
-            f"is not compliant with product type {product_type} in workflow {workflow_id}"
+            f"input product name {input_product_reference_name!r} does not comply "
+            f"to the naming convention for the {product_type!r} product type required by "
+            f"{workflow_id!r}"
         )
 
 
@@ -106,8 +106,7 @@ def instantiate_client(scheduler_addr=None):
     if scheduler_addr is None:
         scheduler_addr = os.getenv("SCHEDULER")
     if scheduler_addr is None:
-        raise ValueError("scheduler not defined")
-
+        raise ValueError("environment variable 'SCHEDULER' not found")
     if not CLIENT or CLIENT.scheduler.addr != scheduler_addr:
         CLIENT = dask.distributed.Client(scheduler_addr)
 
@@ -153,7 +152,7 @@ def get_workflow_by_id(workflow_id, scheduler=None):
         workflow = workflows[workflow_id]
     except KeyError:
         raise KeyError(
-            f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
+            f"Workflow {workflow_id!r} not found, the available workflows are {list(workflows)!r}"
         )
     return workflow
 
@@ -187,7 +186,7 @@ def get_transformation_order(order_id):
     """
     order = TRANSFORMATION_ORDERS.get(order_id)
     if order is None:
-        raise KeyError(f"Transformation Order {order_id} not found")
+        raise KeyError(f"Transformation Order {order_id!r} not found")
     transformation_order = build_transformation_order(order)
     return transformation_order
 
@@ -237,8 +236,8 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     missing_options_values = set(config_workflow_options) - set(workflow_options)
     if len(missing_options_values):
         raise ValueError(
-            f"{list(missing_options_values)} are mandatory options for workflow {workflow_id}, "
-            f"but they are missing in order definition "
+            f"the following missing options are mandatory for {workflow_id!r} Workflow:"
+            f"{list(missing_options_values)!r} "
         )
     return workflow_options
 
@@ -270,9 +269,7 @@ def submit_workflow(
     the value of environment variable SCHEDULER.
     """
 
-    workflow = get_workflows().get(workflow_id)
-    if workflow is None:
-        raise ValueError(f"Workflow id {workflow_id} not found.")
+    workflow = get_workflow_by_id(workflow_id)
     product_type = workflow["InputProductType"]
     check_products_consistency(
         product_type, input_product_reference["Reference"], workflow_id=workflow_id

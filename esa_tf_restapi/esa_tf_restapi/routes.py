@@ -30,8 +30,9 @@ async def workflow(request: Request, id: str):
     data = {}
     try:
         data = api.get_workflow_by_id(id)
-    except KeyError:
-        raise HTTPException(status_code=404, detail=f"Workflow {id} not found")
+    except KeyError as exc:
+        logging.exception("Invalid Worfklow id")
+        raise HTTPException(status_code=404, detail=str(exc))
     base = request.url_for("workflows")
     root = request.url_for("metadata")
     return {
@@ -66,10 +67,10 @@ async def get_transformation_order(request: Request, id: str):
     data = None
     try:
         data = api.get_transformation_order(id)
-    except KeyError:
-        raise HTTPException(
-            status_code=404, detail=f"Transformation order {id} not found"
-        )
+    except KeyError as exc:
+        logging.exception("Invalid Transformation Order id")
+        raise HTTPException(status_code=404, detail=str(exc))
+
     root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
@@ -94,7 +95,7 @@ async def transformation_order_create(
             workflow_options=data.workflow_options,
         )
     except ValueError as exc:
-        logging.exception("Invalid transformation order")
+        logging.exception("Invalid Transformation Order")
         raise HTTPException(status_code=422, detail=str(exc))
     url = request.url_for("transformation_order", id=running_transformation.get("Id"))
     response.headers["Location"] = url
