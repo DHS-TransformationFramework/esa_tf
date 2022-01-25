@@ -96,10 +96,61 @@ curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')" | jq
 curl http://localhost:8080/TransformationOrders | jq
 ```
 
-It is also possible to filter accessible orders:
+#### Filters transformation orders
+
+It is also possible to filter accessible orders.
+Filters are applied using standard OData `$filter` query parameter; following clauses can be used:
+
+`Status`
+: Filter by transformation status (e.g: `in_progress`, `completed`, …)  
+  Example:
+
+  ```bash
+  curl "http://localhost:8080/TransformationOrders?\$filter=Status%20eq%20'completed'" | jq
+  ```
+  
+`SubmissionDate`
+: Filter by submission date. Date must be a string in ISO format.  
+  Example:
+
+  ```bash
+  curl "http://localhost:8080/TransformationOrders?\$filter=SubmissionDate%20eq%20'2022-01-25T08:53:47.961866'" | jq
+  ```
+
+`CompletedDate`
+: Filter by submission date. Date must be a string in ISO format.  
+  Example:
+
+  ```bash
+  curl "http://localhost:8080/TransformationOrders?\$filter=CompletedDate%20eq%20'2022-01-25T09:07:51.908863'" | jq
+  ```
+
+`InputProductReference`
+: Filter by input product filename. This will be treated as an exact match  
+  Example:
+
+  ```bash
+  curl "http://localhost:8080/TransformationOrders?\$filter=InputProductReference%20eq%20'S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip'" | jq
+  ```
+
+It's also possible to combine filters by using then `and` operator:
 
 ```bash
-curl "http://localhost:8080/TransformationOrders?\$filter=Status%20eq%20'completed'" | jq
+curl "http://localhost:8080/TransformationOrders?\$filter=CompletedDate%20eq%20'2022-01-25T09:07:51.908863'%20and%20InputProductReference%20eq%20'S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip'" | jq
+```
+
+The `and` operator is not the only one supported.
+You can also use:
+
+- `lt`
+- `gt`
+- `ge`
+- `le`
+
+A filter request like the following is perfectly valid:
+
+```bash
+curl "http://localhost:8080/TransformationOrders?\$filter=CompletedDate%20ge%20'2022-01-01'%20and%20CompletedDate%20lt%20'2022-02-01'" | jq
 ```
 
 ### Request a new transformation
