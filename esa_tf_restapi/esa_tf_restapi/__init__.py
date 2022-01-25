@@ -12,8 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.responses import JSONResponse
+from odata_query.exceptions import TokenizingException
 
 app = FastAPI()
 
 from . import routes
+
+
+@app.exception_handler(TokenizingException)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(content={"detail": "Invalid OData query"}, status_code=422,)
