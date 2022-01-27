@@ -107,7 +107,6 @@ def check_ozone_content(options):
         raise ValueError(
             f"when 'Mid_Latitude=SUMMER' the allowed ozone content values are {OZONE_SUMMER_VALUES}"
         )
-    return True
 
 
 def check_row_col_type(roi_options):
@@ -129,7 +128,6 @@ def check_row_col_type(roi_options):
         for oname in ["row0", "col0"]:
             if roi_options[oname] % 6 != 0:
                 raise ValueError("row0, col0 must be integer divisible by 6")
-    return True
 
 
 def check_nrow_ncol(roi_options):
@@ -141,7 +139,6 @@ def check_nrow_ncol(roi_options):
     for oname in ["nrow_win", "ncol_win"]:
         if roi_options[oname] % 6 != 0:
             raise ValueError("nrow_win and ncol_win must be integer divisible by 6")
-    return True
 
 
 def check_roi_options(roi_options):
@@ -151,14 +148,13 @@ def check_roi_options(roi_options):
     :return bool:
     """
     if not roi_options:
-        return True
+        return
     # if ROI options are present, they must be 4, not just a few
     if len(roi_options) != len(ROI_OPTIONS_NAMES):
         missing_options = ROI_OPTIONS_NAMES.difference(set(roi_options.keys()))
         raise ValueError(f"some ROI options are missing: {missing_options}")
     check_row_col_type(roi_options)
     check_nrow_ncol(roi_options)
-    return True
 
 
 def check_options(options):
@@ -187,7 +183,6 @@ def check_options(options):
                 )
         else:
             raise ValueError(f"invalid option {oname}: valid options are {valid_names}")
-    return True
 
 
 def print_options(workflow_options):
