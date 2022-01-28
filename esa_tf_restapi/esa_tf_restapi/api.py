@@ -176,10 +176,29 @@ def build_transformation_order(order):
     transformation_order = copy.deepcopy(order)
     transformation_order.pop("future")
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
-
+    transformation_order["Logs"] = get_transformation_order_log(order["Id"])
     if future.status == "finished":
         transformation_order["OutputFile"] = os.path.basename(future.result())
+    if future.status == "error":
+        transformation_order["ErrorMessage"] = str(future.exception())
     return transformation_order
+
+
+def get_dask_orders_status():
+    def orders_status_on_scheduler(dask_scheduler):
+        return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
+
+    client = instantiate_client()
+    return client.run_on_scheduler(orders_status_on_scheduler)
+
+
+def get_transformation_order_log(order_id):
+    client = instantiate_client()
+    seconds_logs = client.get_events(order_id)
+    logs = []
+    for seconds, log in seconds_logs:
+        logs.append(log)
+    return logs
 
 
 def get_transformation_order(order_id):
@@ -226,8 +245,8 @@ def get_transformation_orders(
     # check filters
     check_filter_validity(filters)
     transformation_orders = []
-    for order in TRANSFORMATION_ORDERS.values():
-        transformation_order = build_transformation_order(order)
+    for order_id in TRANSFORMATION_ORDERS.keys():
+        transformation_order = get_transformation_order(order_id)
         add_order = True
         for key, op, value in filters:
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:
