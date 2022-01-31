@@ -176,7 +176,6 @@ def build_transformation_order(order):
     transformation_order = copy.deepcopy(order)
     transformation_order.pop("future")
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
-    transformation_order["Logs"] = get_transformation_order_log(order["Id"])
     if future.status == "finished":
         transformation_order["OutputFile"] = os.path.basename(future.result())
     if future.status == "error":
