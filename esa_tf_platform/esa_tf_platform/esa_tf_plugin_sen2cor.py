@@ -194,7 +194,7 @@ def check_options(options):
     return True
 
 
-def print_options(workflow_options):
+def log_options(workflow_options):
     """Print the required Sen2Cor options (user desiderata + default values).
 
     :param workflow_options: the user's options dictionary
@@ -205,8 +205,6 @@ def print_options(workflow_options):
         for option_name, option in sen2cor_l1c_l2a["WorkflowOptions"].items()
     }
     applied_options.update(workflow_options)
-    print("Sen2Cor options:")
-    pprint.pprint(applied_options)
     LOGGER.info(applied_options)
     return applied_options
 
@@ -305,7 +303,7 @@ def run_processing(
 
     check_input_consistency(product_path)
     check_options(workflow_options)
-    print_options(workflow_options)
+    log_options(workflow_options)
 
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
