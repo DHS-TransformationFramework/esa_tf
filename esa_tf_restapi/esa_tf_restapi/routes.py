@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from fastapi import HTTPException, Query, Request, Response
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse, PlainTextResponse
 
 from . import api, app, models
 from .csdl import loadDefinition
@@ -101,6 +101,16 @@ async def get_transformation_order(request: Request, id: str):
         "Id": id,
         **data,
     }
+
+
+@app.get("/TransformationOrders('{id}')/Log", response_class=PlainTextResponse)
+async def get_transformation_order_log(request: Request, id: str):
+    try:
+        log = api.get_transformation_order_log(id)
+    except KeyError as exc:
+        logging.exception("Invalid Transformation Order id")
+        raise HTTPException(status_code=404, detail=str(exc))
+    return "\n".join(log)
 
 
 @app.post("/TransformationOrders", status_code=201)

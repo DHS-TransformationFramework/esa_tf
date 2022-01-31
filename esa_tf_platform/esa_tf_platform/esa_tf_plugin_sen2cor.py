@@ -1,7 +1,6 @@
 import glob
 import logging
 import os
-import pprint
 import subprocess
 from xml.etree import ElementTree
 
@@ -18,7 +17,7 @@ ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
 OZONE_WINTER_VALUES = (0, 250, 290, 330, 377, 420, 460)
 OZONE_SUMMER_VALUES = (0, 250, 290, 331, 370, 410, 450)
 
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger("esa_tf_platform")
 
 
 def set_sen2cor_options(etree, options, srtm_dir):

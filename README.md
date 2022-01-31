@@ -181,6 +181,13 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
 curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')" | jq
 ```
 
+You can also inspect the current output from the transformation itself.
+
+```bash
+curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')/Log" | jq
+```
+
+
 ## License information
 
 ```text
