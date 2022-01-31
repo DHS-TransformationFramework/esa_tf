@@ -36,7 +36,7 @@ class DaskLogHandler(logging.Handler, object):
             dask_worker = dask.distributed.get_worker()
             dask_worker.log_event(ORDER_ID, msg)
         # todo: log properly the error
-        except Exception:
+        except ValueError:
             pass
 
 
@@ -449,8 +449,11 @@ def run_workflow(
     # define create directories
     global ORDER_ID
     ORDER_ID = order_id
-    dask_worker = dask.distributed.get_worker()
-    logger.info(f"start processing on worker: {dask_worker.name!r}")
+    try:
+        dask_worker = dask.distributed.get_worker()
+        logger.info(f"start processing on worker: {dask_worker.name!r}")
+    except ValueError:
+        pass
 
     if working_dir is None:
         working_dir = os.getenv("WORKING_DIR", "./working_dir")
