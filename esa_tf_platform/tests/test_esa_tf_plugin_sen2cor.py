@@ -302,23 +302,23 @@ def test_check_options_invalid_with_roi2():
         assert esa_tf_plugin_sen2cor.check_options(options)
 
 
-def test_print_options():
+def test_log_options():
     workflow_options = {}
-    assert esa_tf_plugin_sen2cor.print_options(workflow_options)
+    assert esa_tf_plugin_sen2cor.log_options(workflow_options)
 
     workflow_options = {"Ozone_Content": 9999}
     assert (
-        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        esa_tf_plugin_sen2cor.log_options(workflow_options)["Ozone_Content"]
         == workflow_options["Ozone_Content"]
     )
 
     workflow_options = {"Ozone_Content": 9999, "dummy": -9999}
     assert (
-        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        esa_tf_plugin_sen2cor.log_options(workflow_options)["Ozone_Content"]
         == workflow_options["Ozone_Content"]
     )
     assert (
-        esa_tf_plugin_sen2cor.print_options(workflow_options)["dummy"]
+        esa_tf_plugin_sen2cor.log_options(workflow_options)["dummy"]
         == workflow_options["dummy"]
     )
 
