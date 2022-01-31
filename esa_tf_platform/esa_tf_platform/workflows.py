@@ -4,8 +4,10 @@ import logging
 import os
 import shutil
 import sys
+import time
 import zipfile
 
+import dask.distributed
 import pkg_resources
 import sentinelsat
 import yaml
@@ -15,30 +17,55 @@ from . import logger
 ORDER_ID = None
 
 
+class MyLogHandler(logging.Handler, object):
+    """
+     custom log handler
+    """
+
+    def __init__(self):
+        logging.Handler.__init__(self)
+
+    def emit(self, record):
+        """
+        emit must be overridden if the function is a custom handler class ， here, you can do some processing for log messages as needed, such as sending logs to the server.
+
+         send out a record (Emit a record)
+        """
+        try:
+            msg = self.format(record)
+            dask_worker = dask.distributed.get_worker()
+            dask_worker.log_event(ORDER_ID, msg)
+        except Exception:
+            self.handleError(record)
+
+
 class ContextFilter(logging.Filter):
     """
     This is a filter which injects contextual information into the log.
     """
 
     def filter(self, record):
-        record.oder_id = ORDER_ID
+        record.order_id = ORDER_ID
         return True
 
 
 # FIXME: where should you configure the log handler in a dask distributed application?
-def add_stderr_handler(logger):
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(
-        logging.Formatter(
-            "%(name)s - order_id %(oder_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
-            datefmt="%d/%m/%Y %H:%M:%S",
-        )
+def add_stderr_handlers(logger):
+    stream_handler = logging.StreamHandler(sys.stderr)
+    dask_handler = MyLogHandler()
+    logging_formatter = logging.Formatter(
+        "%(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
+        datefmt="%d/%m/%Y %H:%M:%S",
     )
-    logger.addHandler(handler)
+    stream_handler.setFormatter(logging_formatter)
+    dask_handler.setFormatter(logging_formatter)
+    logging.Formatter.converter = time.gmtime
+    logger.addHandler(stream_handler)
+    logger.addHandler(dask_handler)
     logger.addFilter(ContextFilter())
 
 
-add_stderr_handler(logger)
+add_stderr_handlers(logger)
 
 
 TYPES = {
@@ -417,6 +444,8 @@ def run_workflow(
     # define create directories
     global ORDER_ID
     ORDER_ID = order_id
+    dask_worker = dask.distributed.get_worker()
+    logger.info(f"start processing on worker: {dask_worker.name!r}")
 
     if working_dir is None:
         working_dir = os.getenv("WORKING_DIR", "./working_dir")
@@ -441,7 +470,7 @@ def run_workflow(
     # download
     product = product_reference["Reference"]
     hub_name = product_reference.get("DataSourceName")
-    logger.info("download input product: %r", product)
+    logger.info(f"downloading input product: {product!r}")
     product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
@@ -449,13 +478,13 @@ def run_workflow(
         hub_name=hub_name,
         order_id=order_id,
     )
-    logger.info("unpack input product: %r", product_zip_file)
+    logger.info(f"unpack input product: {product_zip_file!r}")
     product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
     workflow_runner = load_workflow_runner(workflow_id)
 
-    logger.info("run workflow: %r, %r", workflow_id, workflow_options)
+    logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
     output = workflow_runner(
         product_path,
         processing_dir=processing_dir,
@@ -464,7 +493,7 @@ def run_workflow(
     )
 
     # re-package the ouput
-    logger.info("package output product: %r", output)
+    logger.info(f"package output product: {output!r}")
     output_zip_file = zip_product(output, output_dir)
     shutil.chown(output_zip_file, user=output_owner)
 
