@@ -345,3 +345,16 @@ def test_find_output(tmpdir):
     output_path = esa_tf_plugin_sen2cor.find_output(output_dir)
 
     assert output_path == sen2cor_output_dir
+
+
+def test_run_command(tmpdir):
+    processing_dir = tmpdir.join("processing_dir").strpath
+    os.mkdir(processing_dir)
+    cmd = 'echo "Hello World"'
+    exit_status, log_path = esa_tf_plugin_sen2cor.run_command(cmd, processing_dir)
+
+    assert exit_status == 0
+    assert os.path.isfile(log_path) is True
+    with open(log_path, "r") as f:
+        stream = f.read()
+    assert "Hello World" in stream
