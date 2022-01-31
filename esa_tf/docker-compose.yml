@@ -36,7 +36,6 @@ services:
             - ./nginx:/etc/nginx/templates
             - "${LOGS:-./logs}:/var/log/nginx"
             - "${OUTPUT_DIR:-./output}:/usr/share/nginx/html"
-        # command: [nginx-debug, '-g', 'daemon off;']
         ports:
             - "8080:8080"
         environment:
