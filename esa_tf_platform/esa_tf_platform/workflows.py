@@ -17,7 +17,7 @@ from . import logger
 ORDER_ID = None
 
 
-class MyLogHandler(logging.Handler, object):
+class DaskLogHandler(logging.Handler, object):
     """
      custom log handler
     """
@@ -35,8 +35,9 @@ class MyLogHandler(logging.Handler, object):
             msg = self.format(record)
             dask_worker = dask.distributed.get_worker()
             dask_worker.log_event(ORDER_ID, msg)
+        # todo: log properly the error
         except Exception:
-            self.handleError(record)
+            pass
 
 
 class ContextFilter(logging.Filter):
@@ -51,18 +52,22 @@ class ContextFilter(logging.Filter):
 
 # FIXME: where should you configure the log handler in a dask distributed application?
 def add_stderr_handlers(logger):
-    stream_handler = logging.StreamHandler(sys.stderr)
-    dask_handler = MyLogHandler()
     logging_formatter = logging.Formatter(
         "%(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
         datefmt="%d/%m/%Y %H:%M:%S",
     )
-    stream_handler.setFormatter(logging_formatter)
-    dask_handler.setFormatter(logging_formatter)
+
     logging.Formatter.converter = time.gmtime
-    logger.addHandler(stream_handler)
-    logger.addHandler(dask_handler)
     logger.addFilter(ContextFilter())
+
+    stream_handler = logging.StreamHandler(sys.stderr)
+    stream_handler.setFormatter(logging_formatter)
+    logger.addHandler(stream_handler)
+
+    dask_handler = DaskLogHandler()
+    dask_handler.setFormatter(logging_formatter)
+    logger.addHandler(dask_handler)
+
 
 
 add_stderr_handlers(logger)
