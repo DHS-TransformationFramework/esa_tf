@@ -184,7 +184,7 @@ curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce857368
 You can also inspect the current output from the transformation itself.
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')/Log" | jq
+curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')/Log/\$value"
 ```
 
 
