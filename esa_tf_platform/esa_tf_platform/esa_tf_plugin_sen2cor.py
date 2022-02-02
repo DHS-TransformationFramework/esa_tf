@@ -284,7 +284,7 @@ def run_processing(
 
 sen2cor_l1c_l2a = {
     "WorkflowName": "Sen2Cor_L1C_L2A",
-    "Description": "Product processing from Sentinel-2 L1C to L2A. Processor V2.3.6",
+    "Description": "Product processing from Sentinel-2 L1C to L2A using Sen2Cor v2.9, supporting Level-1C product version 14.2 - 14.6",
     "Execute": "esa_tf_platform.esa_tf_plugin_sen2cor.run_processing",
     "InputProductType": "S2MSI1C",
     "OutputProductType": "S2MSI2A",
