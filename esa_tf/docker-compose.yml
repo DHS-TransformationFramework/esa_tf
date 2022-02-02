@@ -30,7 +30,6 @@ services:
         command: make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"
 
     esa_tf_proxy:
-        hostname: reverse
         image: nginx:1.21.5
         volumes:
             - ./nginx:/etc/nginx/templates
