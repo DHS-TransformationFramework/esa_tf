@@ -24,6 +24,7 @@ class DaskLogHandler(logging.Handler, object):
 
     def __init__(self):
         logging.Handler.__init__(self)
+        self.dask_worker = dask.distributed.get_worker()
 
     def emit(self, record):
         """
@@ -31,13 +32,8 @@ class DaskLogHandler(logging.Handler, object):
 
          send out a record (Emit a record)
         """
-        try:
-            msg = self.format(record)
-            dask_worker = dask.distributed.get_worker()
-            dask_worker.log_event(ORDER_ID, msg)
-        # todo: log properly the error
-        except ValueError:
-            pass
+        msg = self.format(record)
+        self.dask_worker.log_event(ORDER_ID, msg)
 
 
 class ContextFilter(logging.Filter):
@@ -64,10 +60,14 @@ def add_stderr_handlers(logger):
     stream_handler.setFormatter(logging_formatter)
     logger.addHandler(stream_handler)
 
-    dask_handler = DaskLogHandler()
-    dask_handler.setFormatter(logging_formatter)
-    logger.addHandler(dask_handler)
-
+    try:
+        dask.distributed.get_worker()
+    except ValueError:
+        pass
+    else:
+        dask_handler = DaskLogHandler()
+        dask_handler.setFormatter(logging_formatter)
+        logger.addHandler(dask_handler)
 
 
 add_stderr_handlers(logger)
