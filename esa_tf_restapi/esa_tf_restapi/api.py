@@ -172,7 +172,14 @@ def build_transformation_order(order):
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
 
     if future.status == "finished":
-        transformation_order["OutputFile"] = os.path.basename(future.result())
+        if not transformation_order.get("OutputProductReference", {}):
+            transformation_order["OutputProductReference"] = [
+                {
+                    "Reference": future.result(),
+                    "DownloadURI": None
+                 }
+
+            ]
     return transformation_order
 
 
