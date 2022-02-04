@@ -50,7 +50,7 @@ class ContextFilter(logging.Filter):
 # FIXME: where should you configure the log handler in a dask distributed application?
 def add_stderr_handlers(logger):
     logging_formatter = logging.Formatter(
-        "esa_tf-%(tf_version)s -%(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
+        "esa_tf-%(tf_version)s - %(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
         datefmt="%d/%m/%Y %H:%M:%S",
     )
 
