@@ -13,6 +13,7 @@ import sentinelsat
 import yaml
 
 from . import logger
+from . import __version__
 
 ORDER_ID = None
 
@@ -28,9 +29,7 @@ class DaskLogHandler(logging.Handler, object):
 
     def emit(self, record):
         """
-        emit must be overridden if the function is a custom handler class ， here, you can do some processing for log messages as needed, such as sending logs to the server.
-
-         send out a record (Emit a record)
+        Send  teg redcord to dask log_event
         """
         msg = self.format(record)
         self.dask_worker.log_event(ORDER_ID, msg)
@@ -43,13 +42,15 @@ class ContextFilter(logging.Filter):
 
     def filter(self, record):
         record.order_id = ORDER_ID
+        record.tf_version = __version__
+
         return True
 
 
 # FIXME: where should you configure the log handler in a dask distributed application?
 def add_stderr_handlers(logger):
     logging_formatter = logging.Formatter(
-        "%(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
+        "esa_tf-%(tf_version)s -%(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
         datefmt="%d/%m/%Y %H:%M:%S",
     )
 
