@@ -174,11 +174,7 @@ def build_transformation_order(order):
     if future.status == "finished":
         if not transformation_order.get("OutputProductReference", {}):
             transformation_order["OutputProductReference"] = [
-                {
-                    "Reference": future.result(),
-                    "DownloadURI": None
-                 }
-
+                {"Reference": future.result(), "DownloadURI": None}
             ]
     return transformation_order
 
