@@ -11,11 +11,10 @@ services:
 
     esa_tf_restapi:
         image: ${ESA_REGISTRY_PATH:-collaborativedhs}/esa_tf_restapi:${ESA_TF_RELEASE:-latest}
-        ports:
-            - "8000:8000"
         command: make serve PORT=8000 SCHEDULER="tcp://esa_tf_scheduler:8786"
         environment:
-            - FORWARDED_ALLOW_IPS=${FORWARDED_ALLOW_IPS:-127.0.0.1}
+            - FORWARDED_ALLOW_IPS=*
+            - ROOT_PATH=${ROOT_PATH}
 
     esa_tf_worker:
         image: ${ESA_REGISTRY_PATH:-collaborativedhs}/esa_tf_worker:${ESA_TF_RELEASE:-latest}
