@@ -41,3 +41,5 @@ services:
         environment:
             - NGINX_HOST=_
             - NGINX_PORT=8080
+            - APPLICATION_HOSTNAME=${APPLICATION_HOSTNAME}
+            - APPLICATION_PROTO=${APPLICATION_PROTO}
