@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from odata_query.exceptions import ODataException
-
 
 app = FastAPI(root_path=os.environ.get("ROOT_PATH", ""))
 
