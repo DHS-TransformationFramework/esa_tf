@@ -1,7 +1,9 @@
 import copy
 import functools
+import operator
 import os
 import re
+import typing as T
 from datetime import datetime
 
 import dask.distributed
@@ -66,6 +68,11 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+def add_completed_date(future):
+    order = TRANSFORMATION_ORDERS[future.key]
+    order["CompletedDate"] = datetime.now().isoformat()
+
+
 def check_products_consistency(
     product_type, input_product_reference_name, workflow_id=None
 ):
@@ -81,14 +88,14 @@ def check_products_consistency(
         exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
     else:
         raise ValueError(
-            f"workflow {workflow_id} product type not recognized. product type shall"
-            f"one of the following {SENTINEL1}, {SENTINEL2}"
+            f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"
         )
 
     if not re.match(exp, str(input_product_reference_name)):
         raise ValueError(
-            f"the input product reference name {input_product_reference_name} "
-            f"is not compliant with product type {product_type} in workflow {workflow_id}"
+            f"input product name {input_product_reference_name!r} does not comply "
+            f"to the naming convention for the {product_type!r} product type required by "
+            f"{workflow_id!r}"
         )
 
 
@@ -101,8 +108,7 @@ def instantiate_client(scheduler_addr=None):
     if scheduler_addr is None:
         scheduler_addr = os.getenv("SCHEDULER")
     if scheduler_addr is None:
-        raise ValueError("scheduler not defined")
-
+        raise ValueError("environment variable 'SCHEDULER' not found")
     if not CLIENT or CLIENT.scheduler.addr != scheduler_addr:
         CLIENT = dask.distributed.Client(scheduler_addr)
 
@@ -148,7 +154,7 @@ def get_workflow_by_id(workflow_id, scheduler=None):
         workflow = workflows[workflow_id]
     except KeyError:
         raise KeyError(
-            f"Workflow {workflow_id} not found, available workflows are {list(workflows.keys())}"
+            f"Workflow {workflow_id!r} not found, the available workflows are {list(workflows)!r}"
         )
     return workflow
 
@@ -185,22 +191,64 @@ def get_transformation_order(order_id):
     """
     order = TRANSFORMATION_ORDERS.get(order_id)
     if order is None:
-        raise KeyError(f"transformation Order {order_id} not found")
+        raise KeyError(f"Transformation Order {order_id!r} not found")
     transformation_order = build_transformation_order(order)
     return transformation_order
 
 
-def get_transformation_orders(status=None, workflow_id=None):
+def check_filter_validity(filters):
+    allowed_filters = {
+        "Id": ("eq",),
+        "SubmissionDate": ("le", "ge", "lt", "gt", "eq"),
+        "CompletedDate": ("le", "ge", "lt", "gt", "eq"),
+        "WorkflowId": ("eq",),
+        "Status": ("eq",),
+        "InputProductReference": ("eq",),
+    }
+    for key, op, value in filters:
+        if key not in set(allowed_filters):
+            raise ValueError(
+                f"{key!r} is not an allowed key, Transformation Orders can "
+                f"be filtered using only the following keys: {list(allowed_filters)}"
+            )
+        if op not in allowed_filters[key]:
+            raise ValueError(
+                f"{op!r} is not an allowed operator for key {key!r}; "
+                f"the valid operators are: {allowed_filters[key]!r}"
+            )
+
+
+def get_transformation_orders(
+    filters: T.List[T.Tuple[str, str, str]] = [],
+) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
-    The can be filtered by the status and the workflow_id
+    They can be filtered by the SubmissionDate, CompletedDate, Status
+    :param T.List[T.Tuple[str, str, str]] filters: list if tuple
     """
+    # check filters
+    check_filter_validity(filters)
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
         transformation_order = build_transformation_order(order)
-        add_order = (not workflow_id or (workflow_id == order["WorkflowId"])) and (
-            not status or (status == transformation_order["Status"])
-        )
+        add_order = True
+        for key, op, value in filters:
+            if key == "CompletedDate" and "CompletedDate" not in transformation_order:
+                continue
+            op = getattr(operator, op)
+            if key == "InputProductReference":
+                order_value = transformation_order["InputProductReference"]["Reference"]
+            else:
+                order_value = transformation_order[key]
+            if key in {"CompletedDate", "SubmissionDate"}:
+                order_value = datetime.fromisoformat(order_value)
+                try:
+                    value = datetime.fromisoformat(value)
+                except ValueError:
+                    raise ValueError(
+                        f"{key!r} is not a valid isoformat string: {value}"
+                    )
+            add_order = add_order and op(order_value, value)
         if add_order:
             transformation_orders.append(transformation_order)
     return transformation_orders
@@ -235,8 +283,8 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     missing_options_values = set(config_workflow_options) - set(workflow_options)
     if len(missing_options_values):
         raise ValueError(
-            f"{list(missing_options_values)} are mandatory options for workflow {workflow_id}, "
-            f"but they are missing in order definition "
+            f"the following missing options are mandatory for {workflow_id!r} Workflow:"
+            f"{list(missing_options_values)!r} "
         )
     return workflow_options
 
@@ -263,15 +311,12 @@ def submit_workflow(
     it is used the value of the environment variable "WORKING_DIR".
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
-    :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None it
     is used the value of the environment variable "HUBS_CREDENTIALS_FILE"
     :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
     the value of environment variable SCHEDULER.
     """
 
-    workflow = get_workflows().get(workflow_id)
-    if workflow is None:
-        raise ValueError(f"Workflow id {workflow_id} not found.")
+    workflow = get_workflow_by_id(workflow_id)
     product_type = workflow["InputProductType"]
     check_products_consistency(
         product_type, input_product_reference["Reference"], workflow_id=workflow_id
@@ -305,18 +350,20 @@ def submit_workflow(
         future = order["future"]
         if future.status == "error":
             client.retry(future)
-            order["SubmissionDate"] = datetime.now().strftime("%Y-%m-%dT%H:%m:%S")
+            order["SubmissionDate"] = datetime.now().isoformat()
+            order.pop("CompletedDate", None)
     else:
         future = client.submit(task, key=order_id)
         order = {
             "future": future,
             "Id": order_id,
-            "SubmissionDate": datetime.now().strftime("%Y-%m-%dT%H:%m:%S"),
+            "SubmissionDate": datetime.now().isoformat(),
             "InputProductReference": input_product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
             "WorkflowName": workflow["WorkflowName"],
         }
         TRANSFORMATION_ORDERS[order_id] = order
+        future.add_done_callback(add_completed_date)
 
     return build_transformation_order(order)

@@ -44,27 +44,17 @@ def test_type_checking():
 
 
 def test_transformation_order_missing_params(register_workflows):
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValidationError, match=f"field required"):
         models.TranformationOrder()
-    assert "WorkflowId\n  field required (type=value_error.missing)" in str(
-        excinfo.value
-    )
 
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValidationError, match=f"field required"):
         models.TranformationOrder(WorkflowId="workflow_1")
-    assert "InputProductReference\n  field required (type=value_error.missing)" in str(
-        excinfo.value
-    )
 
     # Checking for registered workflow
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValidationError, match=r"unknown workflow"):
         models.TranformationOrder(
             WorkflowId="workflow_xxxx", InputProductReference={"Reference": "Ref a"},
         )
-    assert (
-        "WorkflowId\n  unknown workflow: workflow_xxxx. Registered workflows are: workflow_1 (type=value_error)"
-        in str(excinfo.value)
-    )
 
     # Testing workflow options can be provided as empty dict
     try:
@@ -78,7 +68,7 @@ def test_transformation_order_missing_params(register_workflows):
 
 
 def test_transformation_order_validate_workflow_options(register_workflows):
-    with pytest.raises(ValueError, match=f"is an unknown name"):
+    with pytest.raises(ValueError, match=f"unknown parameter"):
         models.TranformationOrder(
             WorkflowId="workflow_1",
             InputProductReference={"Reference": "Ref a"},
@@ -102,16 +92,12 @@ def test_transformation_order_validate_workflow_options(register_workflows):
     except:
         pytest.fail("Valid Case 1 failed")
 
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValidationError, match=r"wrong type"):
         models.TranformationOrder(
             WorkflowId="workflow_1",
             InputProductReference={"Reference": "Ref a"},
             WorkflowOptions={"Case 2": "foo"},
         )
-    assert (
-        "WorkflowOptions\n  wrong type for Case 2. Param type should be boolean while 'foo' (of type str) provided (type=value_error)"
-        in str(excinfo.value)
-    )
 
     # Valid Case 2
     try:
@@ -123,16 +109,12 @@ def test_transformation_order_validate_workflow_options(register_workflows):
     except:
         pytest.fail("Valid Case 2 failed")
 
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValidationError, match=f"disallowed value"):
         models.TranformationOrder(
             WorkflowId="workflow_1",
             InputProductReference={"Reference": "Ref a"},
             WorkflowOptions={"Case 3": 999},
         )
-    assert (
-        "WorkflowOptions\n  disallowed value for Case 3: 999 has been provided while possible values are 0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460 (type=value_error)"
-        in str(excinfo.value)
-    )
 
     # Valid Case 2
     try:

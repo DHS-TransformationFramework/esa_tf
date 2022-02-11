@@ -13,9 +13,18 @@
 # limitations under the License.
 
 import os
+import logging
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from odata_query.exceptions import ODataException
 
 
 app = FastAPI(root_path=os.environ.get("ROOT_PATH", ""))
 
 from . import routes
+
+
+@app.exception_handler(ODataException)
+async def validation_exception_handler(request, exc):
+    logging.exception("Invalid OData query")
+    return JSONResponse(content={"detail": "Invalid OData query"}, status_code=422,)
