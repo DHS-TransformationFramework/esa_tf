@@ -179,8 +179,9 @@ def build_transformation_order(order):
 
     if future.status == "finished":
         if not transformation_order.get("OutputProductReference", {}):
+            basepath, reference = os.path.split(future.result())
             transformation_order["OutputProductReference"] = [
-                {"Reference": future.result(), "DownloadURI": None}
+                {"Reference": reference, "RaferenceBasePath": basepath}
             ]
     return transformation_order
 
