@@ -43,22 +43,21 @@ class ContextFilter(logging.Filter):
     def filter(self, record):
         record.order_id = ORDER_ID
         record.tf_version = __version__
-
         return True
 
 
 # FIXME: where should you configure the log handler in a dask distributed application?
 def add_stderr_handlers(logger):
+    filter = ContextFilter()
     logging_formatter = logging.Formatter(
         "esa_tf-%(tf_version)s - %(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
         datefmt="%d/%m/%Y %H:%M:%S",
     )
-
     logging.Formatter.converter = time.gmtime
-    logger.addFilter(ContextFilter())
 
     stream_handler = logging.StreamHandler(sys.stderr)
     stream_handler.setFormatter(logging_formatter)
+    stream_handler.addFilter(filter)
     logger.addHandler(stream_handler)
 
     try:
@@ -68,10 +67,14 @@ def add_stderr_handlers(logger):
     else:
         dask_handler = DaskLogHandler()
         dask_handler.setFormatter(logging_formatter)
+        dask_handler.addFilter(filter)
+
         logger.addHandler(dask_handler)
 
 
+logger.propagate = True
 add_stderr_handlers(logger)
+
 
 
 TYPES = {

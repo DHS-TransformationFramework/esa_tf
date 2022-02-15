@@ -192,6 +192,8 @@ def get_dask_orders_status():
 
 
 def get_transformation_order_log(order_id):
+    if not order_id in TRANSFORMATION_ORDERS:
+        raise KeyError(f"Transformation Order {order_id!r} not found")
     client = instantiate_client()
     seconds_logs = client.get_events(order_id)
     logs = []
