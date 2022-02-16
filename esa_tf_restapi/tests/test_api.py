@@ -155,7 +155,7 @@ def test_error_fill_with_defaults():
 
 
 @mock.patch(
-    "esa_tf_restapi.api.build_transformation_order", side_effect=lambda x: x,
+    "esa_tf_restapi.api.build_transformation_order", side_effect=lambda order, uri_root: order,
 )
 def test_get_transformation_orders(function):
     esa_tf_restapi.api.TRANSFORMATION_ORDERS.update(TRANSFORMATION_ORDERS)
