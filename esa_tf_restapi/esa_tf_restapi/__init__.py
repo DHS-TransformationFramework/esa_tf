@@ -25,6 +25,9 @@ __version__ = "0.8.1"
 app = FastAPI()
 
 from . import routes
+from . import logger_setup
+
+logger_setup.logger_setup()
 
 
 @app.exception_handler(TokenizingException)

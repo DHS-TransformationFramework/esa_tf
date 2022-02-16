@@ -4,48 +4,13 @@ import logging
 import operator
 import os
 import re
-import sys
-import time
+
 import typing as T
 from datetime import datetime
 
 import dask.distributed
 
-from . import __version__
 
-
-class ContextFilter(logging.Filter):
-    """
-    This is a filter which injects contextual information into the log.
-    """
-
-    def filter(self, record):
-        record.tf_version = __version__
-        return True
-
-
-def add_stderr_handlers(logger):
-    filter = ContextFilter()
-    logging_formatter = logging.Formatter(
-        "esa_tf-%(tf_version)s - %(name)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
-        datefmt="%d/%m/%Y %H:%M:%S",
-    )
-    logging.Formatter.converter = time.gmtime
-
-    stream_handler = logging.StreamHandler(sys.stderr)
-    stream_handler.setFormatter(logging_formatter)
-    stream_handler.addFilter(filter)
-    logger.addHandler(stream_handler)
-
-
-def logger_set_up():
-    rootlogger = logging.getLogger()
-    rootlogger.setLevel(logging.INFO)
-    rootlogger.propagate = True
-    add_stderr_handlers(rootlogger)
-
-
-logger_set_up()
 logger = logging.getLogger(__name__)
 
 CLIENT = None
