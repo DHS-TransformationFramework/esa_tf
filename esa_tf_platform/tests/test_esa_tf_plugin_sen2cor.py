@@ -114,7 +114,7 @@ def test_check_ozone_content_valid_summer():
         "Ozone_Content": 370,
         "Cirrus_Correction": True,
     }
-    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is None
 
 
 def test_check_ozone_content_invalid_summer():
@@ -133,7 +133,7 @@ def test_check_ozone_content_valid_winter():
         "Ozone_Content": 420,
         "Cirrus_Correction": True,
     }
-    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is None
 
 
 def test_check_ozone_content_invalid_winter():
@@ -152,7 +152,7 @@ def test_check_ozone_content_valid_auto():
         "Ozone_Content": 290,
         "Cirrus_Correction": True,
     }
-    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is True
+    assert esa_tf_plugin_sen2cor.check_ozone_content(options) is None
 
 
 def test_check_ozone_content_invalid_auto():
@@ -167,7 +167,7 @@ def test_check_ozone_content_invalid_auto():
 
 def test_check_roi_options_missing_valid():
     roi_options = {}
-    assert esa_tf_plugin_sen2cor.check_roi_options(roi_options) is True
+    assert esa_tf_plugin_sen2cor.check_roi_options(roi_options) is None
 
 
 def test_check_roi_options_missing_invalid():
@@ -209,7 +209,7 @@ def test_check_roi_options_rowcol_same_str_value():
         "nrow_win": 600,
         "ncol_win": 600,
     }
-    assert esa_tf_plugin_sen2cor.check_roi_options(roi_options) is True
+    assert esa_tf_plugin_sen2cor.check_roi_options(roi_options) is None
 
 
 def test_check_roi_options_rowcol_int_value():
@@ -219,7 +219,7 @@ def test_check_roi_options_rowcol_int_value():
         "nrow_win": 600,
         "ncol_win": 600,
     }
-    assert esa_tf_plugin_sen2cor.check_roi_options(roi_options) is True
+    assert esa_tf_plugin_sen2cor.check_roi_options(roi_options) is None
 
 
 def test_check_roi_options_int_invalid_centre():
@@ -248,7 +248,7 @@ def test_check_roi_options_int_invalid_win():
 
 def test_check_options_no_option():
     options = {}
-    assert esa_tf_plugin_sen2cor.check_options(options) is True
+    assert esa_tf_plugin_sen2cor.check_options(options) is None
 
 
 def test_check_options_valid_no_roi():
@@ -258,7 +258,7 @@ def test_check_options_valid_no_roi():
         "Ozone_Content": 0,
         "Cirrus_Correction": True,
     }
-    assert esa_tf_plugin_sen2cor.check_options(options) is True
+    assert esa_tf_plugin_sen2cor.check_options(options) is None
 
 
 def test_check_options_invalid_no_roi():
