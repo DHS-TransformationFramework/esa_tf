@@ -20,6 +20,8 @@ from fastapi.exception_handlers import (
 from fastapi.responses import JSONResponse
 from odata_query.exceptions import TokenizingException
 
+__version__ = "0.8.1"
+
 app = FastAPI()
 
 from . import routes

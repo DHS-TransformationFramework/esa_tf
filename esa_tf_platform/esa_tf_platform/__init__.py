@@ -14,10 +14,7 @@
 
 import logging
 
-__version__ = "0.8.2"
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+__version__ = "0.8.1"
 
 from .workflows import get_all_workflows, run_workflow
 
