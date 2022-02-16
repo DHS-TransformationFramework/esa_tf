@@ -4,6 +4,7 @@ import time
 
 from . import __version__
 
+
 class ContextFilter(logging.Filter):
     """
     This is a filter which injects contextual information into the log.

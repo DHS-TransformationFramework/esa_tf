@@ -24,8 +24,7 @@ __version__ = "0.8.1"
 
 app = FastAPI()
 
-from . import routes
-from . import logger_setup
+from . import logger_setup, routes
 
 logger_setup.logger_setup()
 

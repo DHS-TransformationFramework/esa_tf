@@ -4,12 +4,10 @@ import logging
 import operator
 import os
 import re
-
 import typing as T
 from datetime import datetime
 
 import dask.distributed
-
 
 logger = logging.getLogger(__name__)
 
@@ -369,7 +367,9 @@ def submit_workflow(
     client = instantiate_client(scheduler)
 
     if user:
-        logger.info(f"submitting transformation order {order_id!r} request by user {user!r}")
+        logger.info(
+            f"submitting transformation order {order_id!r} request by user {user!r}"
+        )
     else:
         logger.info(f"submitting transformation order {order_id!r}")
 

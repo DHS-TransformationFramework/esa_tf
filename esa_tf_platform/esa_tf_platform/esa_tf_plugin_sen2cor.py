@@ -6,7 +6,6 @@ from xml.etree import ElementTree
 
 import pkg_resources
 
-
 SEN2COR_CONFILE_NAME = "L2A_GIPP.xml"
 SRTM_DOWNLOAD_ADDRESS = (
     "http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/"
@@ -240,10 +239,12 @@ def run_command(cmd, processing_dir):
     """
     LOGGER.info(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
     sen2cor_log_path = os.path.join(processing_dir, "sen2cor_log.log")
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+    process = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
+    )
     with open(sen2cor_log_path, "w", buffering=1) as f_log:
         while process.poll() is None:
-            lines = iter(process.stdout.readline, b'')
+            lines = iter(process.stdout.readline, b"")
             try:
                 line = next(lines)
             except:

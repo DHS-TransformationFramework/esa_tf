@@ -2,12 +2,11 @@ import logging
 from typing import Optional
 
 from fastapi import HTTPException, Query, Request, Response
-from fastapi.responses import RedirectResponse, StreamingResponse, PlainTextResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
 
 from . import api, app, models
 from .csdl import loadDefinition
 from .odata import parse_qs
-
 
 # @app.get("/")
 # async def index():
