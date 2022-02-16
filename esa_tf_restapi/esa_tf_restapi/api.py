@@ -1,16 +1,55 @@
 import copy
 import functools
+import logging
 import operator
 import os
 import re
+import sys
+import time
 import typing as T
 from datetime import datetime
 
 import dask.distributed
 
+from . import __version__
+
+
+class ContextFilter(logging.Filter):
+    """
+    This is a filter which injects contextual information into the log.
+    """
+
+    def filter(self, record):
+        record.tf_version = __version__
+        return True
+
+
+def add_stderr_handlers(logger):
+    filter = ContextFilter()
+    logging_formatter = logging.Formatter(
+        "esa_tf-%(tf_version)s - %(name)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
+        datefmt="%d/%m/%Y %H:%M:%S",
+    )
+    logging.Formatter.converter = time.gmtime
+
+    stream_handler = logging.StreamHandler(sys.stderr)
+    stream_handler.setFormatter(logging_formatter)
+    stream_handler.addFilter(filter)
+    logger.addHandler(stream_handler)
+
+
+def logger_set_up():
+    rootlogger = logging.getLogger()
+    rootlogger.setLevel(logging.INFO)
+    rootlogger.propagate = True
+    add_stderr_handlers(rootlogger)
+
+
+logger_set_up()
+logger = logging.getLogger(__name__)
+
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
-
 
 STATUS_DASK_TO_API = {
     "pending": "in_progress",
@@ -311,6 +350,7 @@ def submit_workflow(
     *,
     input_product_reference,
     workflow_options,
+    user=None,
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
@@ -342,6 +382,7 @@ def submit_workflow(
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
+
     workflow_options = fill_with_defaults(
         workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
@@ -361,6 +402,11 @@ def submit_workflow(
         )
 
     client = instantiate_client(scheduler)
+
+    if user:
+        logger.info(f"submitting transformation order {order_id!r} request by user {user!r}")
+    else:
+        logger.info(f"submitting transformation order {order_id!r}")
 
     if order_id in TRANSFORMATION_ORDERS:
         order = TRANSFORMATION_ORDERS[order_id]
