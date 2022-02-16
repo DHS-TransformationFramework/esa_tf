@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-
 __version__ = "0.8.1"
 
 from .workflows import get_all_workflows, run_workflow
