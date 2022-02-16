@@ -5,17 +5,7 @@ from fastapi import HTTPException, Query, Request, Response
 from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
 
 from . import api, app, models
-from .csdl import loadDefinition
 from .odata import parse_qs
-
-# @app.get("/")
-# async def index():
-#     return RedirectResponse("/$metadata")
-
-
-# @app.get("/$metadata")
-# def metadata():
-#     return StreamingResponse(loadDefinition(), media_type="application/xml")
 
 
 @app.get("/Workflows")
@@ -23,7 +13,6 @@ async def workflows(request: Request):
     # root = request.url_for("metadata")
     data = api.get_workflows()
     return {
-        # "@odata.context": f"{root}#Workflows",
         "value": [{"Id": id, **ops} for id, ops in data.items()],
     }
 
@@ -40,7 +29,6 @@ async def workflow(request: Request, id: str):
     # root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
-        # "@odata.context": f"{root}#Workflows('{id}')",
         "Id": id,
         **data,
     }
@@ -71,7 +59,6 @@ async def transformation_orders(
 
     # root = request.url_for("metadata")
     return {
-        # "@odata.context": f"{root}#TransformationOrders",
         **({"odata.count": len(data)} if count else {}),
         "value": data,
     }
@@ -96,7 +83,6 @@ async def get_transformation_order(request: Request, id: str):
     # root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
-        # "@odata.context": f"{root}#TransformationOrders('{id}')",
         "Id": id,
         **data,
     }
@@ -110,7 +96,6 @@ async def get_transformation_order_log(id: str):
         logging.exception("Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
     return {
-        # "@odata.context": f"{root}#TransformationOrders",
         "value": log,
     }
 
