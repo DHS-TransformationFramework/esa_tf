@@ -12,7 +12,6 @@ import pkg_resources
 import sentinelsat
 import yaml
 
-from . import logger
 from . import __version__
 
 ORDER_ID = None
@@ -68,14 +67,18 @@ def add_stderr_handlers(logger):
         dask_handler = DaskLogHandler()
         dask_handler.setFormatter(logging_formatter)
         dask_handler.addFilter(filter)
-
         logger.addHandler(dask_handler)
 
 
-logger.propagate = True
-add_stderr_handlers(logger)
+def logger_set_up():
+    rootlogger = logging.getLogger()
+    rootlogger.setLevel(logging.INFO)
+    rootlogger.propagate = True
+    add_stderr_handlers(rootlogger)
 
 
+logger_set_up()
+logger = logging.getLogger(__name__)
 
 TYPES = {
     "boolean": bool,
