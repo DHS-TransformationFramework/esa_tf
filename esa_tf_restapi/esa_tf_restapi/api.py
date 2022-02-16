@@ -68,6 +68,15 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+def _prepare_download_uri(output_product_referece: list, root_uri: str):
+    for product in output_product_referece:
+        product[
+            "DownloadURI"
+        ] = f"{root_uri}download/{product['ReferenceBasePath']}/{product['Reference']}"
+        del product["ReferenceBasePath"]
+    return output_product_referece
+
+
 def add_completed_date(future):
     order = TRANSFORMATION_ORDERS[future.key]
     order["CompletedDate"] = datetime.now().isoformat()
@@ -170,7 +179,7 @@ def get_workflows(product=None, scheduler=None):
     return workflows
 
 
-def build_transformation_order(order):
+def build_transformation_order(order, uri_root=None):
     # Note: the future must be extracted from the original order. The deepcopy breaks the future
     future = order["future"]
     transformation_order = copy.deepcopy(order)
@@ -181,19 +190,23 @@ def build_transformation_order(order):
         if not transformation_order.get("OutputProductReference", {}):
             basepath, reference = os.path.split(future.result())
             transformation_order["OutputProductReference"] = [
-                {"Reference": reference, "RaferenceBasePath": basepath}
+                {"Reference": reference, "ReferenceBasePath": basepath}
             ]
+            if uri_root:
+                transformation_order["OutputProductReference"] = _prepare_download_uri(
+                    transformation_order["OutputProductReference"], uri_root
+                )
     return transformation_order
 
 
-def get_transformation_order(order_id):
+def get_transformation_order(order_id, uri_root=None):
     """
     Return the transformation order corresponding to the order_id
     """
     order = TRANSFORMATION_ORDERS.get(order_id)
     if order is None:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    transformation_order = build_transformation_order(order)
+    transformation_order = build_transformation_order(order, uri_root=uri_root)
     return transformation_order
 
 
@@ -220,7 +233,7 @@ def check_filter_validity(filters):
 
 
 def get_transformation_orders(
-    filters: T.List[T.Tuple[str, str, str]] = [],
+    filters: T.List[T.Tuple[str, str, str]] = [], uri_root: str = None,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
@@ -231,7 +244,7 @@ def get_transformation_orders(
     check_filter_validity(filters)
     transformation_orders = []
     for order in TRANSFORMATION_ORDERS.values():
-        transformation_order = build_transformation_order(order)
+        transformation_order = build_transformation_order(order, uri_root=uri_root)
         add_order = True
         for key, op, value in filters:
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:

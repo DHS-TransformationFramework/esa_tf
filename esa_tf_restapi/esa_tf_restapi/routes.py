@@ -62,9 +62,10 @@ async def transformation_orders(
 ):
     odata_params = parse_qs(filter=rawfilter)
     filters = odata_params.filter
+    uri_root = request.url_for("index")
     try:
         data = api.get_transformation_orders(
-            [(f.name, f.operator, f.value) for f in filters]
+            [(f.name, f.operator, f.value) for f in filters], uri_root=uri_root,
         )
     except ValueError as exc:
         logging.exception("Invalid request")
@@ -87,9 +88,10 @@ async def transformation_orders_count(request: Request,):
 @app.get("/TransformationOrders('{id}')", name="transformation_order")
 async def get_transformation_order(request: Request, id: str):
     base = request.url_for("transformation_orders")
+    uri_root = request.url_for("index")
     data = None
     try:
-        data = api.get_transformation_order(id)
+        data = api.get_transformation_order(id, uri_root=uri_root)
     except KeyError as exc:
         logging.exception("Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
