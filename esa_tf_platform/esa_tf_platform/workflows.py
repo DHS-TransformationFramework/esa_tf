@@ -4,15 +4,34 @@ import logging
 import os
 import shutil
 import sys
+import time
 import zipfile
 
+import dask.distributed
 import pkg_resources
 import sentinelsat
 import yaml
 
-from . import logger
+from . import __version__
 
 ORDER_ID = None
+
+
+class DaskLogHandler(logging.Handler, object):
+    """
+     custom log handler
+    """
+
+    def __init__(self):
+        logging.Handler.__init__(self)
+        self.dask_worker = dask.distributed.get_worker()
+
+    def emit(self, record):
+        """
+        Send  teg redcord to dask log_event
+        """
+        msg = self.format(record)
+        self.dask_worker.log_event(ORDER_ID, msg)
 
 
 class ContextFilter(logging.Filter):
@@ -21,25 +40,45 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-        record.oder_id = ORDER_ID
+        record.order_id = ORDER_ID
+        record.tf_version = __version__
         return True
 
 
 # FIXME: where should you configure the log handler in a dask distributed application?
-def add_stderr_handler(logger):
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(
-        logging.Formatter(
-            "%(name)s - order_id %(oder_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
-            datefmt="%d/%m/%Y %H:%M:%S",
-        )
+def add_stderr_handlers(logger):
+    filter = ContextFilter()
+    logging_formatter = logging.Formatter(
+        "esa_tf-%(tf_version)s - %(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
+        datefmt="%d/%m/%Y %H:%M:%S",
     )
-    logger.addHandler(handler)
-    logger.addFilter(ContextFilter())
+    logging.Formatter.converter = time.gmtime
+
+    stream_handler = logging.StreamHandler(sys.stderr)
+    stream_handler.setFormatter(logging_formatter)
+    stream_handler.addFilter(filter)
+    logger.addHandler(stream_handler)
+
+    try:
+        dask.distributed.get_worker()
+    except ValueError:
+        pass
+    else:
+        dask_handler = DaskLogHandler()
+        dask_handler.setFormatter(logging_formatter)
+        dask_handler.addFilter(filter)
+        logger.addHandler(dask_handler)
 
 
-add_stderr_handler(logger)
+def logger_set_up():
+    rootlogger = logging.getLogger()
+    rootlogger.setLevel(logging.INFO)
+    rootlogger.propagate = True
+    add_stderr_handlers(rootlogger)
 
+
+logger_set_up()
+logger = logging.getLogger(__name__)
 
 TYPES = {
     "boolean": bool,
@@ -417,6 +456,11 @@ def run_workflow(
     # define create directories
     global ORDER_ID
     ORDER_ID = order_id
+    try:
+        dask_worker = dask.distributed.get_worker()
+        logger.info(f"start processing on worker: {dask_worker.name!r}")
+    except ValueError:
+        pass
 
     if working_dir is None:
         working_dir = os.getenv("WORKING_DIR", "./working_dir")
@@ -441,7 +485,7 @@ def run_workflow(
     # download
     product = product_reference["Reference"]
     hub_name = product_reference.get("DataSourceName")
-    logger.info("download input product: %r", product)
+    logger.info(f"downloading input product: {product!r}")
     product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
@@ -449,13 +493,13 @@ def run_workflow(
         hub_name=hub_name,
         order_id=order_id,
     )
-    logger.info("unpack input product: %r", product_zip_file)
+    logger.info(f"unpack input product: {product_zip_file!r}")
     product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
     workflow_runner = load_workflow_runner(workflow_id)
 
-    logger.info("run workflow: %r, %r", workflow_id, workflow_options)
+    logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
     output = workflow_runner(
         product_path,
         processing_dir=processing_dir,
@@ -464,7 +508,7 @@ def run_workflow(
     )
 
     # re-package the ouput
-    logger.info("package output product: %r", output)
+    logger.info(f"package output product: {output!r}")
 
     output_order_dir = os.path.join(output_dir, order_id)
     os.makedirs(output_order_dir, exist_ok=True)

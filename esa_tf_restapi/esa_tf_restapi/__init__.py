@@ -19,9 +19,13 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from odata_query.exceptions import ODataException
 
+__version__ = "0.8.1"
+
 app = FastAPI(root_path=os.environ.get("ROOT_PATH", ""))
 
-from . import routes
+from . import logger_setup, routes
+
+logger_setup.logger_setup()
 
 
 @app.exception_handler(ODataException)

@@ -1,6 +1,6 @@
 import glob
+import logging
 import os
-import pprint
 import subprocess
 from xml.etree import ElementTree
 
@@ -15,6 +15,8 @@ ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
 
 OZONE_WINTER_VALUES = (0, 250, 290, 330, 377, 420, 460)
 OZONE_SUMMER_VALUES = (0, 250, 290, 331, 370, 410, 450)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def set_sen2cor_options(etree, options, srtm_dir):
@@ -185,7 +187,7 @@ def check_options(options):
             raise ValueError(f"invalid option {oname}: valid options are {valid_names}")
 
 
-def print_options(workflow_options):
+def log_options(workflow_options):
     """Print the required Sen2Cor options (user desiderata + default values).
 
     :param workflow_options: the user's options dictionary
@@ -196,8 +198,7 @@ def print_options(workflow_options):
         for option_name, option in sen2cor_l1c_l2a["WorkflowOptions"].items()
     }
     applied_options.update(workflow_options)
-    print("Sen2Cor options:")
-    pprint.pprint(applied_options)
+    LOGGER.info(applied_options)
     return applied_options
 
 
@@ -219,6 +220,37 @@ def find_output(output_dir):
         )
     output_path = os.path.join(output_dir, sen2cor_output)
     return output_path
+
+
+def run_command(cmd, processing_dir):
+    """Execute a Sen2Cor command line in a new process. The Sen2Cor standard output is read during
+    the processing, then it is sent both to a dedicated log-file and to the server as log messages.
+    The function returns the exit code of the Sen2Cor sub-process and the path of the Sen2Cor
+    log-file saved in the processing directory.
+
+    :param str cmd: Sen2Cor command line must be executed
+    :param str processing_dir: path fo the processing directory
+    :return (str, str):
+    """
+    LOGGER.info(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
+    sen2cor_log_path = os.path.join(processing_dir, "sen2cor_log.log")
+    process = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
+    )
+    with open(sen2cor_log_path, "w", buffering=1) as f_log:
+        while process.poll() is None:
+            lines = iter(process.stdout.readline, b"")
+            try:
+                line = next(lines)
+            except:
+                continue
+            f_log.write(line)
+            LOGGER.info(line)
+    process.stdout.close()
+    exit_status = process.returncode
+    if exit_status != 0:
+        raise subprocess.CalledProcessError(exit_status, cmd)
+    return exit_status, sen2cor_log_path
 
 
 def run_processing(
@@ -245,7 +277,6 @@ def run_processing(
     in the ``processing_dir`` will be created.
     :return str:
     """
-    print("\n**** Sen2Cor Workflow ****\n")
     if sen2cor_script_file is None:
         sen2cor_script_file = os.getenv("SEN2COR_SCRIPT_FILE", "L2A_Process")
     if srtm_dir is None:
@@ -267,7 +298,7 @@ def run_processing(
 
     check_input_consistency(product_path)
     check_options(workflow_options)
-    print_options(workflow_options)
+    log_options(workflow_options)
 
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
@@ -275,9 +306,7 @@ def run_processing(
     cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
     if workflow_options.get("Resolution"):
         cmd += f" --resolution {workflow_options.get('Resolution')}"
-    print(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
-    process = subprocess.run(cmd, shell=True)
-    process.check_returncode()
+    run_command(cmd, processing_dir)
     output_path = find_output(output_dir)
     return output_path
 

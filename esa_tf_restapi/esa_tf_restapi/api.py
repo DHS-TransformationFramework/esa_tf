@@ -1,5 +1,6 @@
 import copy
 import functools
+import logging
 import operator
 import os
 import re
@@ -8,9 +9,10 @@ from datetime import datetime
 
 import dask.distributed
 
+logger = logging.getLogger(__name__)
+
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
-
 
 STATUS_DASK_TO_API = {
     "pending": "in_progress",
@@ -185,7 +187,6 @@ def build_transformation_order(order, uri_root=None):
     transformation_order = copy.deepcopy(order)
     transformation_order.pop("future")
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
-
     if future.status == "finished":
         if not transformation_order.get("OutputProductReference", {}):
             basepath, reference = os.path.split(future.result())
@@ -196,7 +197,28 @@ def build_transformation_order(order, uri_root=None):
                 transformation_order["OutputProductReference"] = _prepare_download_uri(
                     transformation_order["OutputProductReference"], uri_root
                 )
+    if future.status == "error":
+        transformation_order["ErrorMessage"] = str(future.exception())
     return transformation_order
+
+
+def get_dask_orders_status():
+    def orders_status_on_scheduler(dask_scheduler):
+        return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
+
+    client = instantiate_client()
+    return client.run_on_scheduler(orders_status_on_scheduler)
+
+
+def get_transformation_order_log(order_id):
+    if not order_id in TRANSFORMATION_ORDERS:
+        raise KeyError(f"Transformation Order {order_id!r} not found")
+    client = instantiate_client()
+    seconds_logs = client.get_events(order_id)
+    logs = []
+    for seconds, log in seconds_logs:
+        logs.append(log)
+    return logs
 
 
 def get_transformation_order(order_id, uri_root=None):
@@ -243,8 +265,8 @@ def get_transformation_orders(
     # check filters
     check_filter_validity(filters)
     transformation_orders = []
-    for order in TRANSFORMATION_ORDERS.values():
-        transformation_order = build_transformation_order(order, uri_root=uri_root)
+    for order_id in TRANSFORMATION_ORDERS.keys():
+        transformation_order = get_transformation_order(order_id, uri_root=uri_root)
         add_order = True
         for key, op, value in filters:
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:
@@ -308,6 +330,7 @@ def submit_workflow(
     *,
     input_product_reference,
     workflow_options,
+    user_id=None,
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
@@ -321,6 +344,7 @@ def submit_workflow(
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
     :param dict workflow_options: dictionary cotaining the workflow kwargs.
+    :param str user_id: user identifier
     :param str working_dir: optional working directory where will be create the processing directory. If it is None
     it is used the value of the environment variable "WORKING_DIR".
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
@@ -339,6 +363,7 @@ def submit_workflow(
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
+
     workflow_options = fill_with_defaults(
         workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
@@ -358,6 +383,13 @@ def submit_workflow(
         )
 
     client = instantiate_client(scheduler)
+
+    if user_id:
+        logger.info(
+            f"submitting transformation order {order_id!r} request by user {user_id!r}"
+        )
+    else:
+        logger.info(f"submitting transformation order {order_id!r}")
 
     if order_id in TRANSFORMATION_ORDERS:
         order = TRANSFORMATION_ORDERS[order_id]

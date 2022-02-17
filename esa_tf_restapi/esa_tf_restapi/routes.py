@@ -2,29 +2,17 @@ import logging
 from typing import Optional
 
 from fastapi import HTTPException, Query, Request, Response
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
 
 from . import api, app, models
-from .csdl import loadDefinition
 from .odata import parse_qs
-
-
-@app.get("/")
-async def index():
-    return RedirectResponse("/$metadata")
-
-
-@app.get("/$metadata")
-def metadata():
-    return StreamingResponse(loadDefinition(), media_type="application/xml")
 
 
 @app.get("/Workflows")
 async def workflows(request: Request):
-    root = request.url_for("metadata")
+    # root = request.url_for("metadata")
     data = api.get_workflows()
     return {
-        "@odata.context": f"{root}#Workflows",
         "value": [{"Id": id, **ops} for id, ops in data.items()],
     }
 
@@ -38,10 +26,9 @@ async def workflow(request: Request, id: str):
         logging.exception("Invalid Worfklow id")
         raise HTTPException(status_code=404, detail=str(exc))
     base = request.url_for("workflows")
-    root = request.url_for("metadata")
+    # root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
-        "@odata.context": f"{root}#Workflows('{id}')",
         "Id": id,
         **data,
     }
@@ -71,9 +58,8 @@ async def transformation_orders(
         logging.exception("Invalid request")
         raise HTTPException(status_code=422, detail=str(exc))
 
-    root = request.url_for("metadata")
+    # root = request.url_for("metadata")
     return {
-        "@odata.context": f"{root}#TransformationOrders",
         **({"odata.count": len(data)} if count else {}),
         "value": data,
     }
@@ -96,13 +82,30 @@ async def get_transformation_order(request: Request, id: str):
         logging.exception("Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
 
-    root = request.url_for("metadata")
+    # root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
-        "@odata.context": f"{root}#TransformationOrders('{id}')",
         "Id": id,
         **data,
     }
+
+
+@app.get("/TransformationOrders('{id}')/Log")
+async def get_transformation_order_log(id: str):
+    try:
+        log = api.get_transformation_order_log(id)
+    except KeyError as exc:
+        logging.exception("Invalid Transformation Order id")
+        raise HTTPException(status_code=404, detail=str(exc))
+    return {
+        "value": log,
+    }
+
+
+@app.get("/TransformationOrders('{id}')/Log/$value", response_class=PlainTextResponse)
+async def get_transformation_order_log_raw(id: str):
+    log = await get_transformation_order_log(id)
+    return "\n".join(log.get("value", []))
 
 
 @app.post("/TransformationOrders", status_code=201)
