@@ -302,23 +302,23 @@ def test_check_options_invalid_with_roi2():
         assert esa_tf_plugin_sen2cor.check_options(options)
 
 
-def test_print_options():
+def test_log_options():
     workflow_options = {}
-    assert esa_tf_plugin_sen2cor.print_options(workflow_options)
+    assert esa_tf_plugin_sen2cor.log_options(workflow_options)
 
     workflow_options = {"Ozone_Content": 9999}
     assert (
-        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        esa_tf_plugin_sen2cor.log_options(workflow_options)["Ozone_Content"]
         == workflow_options["Ozone_Content"]
     )
 
     workflow_options = {"Ozone_Content": 9999, "dummy": -9999}
     assert (
-        esa_tf_plugin_sen2cor.print_options(workflow_options)["Ozone_Content"]
+        esa_tf_plugin_sen2cor.log_options(workflow_options)["Ozone_Content"]
         == workflow_options["Ozone_Content"]
     )
     assert (
-        esa_tf_plugin_sen2cor.print_options(workflow_options)["dummy"]
+        esa_tf_plugin_sen2cor.log_options(workflow_options)["dummy"]
         == workflow_options["dummy"]
     )
 
@@ -345,3 +345,16 @@ def test_find_output(tmpdir):
     output_path = esa_tf_plugin_sen2cor.find_output(output_dir)
 
     assert output_path == sen2cor_output_dir
+
+
+def test_run_command(tmpdir):
+    processing_dir = tmpdir.join("processing_dir").strpath
+    os.mkdir(processing_dir)
+    cmd = 'echo "Hello World"'
+    exit_status, log_path = esa_tf_plugin_sen2cor.run_command(cmd, processing_dir)
+
+    assert exit_status == 0
+    assert os.path.isfile(log_path) is True
+    with open(log_path, "r") as f:
+        stream = f.read()
+    assert "Hello World" in stream

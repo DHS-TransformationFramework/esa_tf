@@ -20,9 +20,13 @@ from fastapi.exception_handlers import (
 from fastapi.responses import JSONResponse
 from odata_query.exceptions import TokenizingException
 
+__version__ = "0.8.1"
+
 app = FastAPI()
 
-from . import routes
+from . import logger_setup, routes
+
+logger_setup.logger_setup()
 
 
 @app.exception_handler(TokenizingException)
