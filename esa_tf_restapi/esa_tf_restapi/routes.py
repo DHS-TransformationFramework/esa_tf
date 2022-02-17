@@ -5,7 +5,18 @@ from fastapi import HTTPException, Query, Request, Response
 from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
 
 from . import api, app, models
+from .csdl import loadDefinition
 from .odata import parse_qs
+
+
+@app.get("/")
+async def index():
+    return RedirectResponse("/$metadata")
+
+
+@app.get("/$metadata")
+def metadata():
+    return StreamingResponse(loadDefinition(), media_type="application/xml")
 
 
 @app.get("/Workflows")
