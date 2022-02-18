@@ -14,4 +14,7 @@
 
 __version__ = "0.8.1"
 
+from .logger_setup import logger_setup
 from .workflows import get_all_workflows, run_workflow
+
+logger_setup()

@@ -3,8 +3,6 @@ import itertools
 import logging
 import os
 import shutil
-import sys
-import time
 import zipfile
 
 import dask.distributed
@@ -12,72 +10,6 @@ import pkg_resources
 import sentinelsat
 import yaml
 
-from . import __version__
-
-ORDER_ID = None
-
-
-class DaskLogHandler(logging.Handler, object):
-    """
-     custom log handler
-    """
-
-    def __init__(self):
-        logging.Handler.__init__(self)
-        self.dask_worker = dask.distributed.get_worker()
-
-    def emit(self, record):
-        """
-        Send  teg redcord to dask log_event
-        """
-        msg = self.format(record)
-        self.dask_worker.log_event(ORDER_ID, msg)
-
-
-class ContextFilter(logging.Filter):
-    """
-    This is a filter which injects contextual information into the log.
-    """
-
-    def filter(self, record):
-        record.order_id = ORDER_ID
-        record.tf_version = __version__
-        return True
-
-
-# FIXME: where should you configure the log handler in a dask distributed application?
-def add_stderr_handlers(logger):
-    filter = ContextFilter()
-    logging_formatter = logging.Formatter(
-        "esa_tf-%(tf_version)s - %(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s ",
-        datefmt="%d/%m/%Y %H:%M:%S",
-    )
-    logging.Formatter.converter = time.gmtime
-
-    stream_handler = logging.StreamHandler(sys.stderr)
-    stream_handler.setFormatter(logging_formatter)
-    stream_handler.addFilter(filter)
-    logger.addHandler(stream_handler)
-
-    try:
-        dask.distributed.get_worker()
-    except ValueError:
-        pass
-    else:
-        dask_handler = DaskLogHandler()
-        dask_handler.setFormatter(logging_formatter)
-        dask_handler.addFilter(filter)
-        logger.addHandler(dask_handler)
-
-
-def logger_set_up():
-    rootlogger = logging.getLogger()
-    rootlogger.setLevel(logging.INFO)
-    rootlogger.propagate = True
-    add_stderr_handlers(rootlogger)
-
-
-logger_set_up()
 logger = logging.getLogger(__name__)
 
 TYPES = {
@@ -454,10 +386,8 @@ def run_workflow(
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
     """
     # define create directories
-    global ORDER_ID
-    ORDER_ID = order_id
     try:
-        dask_worker = dask.distributed.get_worker()
+        dask_worker = dask.distributed.worker.get_worker()
         logger.info(f"start processing on worker: {dask_worker.name!r}")
     except ValueError:
         pass
