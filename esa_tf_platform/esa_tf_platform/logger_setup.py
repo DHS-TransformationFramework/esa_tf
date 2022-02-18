@@ -31,7 +31,12 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-        record.order_id = dask.distributed.worker.thread_state.key
+        order_id = None
+        try:
+            order_id = dask.distributed.worker.thread_state.key
+        except AttributeError:
+            pass
+        record.order_id = order_id
         record.tf_version = __version__
         return True
 
