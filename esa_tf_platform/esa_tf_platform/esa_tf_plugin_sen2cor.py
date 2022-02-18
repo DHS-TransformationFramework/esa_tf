@@ -315,20 +315,20 @@ sen2cor_l1c_l2a = {
         },
         "Cirrus_Correction": {
             "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
-            "Default": False,
             "Type": "boolean",
+            "Default": False,
             "Enum": [True, False],
         },
         "DEM_Terrain_Correction": {
             "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
-            "Default": True,
             "Type": "boolean",
+            "Default": True,
             "Enum": [True, False],
         },
         "Resolution": {
             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
-            "Default": None,
             "Type": "integer",
+            "Default": None,
             "Enum": [10, 20, 60],
         },
     },
