@@ -182,17 +182,18 @@ def test_get_transformation_orders(function):
     orders = esa_tf_restapi.api.get_transformation_orders(
         {
             ("CompletedDate", "gt", "2022-01-20T16:27:40.000000"),
-            ("CompletedDate", "lt", "2022-01-20T16:28:00.000000")}
+            ("CompletedDate", "lt", "2022-01-20T16:28:00.000000"),
+        }
     )
     assert set([order["Id"] for order in orders]) == {"Id1"}
 
     orders = esa_tf_restapi.api.get_transformation_orders(
         {
             ("CompletedDate", "gt", "2022-01-20T16:27:40.000000"),
-            ("InputProductReference", "eq", "product_a")}
+            ("InputProductReference", "eq", "product_a"),
+        }
     )
     assert set([order["Id"] for order in orders]) == {"Id2"}
-
 
     orders = esa_tf_restapi.api.get_transformation_orders(
         {
