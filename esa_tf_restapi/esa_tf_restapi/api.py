@@ -260,7 +260,7 @@ def get_transformation_orders(
     """
     Return the all the transformation orders.
     They can be filtered by the SubmissionDate, CompletedDate, Status
-    :param T.List[T.Tuple[str, str, str]] filters: list if tuple
+    :param T.List[T.Tuple[str, str, str]] filters: list of tuple
     """
     # check filters
     check_filter_validity(filters)
@@ -270,6 +270,7 @@ def get_transformation_orders(
         add_order = True
         for key, op, value in filters:
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:
+                add_order = False
                 continue
             op = getattr(operator, op)
             if key == "InputProductReference":
