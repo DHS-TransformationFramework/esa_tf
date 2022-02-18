@@ -1,22 +1,16 @@
 import logging
 from typing import Optional
 
-from fastapi import HTTPException, Query, Request, Response
-from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
+from fastapi import HTTPException, Query, Request, Response, status
+from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from . import api, app, models
-from .csdl import loadDefinition
 from .odata import parse_qs
 
 
-@app.get("/")
+@app.get("/", status_code=status.HTTP_404_NOT_FOUND, response_class=HTMLResponse)
 async def index():
-    return RedirectResponse("/$metadata")
-
-
-@app.get("/$metadata")
-def metadata():
-    return StreamingResponse(loadDefinition(), media_type="application/xml")
+    pass
 
 
 @app.get("/Workflows")
@@ -69,7 +63,6 @@ async def transformation_orders(
         logging.exception("Invalid request")
         raise HTTPException(status_code=422, detail=str(exc))
 
-    # root = request.url_for("metadata")
     return {
         **({"odata.count": len(data)} if count else {}),
         "value": data,
@@ -93,7 +86,6 @@ async def get_transformation_order(request: Request, id: str):
         logging.exception("Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
 
-    # root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
         "Id": id,
