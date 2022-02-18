@@ -509,9 +509,12 @@ def run_workflow(
 
     # re-package the ouput
     logger.info(f"package output product: {output!r}")
-    output_zip_file = zip_product(output, output_dir)
+
+    output_order_dir = os.path.join(output_dir, order_id)
+    os.makedirs(output_order_dir, exist_ok=True)
+    output_zip_file = zip_product(output, output_order_dir)
     shutil.chown(output_zip_file, user=output_owner)
 
     # delete workflow processing dir
     shutil.rmtree(processing_dir, ignore_errors=True)
-    return output_zip_file
+    return os.path.join(order_id, os.path.basename(output_zip_file))

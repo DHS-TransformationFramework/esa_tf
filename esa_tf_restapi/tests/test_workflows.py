@@ -62,7 +62,9 @@ def to_payload():
 def tr_orders():
     orig = api.get_transformation_orders
 
-    def get_transformation_orders(filters: T.List[T.Tuple[str, str, str]] = [],):
+    def get_transformation_orders(
+        filters: T.List[T.Tuple[str, str, str]] = [], uri_root=None
+    ):
         entries = [
             {"Id": "foo", "Status": "in_progress"},
             {"Id": "bar", "Status": "completed"},
@@ -82,7 +84,7 @@ def tr_orders():
 def tr_order():
     orig = api.get_transformation_order
 
-    def get_transformation_order(id):
+    def get_transformation_order(id, uri_root=None):
         if id == "foo":
             return {"Id": id}
         raise KeyError(f"Cannot find {id}")

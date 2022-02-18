@@ -1,0 +1,44 @@
+
+log_format  time_combined  '$remote_addr - [$time_local] "$request" '
+                           '$status $body_bytes_sent "$http_referer" '
+                           '"$http_user_agent" "$sent_http_x_forwarded_for" '
+                           '$request_time $upstream_response_time';
+
+upstream tr_framework {
+    server                    esa_tf_restapi:8000;
+}
+
+server {
+    set $configured_host "${APPLICATION_HOSTNAME}";
+    if ($configured_host ~ "^$") {
+        set $configured_host $http_host;
+    }
+
+    set $configured_proto "${APPLICATION_PROTO}";
+    if ($configured_proto ~ "^$") {
+        set $configured_proto $http_x_forwarded_proto;
+    }
+
+    listen ${NGINX_PORT} default_server;
+    server_name ${NGINX_HOST};
+
+    access_log  /var/log/nginx/access.log time_combined;
+    error_log /var/log/nginx/error.log warn;
+
+    root /usr/share/nginx/html;
+
+    location / {
+        proxy_set_header Host $configured_host;
+        proxy_set_header X-Forwarded-Proto $configured_proto;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://tr_framework$request_uri;
+    }
+
+    location ~ ^/download/(.*)($|\?) {
+        autoindex off;
+        sendfile           on;
+        sendfile_max_chunk 1m;
+        try_files /$1 =404;
+    }
+
+}

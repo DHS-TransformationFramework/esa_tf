@@ -70,6 +70,15 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+def _prepare_download_uri(output_product_referece: list, root_uri: str):
+    for product in output_product_referece:
+        product[
+            "DownloadURI"
+        ] = f"{root_uri}download/{product['ReferenceBasePath']}/{product['Reference']}"
+        del product["ReferenceBasePath"]
+    return output_product_referece
+
+
 def add_completed_date(future):
     order = TRANSFORMATION_ORDERS[future.key]
     order["CompletedDate"] = datetime.now().isoformat()
@@ -172,14 +181,22 @@ def get_workflows(product=None, scheduler=None):
     return workflows
 
 
-def build_transformation_order(order):
+def build_transformation_order(order, uri_root=None):
     # Note: the future must be extracted from the original order. The deepcopy breaks the future
     future = order["future"]
     transformation_order = copy.deepcopy(order)
     transformation_order.pop("future")
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
     if future.status == "finished":
-        transformation_order["OutputFile"] = os.path.basename(future.result())
+        if not transformation_order.get("OutputProductReference", {}):
+            basepath, reference = os.path.split(future.result())
+            transformation_order["OutputProductReference"] = [
+                {"Reference": reference, "ReferenceBasePath": basepath}
+            ]
+            if uri_root:
+                transformation_order["OutputProductReference"] = _prepare_download_uri(
+                    transformation_order["OutputProductReference"], uri_root
+                )
     if future.status == "error":
         transformation_order["ErrorMessage"] = str(future.exception())
     return transformation_order
@@ -204,14 +221,14 @@ def get_transformation_order_log(order_id):
     return logs
 
 
-def get_transformation_order(order_id):
+def get_transformation_order(order_id, uri_root=None):
     """
     Return the transformation order corresponding to the order_id
     """
     order = TRANSFORMATION_ORDERS.get(order_id)
     if order is None:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    transformation_order = build_transformation_order(order)
+    transformation_order = build_transformation_order(order, uri_root=uri_root)
     return transformation_order
 
 
@@ -238,7 +255,7 @@ def check_filter_validity(filters):
 
 
 def get_transformation_orders(
-    filters: T.List[T.Tuple[str, str, str]] = [],
+    filters: T.List[T.Tuple[str, str, str]] = [], uri_root: str = None,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
@@ -249,7 +266,7 @@ def get_transformation_orders(
     check_filter_validity(filters)
     transformation_orders = []
     for order_id in TRANSFORMATION_ORDERS.keys():
-        transformation_order = get_transformation_order(order_id)
+        transformation_order = get_transformation_order(order_id, uri_root=uri_root)
         add_order = True
         for key, op, value in filters:
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:
@@ -313,7 +330,7 @@ def submit_workflow(
     *,
     input_product_reference,
     workflow_options,
-    user=None,
+    user_id=None,
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
@@ -327,6 +344,7 @@ def submit_workflow(
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
     :param dict workflow_options: dictionary cotaining the workflow kwargs.
+    :param str user_id: user identifier
     :param str working_dir: optional working directory where will be create the processing directory. If it is None
     it is used the value of the environment variable "WORKING_DIR".
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
@@ -366,9 +384,9 @@ def submit_workflow(
 
     client = instantiate_client(scheduler)
 
-    if user:
+    if user_id:
         logger.info(
-            f"submitting transformation order {order_id!r} request by user {user!r}"
+            f"submitting transformation order {order_id!r} request by user {user_id!r}"
         )
     else:
         logger.info(f"submitting transformation order {order_id!r}")

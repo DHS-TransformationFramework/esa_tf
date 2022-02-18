@@ -1,11 +1,16 @@
 import logging
 from typing import Optional
 
-from fastapi import HTTPException, Query, Request, Response
-from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
+from fastapi import HTTPException, Query, Request, Response, status
+from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from . import api, app, models
 from .odata import parse_qs
+
+
+@app.get("/", status_code=status.HTTP_404_NOT_FOUND, response_class=HTMLResponse)
+async def index():
+    pass
 
 
 @app.get("/Workflows")
@@ -49,15 +54,15 @@ async def transformation_orders(
 ):
     odata_params = parse_qs(filter=rawfilter)
     filters = odata_params.filter
+    uri_root = request.url_for("index")
     try:
         data = api.get_transformation_orders(
-            [(f.name, f.operator, f.value) for f in filters]
+            [(f.name, f.operator, f.value) for f in filters], uri_root=uri_root,
         )
     except ValueError as exc:
         logging.exception("Invalid request")
         raise HTTPException(status_code=422, detail=str(exc))
 
-    # root = request.url_for("metadata")
     return {
         **({"odata.count": len(data)} if count else {}),
         "value": data,
@@ -73,14 +78,14 @@ async def transformation_orders_count(request: Request,):
 @app.get("/TransformationOrders('{id}')", name="transformation_order")
 async def get_transformation_order(request: Request, id: str):
     base = request.url_for("transformation_orders")
+    uri_root = request.url_for("index")
     data = None
     try:
-        data = api.get_transformation_order(id)
+        data = api.get_transformation_order(id, uri_root=uri_root)
     except KeyError as exc:
         logging.exception("Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
 
-    # root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
         "Id": id,
