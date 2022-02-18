@@ -16,7 +16,7 @@ In its current development status *Alpha*, it features:
 - The functionalities which allow setting workflow parameters and options
   [via a REST API](#How-to-test-API-endpoints). (DHS-EVO-32)
 - A [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
-  which uses Sen2Cor v2.9 tool to convert Sentinel-2 L1C products into L2A output products,
+  which uses Sen2Cor v2.10 tool to convert Sentinel-2 L1C products into L2A output products,
   also using the *SRTM DEM* for terrain correction, classification and atmospheric correction. (DHS-EVO-35)
 - A deployment [via docker-compose](#Docker-compose-startup). (DHS-MNT-16)
 - Continuous Integration and Continuous Delivery (CI/CD) via GitHub Actions.

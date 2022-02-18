@@ -6,8 +6,8 @@
     <Region_Of_Interest>
         <row0>OFF</row0>
         <col0>OFF</col0>
-        <nrow_win>3000</nrow_win>
-        <ncol_win>3000</ncol_win>
+        <nrow_win>1200</nrow_win>
+        <ncol_win>1200</ncol_win>
     <!-- this defines a configurable Region of Interest (ROI) -->
         <!-- if row0 == OFF: standard processing without ROI detection -->
         <!-- if row0 == AUTO: region of interest is detected automatically via an algorithm -->
@@ -16,18 +16,22 @@
         <!-- row0, col0, nrow_win and ncol_win must be integer divisible by 6, to prevent rounding errors for downsampling -->
         <!-- specify always a 10m resolution ROI, it will be automatically adapted to the lower resolutions -->
     </Region_Of_Interest>
+    <Product_DOI>https://doi.org/10.5270/S2_-znk9xsj</Product_DOI>
+      <!-- A dedicted Digital Object Identifier, to be inserted in the Level 2A DS and Product metadata -->
     <Nr_Threads>AUTO</Nr_Threads>
     <!-- Nr_Treads determines the number of threads used for reading the OpenJPEG2 images. This is a new
          feature implemented with OpenJPEG 2.3., improving the speed for importing the Bands.
          If AUTO is chosen, the number of treads are deduced, using cpu_count().
          Set this to 1 up to a maximum of 8, if this automatic mode will not fit to your platform -->
+    <Product_Generator>NONE</Product_Generator>
+    <!-- should be either a directory in the sen2cor home folder or 'NONE'. If NONE, Toolbox mode of operation will be used-->
     <DEM_Directory>NONE</DEM_Directory>
     <!-- should be either a directory in the sen2cor home folder or 'NONE'. If NONE, no DEM will be used -->
     <DEM_Reference>NONE</DEM_Reference>
-    <!-- DEM_Reference>http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/</DEM_Reference -->
-    <!-- disable / enable the upper two rows if you want to use an SRTM DEM -->
-    <!-- The SRTM DEM will then be downloaded from this reference, if no local DEM is available -->
-    <!-- if you use Planet DEM you can optionally add the local path instead,
+    <!-- DEM_Reference>http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/</DEM_Reference
+         disable / enable the upper two rows if you want to use an SRTM DEM
+         The SRTM DEM will then be downloaded from this reference, if no local DEM is available
+         if you use Planet DEM you can optionally add the local path instead,
          which then will be inserted in the datastrip metadata -->
     <Generate_DEM_Output>FALSE</Generate_DEM_Output>
     <!-- FALSE: no DEM output, TRUE: store DEM in the AUX data directory -->
@@ -37,8 +41,13 @@
     <!-- FALSE: no TCI output, TRUE: store TCI in the IMAGE data directory -->
     <Generate_DDV_Output>FALSE</Generate_DDV_Output>
     <!-- FALSE: no DDV output, TRUE: store DDV in the QI_DATA directory -->
+    <Handle_L1C_QLT_Mask>FALSE</Handle_L1C_QLT_Mask>
+    <!-- FALSE: no handling of L1C Quality Mask, TRUE: handling L1C Quality Mask -->
     <Downsample_20_to_60>TRUE</Downsample_20_to_60>
     <!-- TRUE: create additional 60m bands when 20m is processed -->
+    <PSD_Version>DEFAULT</PSD_Version>
+    <!-- Special entry for forcing a special PSD Version to be processed
+         leave it to DEFAULT if you are not 100 % sure that you need a dedicated version -->
     <PSD_Scheme PSD_Version="14.2" PSD_Reference="S2-PDGS-TAS-DI-PSD-V14.2_Schema">
 		<UP_Scheme_1C>S2_User_Product_Level-1C_Metadata</UP_Scheme_1C>
 		<UP_Scheme_2A>S2_User_Product_Level-2A_Metadata</UP_Scheme_2A>
@@ -55,10 +64,35 @@
 		<DS_Scheme_1C>S2_PDI_Level-1C_Datastrip_Metadata</DS_Scheme_1C>
 		<DS_Scheme_2A>S2_PDI_Level-2A_Datastrip_Metadata</DS_Scheme_2A>
 	</PSD_Scheme>
+          <PSD_Scheme PSD_Version="14.7" PSD_Reference="S2-PDGS-TAS-DI-PSD-V14.7_Schema">
+		<UP_Scheme_1C>S2_User_Product_Level-1C_Metadata</UP_Scheme_1C>
+		<UP_Scheme_2A>S2_User_Product_Level-2A_Metadata</UP_Scheme_2A>
+		<Tile_Scheme_1C>S2_PDI_Level-1C_Tile_Metadata</Tile_Scheme_1C>
+		<Tile_Scheme_2A>S2_PDI_Level-2A_Tile_Metadata</Tile_Scheme_2A>
+		<DS_Scheme_1C>S2_PDI_Level-1C_Datastrip_Metadata</DS_Scheme_1C>
+		<DS_Scheme_2A>S2_PDI_Level-2A_Datastrip_Metadata</DS_Scheme_2A>
+	</PSD_Scheme>
+          <PSD_Scheme PSD_Version="14.8" PSD_Reference="S2-PDGS-TAS-DI-PSD-V14.8_Schema">
+		<UP_Scheme_1C>S2_User_Product_Level-1C_Metadata</UP_Scheme_1C>
+		<UP_Scheme_2A>S2_User_Product_Level-2A_Metadata</UP_Scheme_2A>
+		<Tile_Scheme_1C>S2_PDI_Level-1C_Tile_Metadata</Tile_Scheme_1C>
+		<Tile_Scheme_2A>S2_PDI_Level-2A_Tile_Metadata</Tile_Scheme_2A>
+		<DS_Scheme_1C>S2_PDI_Level-1C_Datastrip_Metadata</DS_Scheme_1C>
+		<DS_Scheme_2A>S2_PDI_Level-2A_Datastrip_Metadata</DS_Scheme_2A>
+	</PSD_Scheme>
+          <PSD_Scheme PSD_Version="14.9" PSD_Reference="S2-PDGS-TAS-DI-PSD-V14.9_Schema">
+        <UP_Scheme_1C>S2_User_Product_Level-1C_Metadata</UP_Scheme_1C>
+        <UP_Scheme_2A>S2_User_Product_Level-2A_Metadata</UP_Scheme_2A>
+        <Tile_Scheme_1C>S2_PDI_Level-1C_Tile_Metadata</Tile_Scheme_1C>
+        <Tile_Scheme_2A>S2_PDI_Level-2A_Tile_Metadata</Tile_Scheme_2A>
+        <DS_Scheme_1C>S2_PDI_Level-1C_Datastrip_Metadata</DS_Scheme_1C>
+        <DS_Scheme_2A>S2_PDI_Level-2A_Datastrip_Metadata</DS_Scheme_2A>
+    </PSD_Scheme>
     <GIPP_Scheme>L2A_GIPP</GIPP_Scheme>
     <SC_Scheme>L2A_CAL_SC_GIPP</SC_Scheme>
     <AC_Scheme>L2A_CAL_AC_GIPP</AC_Scheme>
     <PB_Scheme>L2A_PB_GIPP</PB_Scheme>
+    <QI_Scheme>L2A_QUALITY</QI_Scheme>
   </Common_Section>
   <Scene_Classification>
     <Filters>
