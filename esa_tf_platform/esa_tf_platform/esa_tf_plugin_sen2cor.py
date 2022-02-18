@@ -326,7 +326,7 @@ sen2cor_l1c_l2a = {
             "Enum": ["MARITIME", "RURAL"],
         },
         "Mid_Latitude": {
-            "Description": "If  'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
+            "Description": "If 'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
             "Type": "string",
             "Default": "SUMMER",
             "Enum": ["SUMMER", "WINTER", "AUTO"],
@@ -341,17 +341,19 @@ sen2cor_l1c_l2a = {
             "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
             "Type": "boolean",
             "Default": False,
+            "Enum": [True, False],
         },
         "DEM_Terrain_Correction": {
             "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
             "Type": "boolean",
             "Default": True,
+            "Enum": [True, False],
         },
         "Resolution": {
             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
             "Type": "integer",
-            "Enum": [10, 20, 60],
             "Default": None,
+            "Enum": [10, 20, 60],
         },
     },
 }
