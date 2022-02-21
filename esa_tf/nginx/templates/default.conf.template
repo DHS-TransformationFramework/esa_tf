@@ -1,5 +1,5 @@
 
-log_format  time_combined  '$remote_addr - [$time_local] "$request" '
+log_format  time_combined  '$remote_addr - $sent_http_x_username - [$time_local] "$request" '
                            '$status $body_bytes_sent "$http_referer" '
                            '"$http_user_agent" "$sent_http_x_forwarded_for" '
                            '$request_time $upstream_response_time';
@@ -28,17 +28,24 @@ server {
     root /usr/share/nginx/html;
 
     location / {
+        js_content oidc.authorize_odpapi;
+    }
+
+    location ~ ^/download/(.*)($|\?) {
+        js_content oidc.authorize_download;
+    }
+
+    location @odpapi-backend {
         proxy_set_header Host $configured_host;
         proxy_set_header X-Forwarded-Proto $configured_proto;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_pass http://tr_framework$request_uri;
     }
 
-    location ~ ^/download/(.*)($|\?) {
+    location @download-backend {
         autoindex off;
         sendfile           on;
         sendfile_max_chunk 1m;
         try_files /$1 =404;
     }
-
 }
