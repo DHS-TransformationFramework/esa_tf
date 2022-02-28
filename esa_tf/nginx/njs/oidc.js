@@ -1,4 +1,4 @@
-const OIDC_ACTIVE = process.env.OIDC_ACTIVE || false;
+const OIDC_ACTIVE = Boolean(process.env.OIDC_ACTIVE);
 const OIDC_ROOT_URL = process.env.OIDC_ROOT_URL;
 const REALM_NAME = process.env.REALM_NAME;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -24,12 +24,12 @@ function getFormBody(token) {
 }
 
 async function authorize(r) {
-  // Check if we have everything for OIDC connection
   if (
     OIDC_ACTIVE &&
     // When OIDC is active, following information are required
     (!OIDC_ROOT_URL || !REALM_NAME || !CLIENT_ID || !CLIENT_SECRET)
   ) {
+    // Check if we have everything for OIDC connection
     const message = `Cannot properly configure OIDC connection. Check required environment variables.`;
     r.error(message);
     r.return(500, message);
@@ -39,7 +39,8 @@ async function authorize(r) {
   r.headersOut["X-Forwarded-For"] = r.headersIn["Host"];
   let token = r.headersIn.Authorization;
   if (!token) {
-    return r.return(401, "No Authorization header found");
+    r.return(401, "No Authorization header found");
+    return;
   }
   token = token.replace("Bearer ", "");
 
@@ -111,9 +112,10 @@ async function authorize(r) {
 }
 
 async function authorize_odpapi(r) {
-  let success;
+  let success = true;
   if (OIDC_ACTIVE) {
     success = await authorize(r);
+    r.error(success);
   }
   if (success) {
     r.internalRedirect("@odpapi-backend");
@@ -121,7 +123,7 @@ async function authorize_odpapi(r) {
 }
 
 async function authorize_download(r) {
-  let success;
+  let success = true;
   if (OIDC_ACTIVE) {
     success = await authorize(r);
   }
