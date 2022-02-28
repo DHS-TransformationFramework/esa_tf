@@ -33,7 +33,9 @@ services:
     esa_tf_proxy:
         image: nginx:1.21.5
         volumes:
-            - ./nginx:/etc/nginx/templates
+            - ./nginx/templates:/etc/nginx/templates
+            - ./nginx/njs:/etc/nginx/njs
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf
             - "${LOGS:-./logs}:/var/log/nginx"
             - "${OUTPUT_DIR:-./output}:/usr/share/nginx/html"
         ports:
@@ -43,3 +45,12 @@ services:
             - NGINX_PORT=8080
             - APPLICATION_HOSTNAME=${APPLICATION_HOSTNAME}
             - APPLICATION_PROTO=${APPLICATION_PROTO}
+            - OIDC_ACTIVE=${OIDC_ACTIVE}
+            - OIDC_ROOT_URL=${OIDC_ROOT_URL}
+            - REALM_NAME=${REALM_NAME}
+            - CLIENT_ID=${CLIENT_ID}
+            - CLIENT_SECRET=${CLIENT_SECRET}
+            - KEYCLOAK_HOST_HEADER=${KEYCLOAK_HOST_HEADER}
+            - GUARD_ROLE=${GUARD_ROLE}
+
+
