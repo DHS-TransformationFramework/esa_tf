@@ -115,7 +115,6 @@ async function authorize_odpapi(r) {
   let success = true;
   if (OIDC_ACTIVE) {
     success = await authorize(r);
-    r.error(success);
   }
   if (success) {
     r.internalRedirect("@odpapi-backend");

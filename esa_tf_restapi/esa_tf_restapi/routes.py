@@ -1,10 +1,11 @@
 import logging
 from typing import Optional
 
-from fastapi import HTTPException, Query, Request, Response, status
+from fastapi import Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from . import api, app, models
+from .auth import get_user
 from .odata import parse_qs
 
 
@@ -113,8 +114,13 @@ async def get_transformation_order_log_raw(id: str):
 
 @app.post("/TransformationOrders", status_code=201)
 async def transformation_order_create(
-    request: Request, response: Response, data: models.TranformationOrder,
+    request: Request,
+    response: Response,
+    data: models.TranformationOrder,
+    x_username: Optional[str] = Header(None),
+    x_roles: Optional[str] = Header(None),
 ):
+    user = get_user(x_username, x_roles)
     running_transformation = None
     try:
         running_transformation = api.submit_workflow(
@@ -123,6 +129,7 @@ async def transformation_order_create(
                 by_alias=True, exclude_unset=True
             ),
             workflow_options=data.workflow_options,
+            user_id=user.username if user else None,
         )
     except ValueError as exc:
         logging.exception("Invalid Transformation Order")
