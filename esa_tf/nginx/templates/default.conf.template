@@ -36,6 +36,8 @@ server {
     }
 
     location @odpapi-backend {
+        proxy_set_header X-Username $sent_http_x_username;
+        proxy_set_header X-Roles $sent_http_x_roles;
         proxy_set_header Host $configured_host;
         proxy_set_header X-Forwarded-Proto $configured_proto;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
