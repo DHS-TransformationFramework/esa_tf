@@ -197,8 +197,8 @@ def build_transformation_order(order, uri_root=None):
                 transformation_order["OutputProductReference"] = _prepare_download_uri(
                     transformation_order["OutputProductReference"], uri_root
                 )
-    if future.status == "error":
-        transformation_order["ErrorMessage"] = str(future.exception())
+    # if future.status == "error":
+    #     transformation_order["ErrorMessage"] = str(future.exception())
     return transformation_order
 
 
@@ -397,8 +397,9 @@ def submit_workflow(
         future = order["future"]
         if future.status == "error":
             client.retry(future)
-            order["SubmissionDate"] = datetime.now().isoformat()
             order.pop("CompletedDate", None)
+            future.add_done_callback(add_completed_date)
+            order["SubmissionDate"] = datetime.now().isoformat()
     else:
         future = client.submit(task, key=order_id)
         order = {
