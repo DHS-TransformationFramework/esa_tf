@@ -5,6 +5,7 @@ import operator
 import os
 import re
 import typing as T
+import yaml
 from datetime import datetime
 
 import dask.distributed
@@ -13,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
+USERS_TRANSFORMATIONS = {}
+
 
 STATUS_DASK_TO_API = {
     "pending": "in_progress",
@@ -211,7 +214,7 @@ def get_dask_orders_status():
 
 
 def get_transformation_order_log(order_id):
-    if not order_id in TRANSFORMATION_ORDERS:
+    if order_id not in TRANSFORMATION_ORDERS:
         raise KeyError(f"Transformation Order {order_id!r} not found")
     client = instantiate_client()
     seconds_logs = client.get_events(order_id)
@@ -326,12 +329,59 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
+@functools.lru_cache()
+def read_users_quota(users_quota_file):
+    """Return the users' quota as read from the dedicated configuration file. The keys are the
+    possible roles and the values are the roles' cap.
+
+    :param str users_quota_file: full path to the users' quota configuration file
+    :return dict:
+    """
+    with open(users_quota_file) as file:
+        users_quota = yaml.load(file, Loader=yaml.FullLoader)
+    return users_quota
+
+
+def check_user_quota(user_id, user_role, users_quota_file=None):
+    """Check the user's quota to determine if he is able to submit a transformation or not. If the
+    cap has been already reached, a RuntimeError is raised.
+
+    :param str user_id:
+    :param str user_role:
+    :param str users_quota_file:
+    :return:
+    """
+    if users_quota_file is None:
+        users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
+    if not os.path.isfile(users_quota_file):
+        raise ValueError(
+            f"{users_quota_file} not found, please define it using 'users_quota_file' "
+            "keyword argument or the environment variable USERS_QUOTA_FILE"
+        )
+    file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
+    if (datetime.now() - file_modification_time).total_seconds() < 3600:
+        read_users_quota.cache_clear()
+    users_quota = read_users_quota(users_quota_file)
+    user_cap = users_quota.get(user_role)
+    running_processes = 0
+    for order_id in USERS_TRANSFORMATIONS[user_id]:
+        order_status = get_transformation_order(order_id)["Status"]
+        running_processes += order_status == "in_progress"
+    if running_processes >= user_cap:
+        raise RuntimeError(
+            f"the user '{user_id}' has reached his user quota. "
+            f"Already {running_processes} processes are running"
+        )
+    return user_cap, users_quota
+
+
 def submit_workflow(
     workflow_id,
     *,
     input_product_reference,
     workflow_options,
     user_id=None,
+    user_role=None,
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
@@ -343,19 +393,68 @@ def submit_workflow(
     :param str workflow_id:  id that identifies the workflow to run
     :param dict input_product_reference: dictionary containing the information to retrieve the product to be processed
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
-    {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
-    :param dict workflow_options: dictionary cotaining the workflow kwargs.
+    {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}
+    :param dict workflow_options: dictionary containing the workflow kwargs
     :param str user_id: user identifier
-    :param str working_dir: optional working directory where will be create the processing directory. If it is None
-    it is used the value of the environment variable "WORKING_DIR".
+    :param str user_role: the user role
+    :param str working_dir: optional working directory within which will be created the processing directory.
+    If it is None it is used the value of the environment variable "WORKING_DIR"
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
-    is used the value of the environment variable "HUBS_CREDENTIALS_FILE"
+    :param str hubs_credentials_file: optional file of credentials. If it is None is used the value
+    of the environment variable "HUBS_CREDENTIALS_FILE"
     :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
-    the value of environment variable SCHEDULER.
+    the value of environment variable SCHEDULER
+    :param order_id:
     """
-
     workflow = get_workflow_by_id(workflow_id)
+    # workflow = {
+    #     "WorkflowName": "Sen2Cor_L1C_L2A",
+    #     "Description": "Product processing from Sentinel-2 L1C to L2A using Sen2Cor v2.10, supporting Level-1C product version 14.2 - 14.9",
+    #     "Execute": "esa_tf_platform.esa_tf_plugin_sen2cor.run_processing",
+    #     "InputProductType": "S2MSI1C",
+    #     "OutputProductType": "S2MSI2A",
+    #     "WorkflowVersion": "0.2",
+    #     "WorkflowOptions": {
+    #         "Aerosol_Type": {
+    #             "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
+    #             "Type": "string",
+    #             "Default": "RURAL",
+    #             "Enum": ["MARITIME", "RURAL"],
+    #         },
+    #         "Mid_Latitude": {
+    #             "Description": "If 'AUTO' the atmosphere profile will be determined automatically by the processor, selecting WINTER or SUMMER atmosphere profile based on the acquisition date and geographic location of the tile",
+    #             "Type": "string",
+    #             "Default": "SUMMER",
+    #             "Enum": ["SUMMER", "WINTER", "AUTO"],
+    #         },
+    #         "Ozone_Content": {
+    #             "Description": "0: to get the best approximation from metadata (this is the smallest difference between metadata and column DU), else select for midlatitude summer (MS) atmosphere: 250, 290, 331 (standard MS), 370, 410, 450; for midlatitude winter (MW) atmosphere: 250, 290, 330, 377 (standard MW), 420, 460",
+    #             "Type": "integer",
+    #             "Default": 331,
+    #             "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
+    #         },
+    #         "Cirrus_Correction": {
+    #             "Description": "FALSE: no cirrus correction applied, TRUE: cirrus correction applied",
+    #             "Type": "boolean",
+    #             "Default": False,
+    #             "Enum": [True, False],
+    #         },
+    #         "DEM_Terrain_Correction": {
+    #             "Description": "Use DEM for Terrain Correction, otherwise only used for WVP and AOT",
+    #             "Type": "boolean",
+    #             "Default": True,
+    #             "Enum": [True, False],
+    #         },
+    #         "Resolution": {
+    #             "Description": "Target resolution, can be 10, 20 or 60m. If omitted, 10, 20 and 60m resolutions will be processed",
+    #             "Type": "integer",
+    #             "Default": None,
+    #             "Enum": [10, 20, 60],
+    #         },
+    #     },
+    # }
+    check_user_quota(user_id, user_role)
     product_type = workflow["InputProductType"]
     check_products_consistency(
         product_type, input_product_reference["Reference"], workflow_id=workflow_id
@@ -412,6 +511,10 @@ def submit_workflow(
             "WorkflowName": workflow["WorkflowName"],
         }
         TRANSFORMATION_ORDERS[order_id] = order
+    if user_id in USERS_TRANSFORMATIONS:
+        USERS_TRANSFORMATIONS[user_id].append(order_id)
+    else:
+        USERS_TRANSFORMATIONS[user_id] = [order_id]
         future.add_done_callback(add_completed_date)
 
     return build_transformation_order(order)

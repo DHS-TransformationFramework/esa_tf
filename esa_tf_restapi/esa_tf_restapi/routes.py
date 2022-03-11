@@ -130,6 +130,7 @@ async def transformation_order_create(
             ),
             workflow_options=data.workflow_options,
             user_id=user.username if user else None,
+            user_role=user.roles if user else None,
         )
     except ValueError as exc:
         logging.exception("Invalid Transformation Order")
