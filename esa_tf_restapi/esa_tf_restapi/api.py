@@ -70,18 +70,26 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
-def _prepare_download_uri(output_product_referece: list, root_uri: str):
+def _prepare_download_uri(output_product_referece: list, root_uri: T.Optional[str] = None):
     for product in output_product_referece:
+        if root_uri:
+            download_uri = f"{root_uri}download/{product['ReferenceBasePath']}/{product['Reference']}"
+        else:
+            download_uri = None
         product[
             "DownloadURI"
-        ] = f"{root_uri}download/{product['ReferenceBasePath']}/{product['Reference']}"
+        ] = download_uri
         del product["ReferenceBasePath"]
     return output_product_referece
 
 
-def add_completed_date(future):
+def add_completed_info(future):
     order = TRANSFORMATION_ORDERS[future.key]
     order["CompletedDate"] = datetime.now().isoformat()
+    basepath, reference = os.path.split(future.result())
+    order["OutputProductReference"] = [
+        {"Reference": reference, "ReferenceBasePath": basepath}
+    ]
 
 
 def check_products_consistency(
@@ -154,7 +162,7 @@ def get_all_workflows(scheduler=None):
     return workflows
 
 
-def get_workflow_by_id(workflow_id, scheduler=None):
+def get_workflow_by_id(workflow_id):
     """
     Return the workflow configuration corresponding to the workflow_id.
     """
@@ -170,7 +178,7 @@ def get_workflow_by_id(workflow_id, scheduler=None):
     return workflow
 
 
-def get_workflows(product=None, scheduler=None):
+def get_workflows(product=None):
     """
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
@@ -188,15 +196,9 @@ def build_transformation_order(order, uri_root=None):
     transformation_order.pop("future")
     transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
     if future.status == "finished":
-        if not transformation_order.get("OutputProductReference", {}):
-            basepath, reference = os.path.split(future.result())
-            transformation_order["OutputProductReference"] = [
-                {"Reference": reference, "ReferenceBasePath": basepath}
-            ]
-            if uri_root:
-                transformation_order["OutputProductReference"] = _prepare_download_uri(
-                    transformation_order["OutputProductReference"], uri_root
-                )
+        transformation_order["OutputProductReference"] = _prepare_download_uri(
+            transformation_order["OutputProductReference"], uri_root
+        )
     # if future.status == "error":
     #     transformation_order["ErrorMessage"] = str(future.exception())
     return transformation_order
@@ -210,8 +212,19 @@ def get_dask_orders_status():
     return client.run_on_scheduler(orders_status_on_scheduler)
 
 
+def resubmit_transformation_order(future):
+    client = instantiate_client()
+    order = TRANSFORMATION_ORDERS[future.key]
+    client.retry(future)
+    order.pop("CompletedDate", None)
+    order.pop("OutputProductReference", None)
+    order["SubmissionDate"] = datetime.now().isoformat()
+    future.add_done_callback(add_completed_info)
+    return order
+
+
 def get_transformation_order_log(order_id):
-    if not order_id in TRANSFORMATION_ORDERS:
+    if order_id not in TRANSFORMATION_ORDERS:
         raise KeyError(f"Transformation Order {order_id!r} not found")
     client = instantiate_client()
     seconds_logs = client.get_events(order_id)
@@ -335,8 +348,8 @@ def submit_workflow(
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
-    scheduler=None,
     order_id=None,
+    uri_root=None
 ):
     """
     Submit the workflow defined by 'workflow_id' using dask:
@@ -351,8 +364,6 @@ def submit_workflow(
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
     is used the value of the environment variable "HUBS_CREDENTIALS_FILE"
-    :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
-    the value of environment variable SCHEDULER.
     """
 
     workflow = get_workflow_by_id(workflow_id)
@@ -383,7 +394,7 @@ def submit_workflow(
             hubs_credentials_file=hubs_credentials_file,
         )
 
-    client = instantiate_client(scheduler)
+    client = instantiate_client()
 
     if user_id:
         logger.info(
@@ -398,8 +409,9 @@ def submit_workflow(
         if future.status == "error":
             client.retry(future)
             order.pop("CompletedDate", None)
-            future.add_done_callback(add_completed_date)
+            order.pop("OutputProductReference", None)
             order["SubmissionDate"] = datetime.now().isoformat()
+            future.add_done_callback(add_completed_info)
     else:
         future = client.submit(task, key=order_id)
         order = {
@@ -412,6 +424,6 @@ def submit_workflow(
             "WorkflowName": workflow["WorkflowName"],
         }
         TRANSFORMATION_ORDERS[order_id] = order
-        future.add_done_callback(add_completed_date)
+        future.add_done_callback(add_completed_info)
 
-    return build_transformation_order(order)
+    return build_transformation_order(order, uri_root=uri_root)
