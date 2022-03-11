@@ -70,15 +70,15 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
-def _prepare_download_uri(output_product_referece: list, root_uri: T.Optional[str] = None):
+def _prepare_download_uri(
+    output_product_referece: list, root_uri: T.Optional[str] = None
+):
     for product in output_product_referece:
         if root_uri:
             download_uri = f"{root_uri}download/{product['ReferenceBasePath']}/{product['Reference']}"
         else:
             download_uri = None
-        product[
-            "DownloadURI"
-        ] = download_uri
+        product["DownloadURI"] = download_uri
         del product["ReferenceBasePath"]
     return output_product_referece
 
@@ -349,7 +349,7 @@ def submit_workflow(
     output_dir=None,
     hubs_credentials_file=None,
     order_id=None,
-    uri_root=None
+    uri_root=None,
 ):
     """
     Submit the workflow defined by 'workflow_id' using dask:
