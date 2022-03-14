@@ -8,11 +8,16 @@ import typing as T
 from datetime import datetime
 
 import dask.distributed
+import yaml
 
 logger = logging.getLogger(__name__)
 
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
+USERS_TRANSFORMATIONS = {}
+GENERAL_TF_ROLE = "general_tf_role"
+QUOTA_MODIFICATION_INTERVAL = 86400  # sec
+
 
 STATUS_DASK_TO_API = {
     "pending": "in_progress",
@@ -211,7 +216,7 @@ def get_dask_orders_status():
 
 
 def get_transformation_order_log(order_id):
-    if not order_id in TRANSFORMATION_ORDERS:
+    if order_id not in TRANSFORMATION_ORDERS:
         raise KeyError(f"Transformation Order {order_id!r} not found")
     client = instantiate_client()
     seconds_logs = client.get_events(order_id)
@@ -326,12 +331,105 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
+@functools.lru_cache()
+def read_users_quota(users_quota_file):
+    """Return the users' quota as read from the dedicated configuration file. The keys are the
+    possible roles and the values are the roles' cap.
+
+    :param str users_quota_file: full path to the users' quota configuration file
+    :return dict:
+    """
+    with open(users_quota_file) as file:
+        users_quota = yaml.load(file, Loader=yaml.FullLoader)
+    return users_quota
+
+
+def reckon_running_process(user_id):
+    """Return the number of running processes (i.e. status equal to `in_progress`) among those
+    required by the `user_id`.
+
+    :param str user_id: user identifier
+    :return int:
+    """
+    running_processes = 0
+    for order_id in USERS_TRANSFORMATIONS[user_id]:
+        order_status = get_transformation_order(order_id)["Status"]
+        running_processes += order_status == "in_progress"
+    return running_processes
+
+
+def reckon_user_quota_cap(user_roles, users_quota_file):
+    """Return the cap of "in_progess" processes according to the role(s). If more than a role has
+    been specified, the cap is calculated as the largest cap among those corresponding to the roles
+    list.
+
+    :param list_or_tuple user_roles: list of the roles associated with the user
+    :param str users_quota_file: path of the configuration file with the users' quota by roles
+    :return int:
+    """
+    users_quota = read_users_quota(users_quota_file)
+    user_caps = []
+    # please, note that the user_roles list is never empty because if no role has been defined the
+    # GENERAL_TF_ROLE is set in submit_workflow function
+    for role in user_roles:
+        cap = users_quota.get(role)
+        if cap is None:
+            logger.info(
+                f"role '{role}' not found in the configuration file {users_quota_file}"
+            )
+        else:
+            user_caps.append(cap)
+    # if all roles are not present on the configuration file, then the GENERAL_TF_ROLE is used
+    if not user_caps:
+        logger.warning(
+            f"all roles were not found in the configuration file {users_quota_file}, "
+            f"a general TF role will be used"
+        )
+    user_cap = max(user_caps, default=users_quota.get(GENERAL_TF_ROLE, 10))
+    return user_cap
+
+
+def check_user_quota(user_id, user_roles, users_quota_file=None):
+    """Check the user's quota to determine if he is able to submit a transformation or not. If the
+    cap has been already reached, a RuntimeError is raised.
+
+    :param str user_id:
+    :param str user_roles:
+    :param str users_quota_file:
+    :return:
+    """
+    if user_id not in USERS_TRANSFORMATIONS:
+        return
+    if users_quota_file is None:
+        users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
+    if not os.path.isfile(users_quota_file):
+        raise ValueError(
+            f"{users_quota_file} not found, please define it using 'users_quota_file' "
+            "keyword argument or the environment variable USERS_QUOTA_FILE"
+        )
+    # if the "users_quota_file" configuration file has been changed in the amount of time specified
+    # by the "QUOTA_MODIFICATION_INTERVAL" constant value, then the cache is cleared
+    file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
+    if (
+        datetime.now() - file_modification_time
+    ).total_seconds() < QUOTA_MODIFICATION_INTERVAL:
+        read_users_quota.cache_clear()
+
+    running_processes = reckon_running_process(user_id)
+    user_cap = reckon_user_quota_cap(user_roles, users_quota_file)
+    if running_processes >= user_cap:
+        raise RuntimeError(
+            f"the user {user_id} has reached his quota: {running_processes} processes are running"
+        )
+
+
 def submit_workflow(
     workflow_id,
     *,
     input_product_reference,
     workflow_options,
     user_id=None,
+    user_roles=None,
     working_dir=None,
     output_dir=None,
     hubs_credentials_file=None,
@@ -343,18 +441,27 @@ def submit_workflow(
     :param str workflow_id:  id that identifies the workflow to run
     :param dict input_product_reference: dictionary containing the information to retrieve the product to be processed
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
-    {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
-    :param dict workflow_options: dictionary cotaining the workflow kwargs.
+    {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}
+    :param dict workflow_options: dictionary containing the workflow kwargs
     :param str user_id: user identifier
-    :param str working_dir: optional working directory where will be create the processing directory. If it is None
-    it is used the value of the environment variable "WORKING_DIR".
+    :param str user_roles: list of the user roles
+    :param str working_dir: optional working directory within which will be created the processing directory.
+    If it is None it is used the value of the environment variable "WORKING_DIR"
     :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
-    is used the value of the environment variable "HUBS_CREDENTIALS_FILE"
+    :param str hubs_credentials_file: optional file of credentials. If it is None is used the value
+    of the environment variable "HUBS_CREDENTIALS_FILE"
     :param str scheduler:  optional the scheduler to be used fot the client instantiation. If it is None it will be used
-    the value of environment variable SCHEDULER.
+    the value of environment variable SCHEDULER
+    :param order_id:
     """
-
+    # a general role is used if user_roles is equal to None or [], [None], [None, None, ...]
+    if user_roles is None or not any(user_roles):
+        logger.warning(
+            f"no user-role is defined for the user '{user_id}', a general TF role will be used"
+        )
+        user_roles = [GENERAL_TF_ROLE]
+    check_user_quota(user_id, user_roles)
     workflow = get_workflow_by_id(workflow_id)
     product_type = workflow["InputProductType"]
     check_products_consistency(
@@ -412,6 +519,10 @@ def submit_workflow(
             "WorkflowName": workflow["WorkflowName"],
         }
         TRANSFORMATION_ORDERS[order_id] = order
+    if user_id in USERS_TRANSFORMATIONS:
+        USERS_TRANSFORMATIONS[user_id].append(order_id)
+    else:
+        USERS_TRANSFORMATIONS[user_id] = [order_id]
         future.add_done_callback(add_completed_date)
 
     return build_transformation_order(order)
