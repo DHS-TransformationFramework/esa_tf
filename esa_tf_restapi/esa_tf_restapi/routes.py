@@ -120,6 +120,7 @@ async def transformation_order_create(
     x_username: Optional[str] = Header(None),
     x_roles: Optional[str] = Header(None),
 ):
+    uri_root = request.url_for("index")
     user = get_user(x_username, x_roles)
     running_transformation = None
     try:
@@ -131,6 +132,7 @@ async def transformation_order_create(
             workflow_options=data.workflow_options,
             user_id=user.username if user else None,
             user_roles=user.roles if user else None,
+            uri_root=uri_root,
         )
     except ValueError as exc:
         logging.exception("Invalid Transformation Order")
