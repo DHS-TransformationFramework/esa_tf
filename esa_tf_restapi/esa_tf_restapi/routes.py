@@ -131,6 +131,7 @@ async def transformation_order_create(
             ),
             workflow_options=data.workflow_options,
             user_id=user.username if user else None,
+            user_roles=user.roles if user else None,
             uri_root=uri_root,
         )
     except ValueError as exc:
