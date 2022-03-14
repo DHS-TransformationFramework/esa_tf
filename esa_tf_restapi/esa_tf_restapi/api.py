@@ -5,10 +5,10 @@ import operator
 import os
 import re
 import typing as T
-import yaml
 from datetime import datetime
 
 import dask.distributed
+import yaml
 
 logger = logging.getLogger(__name__)
 
