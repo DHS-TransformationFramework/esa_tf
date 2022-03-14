@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
 USERS_TRANSFORMATIONS = {}
-DEFAULT_TF_ROLE = "default_tf_role"
+DEFAULT_ESA_TF_ROLE = "default_esa_tf_role"
 QUOTA_MODIFICATION_INTERVAL = 86400  # sec
 
 
@@ -354,7 +354,7 @@ def read_users_quota(users_quota_file):
     """
     with open(users_quota_file) as file:
         users_quota = yaml.load(file, Loader=yaml.FullLoader)
-    if DEFAULT_TF_ROLE not in users_quota:
+    if DEFAULT_ESA_TF_ROLE not in users_quota:
         raise RuntimeError(
             f"default role 'default_tf_role' not found in {users_quota_file}. "
             f"Please, add the default role into the configuration file {users_quota_file}"
@@ -403,7 +403,7 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
             f"all roles were not found in the configuration file {users_quota_file}, "
             f"a general TF role will be used"
         )
-    user_cap = max(user_caps, default=users_quota.get(DEFAULT_TF_ROLE).get("submit_limit"))
+    user_cap = max(user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit"))
     return user_cap
 
 
@@ -420,7 +420,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
         logger.warning(
             f"no user-role is defined for the user '{user_id}', a general TF role will be used"
         )
-        user_roles = [DEFAULT_TF_ROLE]
+        user_roles = [DEFAULT_ESA_TF_ROLE]
     if users_quota_file is None:
         users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
     if not os.path.isfile(users_quota_file):
