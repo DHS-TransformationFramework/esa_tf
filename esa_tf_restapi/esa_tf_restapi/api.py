@@ -403,7 +403,9 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
             f"all roles were not found in the configuration file {users_quota_file}, "
             f"a general TF role will be used"
         )
-    user_cap = max(user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit"))
+    user_cap = max(
+        user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit")
+    )
     return user_cap
 
 
@@ -432,7 +434,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     # by the "QUOTA_MODIFICATION_INTERVAL" constant value, then the cache is cleared
     file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
     if (
-            datetime.now() - file_modification_time
+        datetime.now() - file_modification_time
     ).total_seconds() < QUOTA_MODIFICATION_INTERVAL:
         read_users_quota.cache_clear()
 
