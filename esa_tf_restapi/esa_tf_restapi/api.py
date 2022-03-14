@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
 USERS_TRANSFORMATIONS = {}
-GENERAL_TF_ROLE = "general_tf_role"
+DEFAULT_TF_ROLE = "default_tf_role"
 QUOTA_MODIFICATION_INTERVAL = 86400  # sec
 
 
@@ -354,6 +354,11 @@ def read_users_quota(users_quota_file):
     """
     with open(users_quota_file) as file:
         users_quota = yaml.load(file, Loader=yaml.FullLoader)
+    if DEFAULT_TF_ROLE not in users_quota:
+        raise RuntimeError(
+            f"default role 'default_tf_role' not found in {users_quota_file}. "
+            f"Please, add the default role into the configuration file {users_quota_file}"
+        )
     return users_quota
 
 
@@ -372,7 +377,7 @@ def reckon_running_process(user_id):
 
 
 def reckon_user_quota_cap(user_roles, users_quota_file):
-    """Return the cap of "in_progess" processes according to the role(s). If more than a role has
+    """Return the cap of "in_progress" processes according to the role(s). If more than a role has
     been specified, the cap is calculated as the largest cap among those corresponding to the roles
     list.
 
@@ -385,7 +390,7 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
     # please, note that the user_roles list is never empty because if no role has been defined the
     # GENERAL_TF_ROLE is set in submit_workflow function
     for role in user_roles:
-        cap = users_quota.get(role)
+        cap = users_quota.get(role, {}).get("submit_limit")
         if cap is None:
             logger.info(
                 f"role '{role}' not found in the configuration file {users_quota_file}"
@@ -398,7 +403,7 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
             f"all roles were not found in the configuration file {users_quota_file}, "
             f"a general TF role will be used"
         )
-    user_cap = max(user_caps, default=users_quota.get(GENERAL_TF_ROLE, 10))
+    user_cap = max(user_caps, default=users_quota.get(DEFAULT_TF_ROLE).get("submit_limit"))
     return user_cap
 
 
@@ -411,8 +416,11 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     :param str users_quota_file:
     :return:
     """
-    if user_id not in USERS_TRANSFORMATIONS:
-        return
+    if user_roles is None or not any(user_roles):
+        logger.warning(
+            f"no user-role is defined for the user '{user_id}', a general TF role will be used"
+        )
+        user_roles = [DEFAULT_TF_ROLE]
     if users_quota_file is None:
         users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
     if not os.path.isfile(users_quota_file):
@@ -424,12 +432,14 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     # by the "QUOTA_MODIFICATION_INTERVAL" constant value, then the cache is cleared
     file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
     if (
-        datetime.now() - file_modification_time
+            datetime.now() - file_modification_time
     ).total_seconds() < QUOTA_MODIFICATION_INTERVAL:
         read_users_quota.cache_clear()
 
-    running_processes = reckon_running_process(user_id)
     user_cap = reckon_user_quota_cap(user_roles, users_quota_file)
+    if user_id not in USERS_TRANSFORMATIONS:
+        return
+    running_processes = reckon_running_process(user_id)
     if running_processes >= user_cap:
         raise RuntimeError(
             f"the user {user_id} has reached his quota: {running_processes} processes are running"
@@ -467,11 +477,6 @@ def submit_workflow(
     :param order_id:
     """
     # a general role is used if user_roles is equal to None or [], [None], [None, None, ...]
-    if user_roles is None or not any(user_roles):
-        logger.warning(
-            f"no user-role is defined for the user '{user_id}', a general TF role will be used"
-        )
-        user_roles = [GENERAL_TF_ROLE]
     check_user_quota(user_id, user_roles)
     workflow = get_workflow_by_id(workflow_id)
     product_type = workflow["InputProductType"]
