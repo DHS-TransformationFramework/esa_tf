@@ -398,7 +398,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     :param str users_quota_file:
     :return:
     """
-    if (user_id not in USERS_TRANSFORMATIONS):
+    if user_id not in USERS_TRANSFORMATIONS:
         return
     if users_quota_file is None:
         users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
@@ -410,7 +410,9 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     # if the "users_quota_file" configuration file has been changed in the amount of time specified
     # by the "QUOTA_MODIFICATION_INTERVAL" constant value, then the cache is cleared
     file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
-    if (datetime.now() - file_modification_time).total_seconds() < QUOTA_MODIFICATION_INTERVAL:
+    if (
+        datetime.now() - file_modification_time
+    ).total_seconds() < QUOTA_MODIFICATION_INTERVAL:
         read_users_quota.cache_clear()
 
     running_processes = reckon_running_process(user_id)
@@ -456,7 +458,8 @@ def submit_workflow(
     # a general role is used if user_roles is equal to None or [], [None], [None, None, ...]
     if user_roles is None or not any(user_roles):
         logger.warning(
-            f"no user-role is defined for the user '{user_id}', a general TF role will be used")
+            f"no user-role is defined for the user '{user_id}', a general TF role will be used"
+        )
         user_roles = [GENERAL_TF_ROLE]
     check_user_quota(user_id, user_roles)
     workflow = get_workflow_by_id(workflow_id)
