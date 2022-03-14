@@ -118,7 +118,7 @@ Filters are applied using standard OData `$filter` query parameter; following cl
   ```
 
 `CompletedDate`
-: Filter by submission date. Date must be a string in ISO format.  
+: Filter by date of completion. Date must be a string in ISO format.  
   Example:
 
   ```bash
