@@ -493,9 +493,9 @@ def update_orders_dicts(keeping_period):
     # remove old orders from the USERS_TRANSFORMATIONS dictionary
     for user_id, orders_ids in USERS_TRANSFORMATIONS.items():
         orders_ids_set = set(orders_ids)
-        logger.info(f"user orders before: {orders_ids_set}")
+        logger.info(f"{user_id} orders before: {orders_ids_set}")
         orders_to_keep = list(orders_ids_set.difference(orders_to_delete))
-        logger.info(f"user orders after: {orders_to_keep}")
+        logger.info(f"{user_id} orders after: {orders_to_keep}")
         USERS_TRANSFORMATIONS[user_id] = orders_to_keep
     return orders_to_delete
 
