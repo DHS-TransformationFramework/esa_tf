@@ -13,6 +13,22 @@ apihub:
   password: my-apihub-password
 endef
 
+define USERS_QUOTA
+# this is the default role if no specific role is associated to a given user. Please, change only
+# the "submit_limit" value, do not change the role name "general_tf_role"
+default_esa_tf_role:
+  submit_limit: 10
+endef
+
+define ESA_TF_CONFIG
+# The keeping_period shall be an integer. It represents the minimum number of minutes from the
+# CompletedDate that a TransformationOrder will be kept in memory.
+keeping-period: 14400  # minutes
+
+# The list of workflows to be excluded
+exclude-workflow:
+endef
+
 # default target
 default:
 	echo No default target
@@ -32,6 +48,18 @@ config/hubs_credentials.yaml:
 	echo "$$HUBS_CREDENTIALS" > $@
 
 setup: config/hubs_credentials.yaml
+
+export USERS_QUOTA
+config/users_quota.yaml:
+	echo "$$USERS_QUOTA" > $@
+
+setup: config/users_quota.yaml
+
+export ESA_TF_CONFIG
+config/esa_tf.config:
+	echo "$$ESA_TF_CONFIG" > $@
+
+setup: config/esa_tf.config
 
 build: setup
 	make -C ../esa_tf_restapi image

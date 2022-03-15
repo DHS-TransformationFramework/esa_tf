@@ -15,6 +15,7 @@ services:
         volumes:
             - "${CONFIG_DIR:-./config}:/config"
         environment:
+            - ESA_TF_CONFIG_FILE=/config/esa_tf.config
             - USERS_QUOTA_FILE=/config/users_quota.yaml
             - FORWARDED_ALLOW_IPS=*
             - ROOT_PATH=${ROOT_PATH}
