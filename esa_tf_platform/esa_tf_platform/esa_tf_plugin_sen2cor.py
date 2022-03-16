@@ -16,7 +16,9 @@ ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
 OZONE_WINTER_VALUES = (0, 250, 290, 330, 377, 420, 460)
 OZONE_SUMMER_VALUES = (0, 250, 290, 331, 370, 410, 450)
 
-LOGGER = logging.getLogger(__name__)
+DEFAULT_USER = "no_user"
+
+logger = logging.getLogger(__name__)
 
 
 def set_sen2cor_options(etree, options, srtm_dir):
@@ -187,10 +189,11 @@ def check_options(options):
             raise ValueError(f"invalid option {oname}: valid options are {valid_names}")
 
 
-def log_options(workflow_options):
+def log_options(workflow_options, user_id=DEFAULT_USER):
     """Print the required Sen2Cor options (user desiderata + default values).
 
     :param workflow_options: the user's options dictionary
+    :param str user_id: user identifier
     :return dict:
     """
     applied_options = {
@@ -198,7 +201,7 @@ def log_options(workflow_options):
         for option_name, option in sen2cor_l1c_l2a["WorkflowOptions"].items()
     }
     applied_options.update(workflow_options)
-    LOGGER.info(applied_options)
+    logger.info(applied_options, extra=dict(user=user_id))
     return applied_options
 
 
@@ -222,7 +225,7 @@ def find_output(output_dir):
     return output_path
 
 
-def run_command(cmd, processing_dir):
+def run_command(cmd, processing_dir, user_id=DEFAULT_USER):
     """Execute a Sen2Cor command line in a new process. The Sen2Cor standard output is read during
     the processing, then it is sent both to a dedicated log-file and to the server as log messages.
     The function returns the exit code of the Sen2Cor sub-process and the path of the Sen2Cor
@@ -230,9 +233,13 @@ def run_command(cmd, processing_dir):
 
     :param str cmd: Sen2Cor command line must be executed
     :param str processing_dir: path fo the processing directory
+    :param str user_id: user_identifier
     :return (str, str):
     """
-    LOGGER.info(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
+    logger.info(
+        f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n",
+        extra=dict(user=user_id),
+    )
     sen2cor_log_path = os.path.join(processing_dir, "sen2cor_log.log")
     process = subprocess.Popen(
         cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
@@ -245,7 +252,7 @@ def run_command(cmd, processing_dir):
             except:
                 continue
             f_log.write(line)
-            LOGGER.info(line)
+            logger.info(line, extra=dict(user=user_id))
     process.stdout.close()
     exit_status = process.returncode
     if exit_status != 0:
@@ -261,6 +268,7 @@ def run_processing(
     output_dir,
     sen2cor_script_file=None,
     srtm_dir=None,
+    user_id=DEFAULT_USER,
 ):
     """Execute the processing by means of Sen2Cor tool to convert, according to the input user
     option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
@@ -275,6 +283,7 @@ def run_processing(
     :param str srtm_dir: path of the folder in which the SRTM DEM will be downloaded or searched. If not defined the
     environment variable ``SRTM_DIR`` will be used. In case this variable does not exist a directory dem
     in the ``processing_dir`` will be created.
+    :param str user_id: user identifier
     :return str:
     """
     if sen2cor_script_file is None:
@@ -298,7 +307,7 @@ def run_processing(
 
     check_input_consistency(product_path)
     check_options(workflow_options)
-    log_options(workflow_options)
+    log_options(workflow_options, user_id)
 
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
@@ -306,7 +315,7 @@ def run_processing(
     cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
     if workflow_options.get("Resolution"):
         cmd += f" --resolution {workflow_options.get('Resolution')}"
-    run_command(cmd, processing_dir)
+    run_command(cmd, processing_dir, user_id)
     output_path = find_output(output_dir)
     return output_path
 

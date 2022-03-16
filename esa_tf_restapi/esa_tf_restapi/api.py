@@ -74,6 +74,8 @@ SENTINEL1 = [
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
+DEFAULT_USER = "no_user"
+
 
 def _prepare_download_uri(
     output_product_referece: list, root_uri: T.Optional[str] = None
@@ -376,13 +378,14 @@ def reckon_running_process(user_id):
     return running_processes
 
 
-def reckon_user_quota_cap(user_roles, users_quota_file):
+def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
     """Return the cap of "in_progress" processes according to the role(s). If more than a role has
     been specified, the cap is calculated as the largest cap among those corresponding to the roles
     list.
 
     :param list_or_tuple user_roles: list of the roles associated with the user
     :param str users_quota_file: path of the configuration file with the users' quota by roles
+    :param str user_id: user identifier
     :return int:
     """
     users_quota = read_users_quota(users_quota_file)
@@ -393,7 +396,8 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
         cap = users_quota.get(role, {}).get("submit_limit")
         if cap is None:
             logger.info(
-                f"role '{role}' not found in the configuration file {users_quota_file}"
+                f"role '{role}' not found in the configuration file {users_quota_file}",
+                extra=dict(user=user_id),
             )
         else:
             user_caps.append(cap)
@@ -401,7 +405,8 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
     if not user_caps:
         logger.warning(
             f"all roles were not found in the configuration file {users_quota_file}, "
-            f"a general TF role will be used"
+            f"a general TF role will be used",
+            extra=dict(user=user_id),
         )
     user_cap = max(
         user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit")
@@ -420,7 +425,8 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     """
     if user_roles is None or not any(user_roles):
         logger.warning(
-            f"no user-role is defined for the user '{user_id}', a general TF role will be used"
+            f"no user-role is defined, a general TF role will be used",
+            extra=dict(user=user_id),
         )
         user_roles = [DEFAULT_ESA_TF_ROLE]
     if users_quota_file is None:
@@ -438,7 +444,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     ).total_seconds() < QUOTA_MODIFICATION_INTERVAL:
         read_users_quota.cache_clear()
 
-    user_cap = reckon_user_quota_cap(user_roles, users_quota_file)
+    user_cap = reckon_user_quota_cap(user_roles, users_quota_file, user_id)
     if user_id not in USERS_TRANSFORMATIONS:
         return
     running_processes = reckon_running_process(user_id)
@@ -453,7 +459,7 @@ def submit_workflow(
     *,
     input_product_reference,
     workflow_options,
-    user_id=None,
+    user_id=DEFAULT_USER,
     user_roles=None,
     working_dir=None,
     output_dir=None,
@@ -489,7 +495,9 @@ def submit_workflow(
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
-
+    logger.info(
+        f"submitting transformation order {order_id!r}", extra=dict(user=user_id)
+    )
     workflow_options = fill_with_defaults(
         workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
@@ -506,16 +514,10 @@ def submit_workflow(
             working_dir=working_dir,
             output_dir=output_dir,
             hubs_credentials_file=hubs_credentials_file,
+            user_id=user_id,
         )
 
     client = instantiate_client()
-
-    if user_id:
-        logger.info(
-            f"submitting transformation order {order_id!r} request by user {user_id!r}"
-        )
-    else:
-        logger.info(f"submitting transformation order {order_id!r}")
 
     if order_id in TRANSFORMATION_ORDERS:
         order = TRANSFORMATION_ORDERS[order_id]
