@@ -6,6 +6,8 @@ from xml.etree import ElementTree
 
 import pkg_resources
 
+from esa_tf_platform.workflows import DEFAULT_USER
+
 SEN2COR_CONFILE_NAME = "L2A_GIPP.xml"
 SRTM_DOWNLOAD_ADDRESS = (
     "http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/"
@@ -16,7 +18,6 @@ ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
 OZONE_WINTER_VALUES = (0, 250, 290, 330, 377, 420, 460)
 OZONE_SUMMER_VALUES = (0, 250, 290, 331, 370, 410, 450)
 
-DEFAULT_USER = "no_user"
 
 logger = logging.getLogger(__name__)
 
