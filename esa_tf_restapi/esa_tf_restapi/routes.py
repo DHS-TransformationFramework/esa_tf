@@ -82,7 +82,9 @@ async def transformation_orders(
         msg = f"required the transformation orders list"
         msg_filter = ""
         if filters:
-            msg_filter = f" filtered by '{' and '.join([' '.join(f) for f in filters])}'"
+            msg_filter = (
+                f" filtered by '{' and '.join([' '.join(f) for f in filters])}'"
+            )
         logger.info(msg + msg_filter, extra=dict(user=user_id))
     uri_root = request.url_for("index")
     try:
@@ -107,11 +109,7 @@ async def transformation_orders_count(
     user_id = user.username if user else DEFAULT_USER
     logger.info("required the transformation orders count", extra=dict(user=user_id))
     results = await transformation_orders(
-        request,
-        rawfilter=None,
-        count=True,
-        x_username=x_username,
-        x_roles=x_roles
+        request, rawfilter=None, count=True, x_username=x_username, x_roles=x_roles
     )
     return results["odata.count"]
 
