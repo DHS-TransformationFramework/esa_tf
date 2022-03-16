@@ -10,6 +10,8 @@ from datetime import datetime
 import dask.distributed
 import yaml
 
+from .auth import DEFAULT_USER
+
 logger = logging.getLogger(__name__)
 
 CLIENT = None

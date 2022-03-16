@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, validator
 
-from . import api, auth
+from . import api
 
 TYPES = {
     "boolean": bool,

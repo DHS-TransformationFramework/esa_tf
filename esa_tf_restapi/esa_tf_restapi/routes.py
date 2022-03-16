@@ -5,11 +5,9 @@ from fastapi import Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from . import api, app, models
-from .auth import get_user
+from .auth import get_user, DEFAULT_USER
 from .odata import parse_qs
 
-
-DEFAULT_USER = "no_user"
 logger = logging.getLogger(__name__)
 
 
