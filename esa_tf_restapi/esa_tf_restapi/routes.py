@@ -5,7 +5,7 @@ from fastapi import Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from . import api, app, models
-from .auth import get_user, DEFAULT_USER
+from .auth import DEFAULT_USER, get_user
 from .odata import parse_qs
 
 logger = logging.getLogger(__name__)
@@ -78,11 +78,12 @@ async def transformation_orders(
     user_id = user.username if user else DEFAULT_USER
     odata_params = parse_qs(filter=rawfilter)
     filters = [(f.name, f.operator, f.value) for f in odata_params.filter]
-    msg = f"required the transformation orders list"
-    msg_filter = ""
-    if filters:
-        msg_filter = f" filtered by '{' and '.join([' '.join(f) for f in filters])}'"
-    logger.info(msg + msg_filter, extra=dict(user=user_id))
+    if not count:
+        msg = f"required the transformation orders list"
+        msg_filter = ""
+        if filters:
+            msg_filter = f" filtered by '{' and '.join([' '.join(f) for f in filters])}'"
+        logger.info(msg + msg_filter, extra=dict(user=user_id))
     uri_root = request.url_for("index")
     try:
         data = api.get_transformation_orders(filters, uri_root=uri_root)
@@ -105,7 +106,13 @@ async def transformation_orders_count(
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
     logger.info("required the transformation orders count", extra=dict(user=user_id))
-    results = await transformation_orders(request, rawfilter=None, count=True,)
+    results = await transformation_orders(
+        request,
+        rawfilter=None,
+        count=True,
+        x_username=x_username,
+        x_roles=x_roles
+    )
     return results["odata.count"]
 
 
