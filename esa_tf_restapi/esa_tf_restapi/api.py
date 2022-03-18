@@ -76,8 +76,6 @@ SENTINEL1 = [
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
-DEFAULT_USER = "no_user"
-
 
 def _prepare_download_uri(
     output_product_referece: list, root_uri: T.Optional[str] = None
@@ -505,6 +503,7 @@ def submit_workflow(
     )
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
+
     def task():
         import esa_tf_platform
 
@@ -516,7 +515,6 @@ def submit_workflow(
             working_dir=working_dir,
             output_dir=output_dir,
             hubs_credentials_file=hubs_credentials_file,
-            user_id=user_id,
         )
 
     client = instantiate_client()

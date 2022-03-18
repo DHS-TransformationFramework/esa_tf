@@ -6,8 +6,6 @@ from xml.etree import ElementTree
 
 import pkg_resources
 
-from esa_tf_platform.workflows import DEFAULT_USER
-
 SEN2COR_CONFILE_NAME = "L2A_GIPP.xml"
 SRTM_DOWNLOAD_ADDRESS = (
     "http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/"
@@ -190,11 +188,10 @@ def check_options(options):
             raise ValueError(f"invalid option {oname}: valid options are {valid_names}")
 
 
-def log_options(workflow_options, user_id=DEFAULT_USER):
+def log_options(workflow_options):
     """Print the required Sen2Cor options (user desiderata + default values).
 
     :param workflow_options: the user's options dictionary
-    :param str user_id: user identifier
     :return dict:
     """
     applied_options = {
@@ -202,7 +199,7 @@ def log_options(workflow_options, user_id=DEFAULT_USER):
         for option_name, option in sen2cor_l1c_l2a["WorkflowOptions"].items()
     }
     applied_options.update(workflow_options)
-    logger.info(applied_options, extra=dict(user=user_id))
+    logger.info(applied_options)
     return applied_options
 
 
@@ -226,7 +223,7 @@ def find_output(output_dir):
     return output_path
 
 
-def run_command(cmd, processing_dir, user_id=DEFAULT_USER):
+def run_command(cmd, processing_dir):
     """Execute a Sen2Cor command line in a new process. The Sen2Cor standard output is read during
     the processing, then it is sent both to a dedicated log-file and to the server as log messages.
     The function returns the exit code of the Sen2Cor sub-process and the path of the Sen2Cor
@@ -234,13 +231,9 @@ def run_command(cmd, processing_dir, user_id=DEFAULT_USER):
 
     :param str cmd: Sen2Cor command line must be executed
     :param str processing_dir: path fo the processing directory
-    :param str user_id: user_identifier
     :return (str, str):
     """
-    logger.info(
-        f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n",
-        extra=dict(user=user_id),
-    )
+    logger.info(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
     sen2cor_log_path = os.path.join(processing_dir, "sen2cor_log.log")
     process = subprocess.Popen(
         cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
@@ -253,7 +246,7 @@ def run_command(cmd, processing_dir, user_id=DEFAULT_USER):
             except:
                 continue
             f_log.write(line)
-            logger.info(line, extra=dict(user=user_id))
+            logger.info(line)
     process.stdout.close()
     exit_status = process.returncode
     if exit_status != 0:
@@ -269,7 +262,6 @@ def run_processing(
     output_dir,
     sen2cor_script_file=None,
     srtm_dir=None,
-    user_id=DEFAULT_USER,
 ):
     """Execute the processing by means of Sen2Cor tool to convert, according to the input user
     option, an input Sentinel-2 L1C product into a Sentinel-2 L2A product. The function returns
@@ -284,7 +276,6 @@ def run_processing(
     :param str srtm_dir: path of the folder in which the SRTM DEM will be downloaded or searched. If not defined the
     environment variable ``SRTM_DIR`` will be used. In case this variable does not exist a directory dem
     in the ``processing_dir`` will be created.
-    :param str user_id: user identifier
     :return str:
     """
     if sen2cor_script_file is None:
@@ -308,7 +299,7 @@ def run_processing(
 
     check_input_consistency(product_path)
     check_options(workflow_options)
-    log_options(workflow_options, user_id)
+    log_options(workflow_options)
 
     # creation of the Sen2Cor configuration files inside the processing-dir
     sen2cor_confile = create_sen2cor_confile(processing_dir, srtm_dir, workflow_options)
@@ -316,7 +307,7 @@ def run_processing(
     cmd = f"{sen2cor_script_file} {product_path} --output_dir {output_dir} --GIP_L2A {sen2cor_confile}"
     if workflow_options.get("Resolution"):
         cmd += f" --resolution {workflow_options.get('Resolution')}"
-    run_command(cmd, processing_dir, user_id)
+    run_command(cmd, processing_dir)
     output_path = find_output(output_dir)
     return output_path
 

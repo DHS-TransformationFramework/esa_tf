@@ -83,8 +83,6 @@ SENTINEL1 = [
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
-DEFAULT_USER = "no_user"
-
 
 def check_valid_product_type(workflow, workflow_id=None):
     product_type = workflow["InputProductType"]
@@ -218,7 +216,7 @@ def remove_duplicates(pkg_entrypoints):
     return unique_pkg_entrypoints
 
 
-def workflow_dict_from_pkg(pkg_entrypoints, user_id=DEFAULT_USER):
+def workflow_dict_from_pkg(pkg_entrypoints):
     """
     Load the entrypoints and store them in a dictionary
     """
@@ -229,31 +227,28 @@ def workflow_dict_from_pkg(pkg_entrypoints, user_id=DEFAULT_USER):
             workflow_config = pkg_ep.load()
             workflow_entrypoints[name] = workflow_config
         except Exception:
-            logger.exception(
-                f"workflow {name!r} registration failed with error:",
-                extra=dict(user=user_id),
-            )
+            logger.exception(f"workflow {name!r} registration failed with error:")
     return workflow_entrypoints
 
 
-def load_workflows_configurations(pkg_entrypoints, user_id=DEFAULT_USER):
+def load_workflows_configurations(pkg_entrypoints):
     """
     Create the dictionary containing all the workflows configuration installed
     """
     pkg_entrypoints = remove_duplicates(pkg_entrypoints)
-    workflow_entrypoints = workflow_dict_from_pkg(pkg_entrypoints, user_id)
+    workflow_entrypoints = workflow_dict_from_pkg(pkg_entrypoints)
     return {
         name: {**workflows, "Id": name}
         for name, workflows in workflow_entrypoints.items()
     }
 
 
-def get_all_workflows(user_id=DEFAULT_USER):
+def get_all_workflows():
     """
     Return the list of all available workflows.
     """
     pkg_entrypoints = pkg_resources.iter_entry_points("esa_tf.plugin")
-    workflows = load_workflows_configurations(pkg_entrypoints, user_id)
+    workflows = load_workflows_configurations(pkg_entrypoints)
     valid_workflows = {}
     for workflow_id, workflow in workflows.items():
         try:
@@ -261,8 +256,7 @@ def get_all_workflows(user_id=DEFAULT_USER):
             valid_workflows[workflow_id] = workflow
         except ValueError:
             logger.exception(
-                f"workflow {workflow_id} registration failed; error in workflow description:",
-                extra=dict(user=user_id),
+                f"workflow {workflow_id} registration failed; error in workflow description:"
             )
     return valid_workflows
 
@@ -294,13 +288,7 @@ def download_product_from_hub(
 
 
 def download_product(
-    product,
-    *,
-    processing_dir,
-    hubs_credentials_file,
-    hub_name=None,
-    order_id=None,
-    user_id=DEFAULT_USER,
+    product, *, processing_dir, hubs_credentials_file, hub_name=None, order_id=None,
 ):
     """
     Download the product from the first hub in the hubs_credentials_file that publishes the product
@@ -319,7 +307,6 @@ def download_product(
         except Exception:
             logger.exception(
                 f"not able to download from {hub_name}, an error occurred:",
-                extra=dict(user=user_id),
             )
         if product_path:
             break
@@ -361,13 +348,12 @@ def zip_product(output, output_dir):
     return output_file
 
 
-def load_workflow_runner(workflow_id, user_id=DEFAULT_USER):
+def load_workflow_runner(workflow_id):
     """Loads workflow runner function
     :param str workflow_id: workflow-ID
-    :param str user_id: user identifier
     """
     # run workflow
-    workflow_runner_name = get_all_workflows(user_id)[workflow_id]["Execute"]
+    workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
     module_name, function_name = workflow_runner_name.rsplit(".", 1)
     module = importlib.import_module(module_name)
     workflow_runner = getattr(module, "run_processing")
@@ -384,7 +370,6 @@ def run_workflow(
     output_dir=None,
     hubs_credentials_file=None,
     output_owner=-1,
-    user_id=DEFAULT_USER,
 ):
     """
     Run the workflow defined by 'workflow_id':
@@ -400,15 +385,11 @@ def run_workflow(
     :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
     :param output_owner:
-    :param str user_id: user identifier
     """
     # define create directories
     try:
         dask_worker = dask.distributed.worker.get_worker()
-        logger.info(
-            f"start processing on worker: {dask_worker.name!r}",
-            extra=dict(user=user_id),
-        )
+        logger.info(f"start processing on worker: {dask_worker.name!r}",)
     except ValueError:
         pass
 
@@ -435,34 +416,30 @@ def run_workflow(
     # download
     product = product_reference["Reference"]
     hub_name = product_reference.get("DataSourceName")
-    logger.info(f"downloading input product: {product!r}", extra=dict(user=user_id))
+    logger.info(f"downloading input product: {product!r}")
     product_zip_file = download_product(
         product=product,
         hubs_credentials_file=hubs_credentials_file,
         processing_dir=processing_dir,
         hub_name=hub_name,
         order_id=order_id,
-        user_id=user_id,
     )
-    logger.info(f"unpack input product: {product_zip_file!r}", extra=dict(user=user_id))
+    logger.info(f"unpack input product: {product_zip_file!r}")
     product_path = unzip_product(product_zip_file, processing_dir)
 
     # run workflow
-    workflow_runner = load_workflow_runner(workflow_id, user_id)
+    workflow_runner = load_workflow_runner(workflow_id)
 
-    logger.info(
-        f"run workflow: {workflow_id!r}, {workflow_options!r}", extra=dict(user=user_id)
-    )
+    logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
     output = workflow_runner(
         product_path,
         processing_dir=processing_dir,
         output_dir=output_binder_dir,
         workflow_options=workflow_options,
-        user_id=user_id,
     )
 
     # re-package the output
-    logger.info(f"package output product: {output!r}", extra=dict(user=user_id))
+    logger.info(f"package output product: {output!r}")
 
     output_order_dir = os.path.join(output_dir, order_id)
     os.makedirs(output_order_dir, exist_ok=True)

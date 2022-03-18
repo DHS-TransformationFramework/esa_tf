@@ -45,7 +45,7 @@ class ContextFilter(logging.Filter):
 def add_stderr_handlers(logger):
     filter = ContextFilter()
     logging_formatter = logging.Formatter(
-        "esa_tf-%(tf_version)s - %(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - user: %(user)s - %(message)s",
+        "esa_tf-%(tf_version)s - %(name)s - order_id %(order_id)s - %(asctime)s.%(msecs)03d - %(levelname)s - %(message)s",
         datefmt="%d/%m/%Y %H:%M:%S",
     )
     logging.Formatter.converter = time.gmtime
