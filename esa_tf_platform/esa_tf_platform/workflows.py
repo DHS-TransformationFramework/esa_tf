@@ -288,7 +288,7 @@ def download_product_from_hub(
 
 
 def download_product(
-    product, *, processing_dir, hubs_credentials_file, hub_name=None, order_id=None,
+    product, *, processing_dir, hubs_credentials_file, hub_name=None, order_id=None
 ):
     """
     Download the product from the first hub in the hubs_credentials_file that publishes the product
@@ -306,7 +306,7 @@ def download_product(
             )
         except Exception:
             logger.exception(
-                f"not able to download from {hub_name}, an error occurred:",
+                f"not able to download from {hub_name}, an error occurred:"
             )
         if product_path:
             break
@@ -350,7 +350,7 @@ def zip_product(output, output_dir):
 
 def load_workflow_runner(workflow_id):
     """Loads workflow runner function
-    :param str workflow_id: workflow-ID
+    :param str workflow_id: workflow ID
     """
     # run workflow
     workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
@@ -384,12 +384,11 @@ def run_workflow(
     :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
     :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
-    :param output_owner:
     """
     # define create directories
     try:
         dask_worker = dask.distributed.worker.get_worker()
-        logger.info(f"start processing on worker: {dask_worker.name!r}",)
+        logger.info(f"start processing on worker: {dask_worker.name!r}")
     except ValueError:
         pass
 
