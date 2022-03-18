@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import functools
 import logging
@@ -16,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
-USERS_TRANSFORMATIONS = {}
+USERS_TRANSFORMATION_ORDERS = {}
 DEFAULT_ESA_TF_ROLE = "default_esa_tf_role"
-QUOTA_MODIFICATION_INTERVAL = 86400  # sec
+FILE_MODIFICATION_INTERVAL = 86400  # sec
 
 
 STATUS_DASK_TO_API = {
@@ -346,7 +347,6 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
-@functools.lru_cache()
 def read_users_quota(users_quota_file):
     """Return the users' quota as read from the dedicated configuration file. The keys are the
     possible roles and the values are the roles' cap.
@@ -372,7 +372,7 @@ def reckon_running_process(user_id):
     :return int:
     """
     running_processes = 0
-    for order_id in USERS_TRANSFORMATIONS[user_id]:
+    for order_id in USERS_TRANSFORMATION_ORDERS[user_id]:
         order_status = get_transformation_order(order_id)["Status"]
         running_processes += order_status == "in_progress"
     return running_processes
@@ -404,8 +404,8 @@ def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
     # if all roles are not present on the configuration file, then the GENERAL_TF_ROLE is used
     if not user_caps:
         logger.warning(
-            f"all roles were not found in the configuration file {users_quota_file}, "
-            f"a default TF role will be used",
+            f"no role among those defined for the user was found in the configuration file {users_quota_file}, "
+            f"a general TF role will be used",
             extra=dict(user=user_id),
         )
     user_cap = max(
@@ -418,9 +418,9 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
     cap has been already reached, a RuntimeError is raised.
 
-    :param str user_id:
-    :param str user_roles:
-    :param str users_quota_file:
+    :param str user_id: user identifier
+    :param str user_roles: list of the user roles
+    :param str users_quota_file: full path to the `users_quota.yaml` file
     :return:
     """
     if user_roles is None or not any(user_roles):
@@ -436,22 +436,90 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
             f"{users_quota_file} not found, please define it using 'users_quota_file' "
             "keyword argument or the environment variable USERS_QUOTA_FILE"
         )
-    # if the "users_quota_file" configuration file has been changed in the amount of time specified
-    # by the "QUOTA_MODIFICATION_INTERVAL" constant value, then the cache is cleared
     file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
-    if (
-        datetime.now() - file_modification_time
-    ).total_seconds() < QUOTA_MODIFICATION_INTERVAL:
-        read_users_quota.cache_clear()
 
     user_cap = reckon_user_quota_cap(user_roles, users_quota_file, user_id)
-    if user_id not in USERS_TRANSFORMATIONS:
+    if user_id not in USERS_TRANSFORMATION_ORDERS:
         return
     running_processes = reckon_running_process(user_id)
     if running_processes >= user_cap:
         raise RuntimeError(
             f"the user {user_id} has reached his quota: {running_processes} processes are running"
         )
+
+
+def read_esa_tf_config(esa_tf_config_file):
+    """
+
+    :param str esa_tf_config_file: full path to the `esa_tf.config` file
+    :return dict:
+    """
+    with open(esa_tf_config_file) as file:
+        esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
+    return esa_tf_config
+
+
+def update_orders_dicts(keeping_period):
+    """Update the TRANSFORMATION_ORDERS and USERS_TRANSFORMATIONS dictionaries removing only the
+    transformations with statuses `completed` or `failed` that are older than the `keeping_period`.
+    It returns the list of order-IDs that have been deleted.
+
+    :param int keeping_period: the minimum number of minutes from the CompletedDate that a
+    TransformationOrder will be kept in memory
+    :return list:
+    """
+    tformat = "%Y-%m-%dT%H:%M:%S"
+    now = datetime.now()
+    # find completed or failed orders that are older than keeping_period
+    orders_to_delete = []
+    for order_id, order in TRANSFORMATION_ORDERS.items():
+        status = get_transformation_order(order_id)["Status"]
+        if status != "in_progress":
+            completed_date_str = order.get("CompletedDate", now.isoformat())
+            completed_date = datetime.strptime(
+                completed_date_str.split(".")[0], tformat
+            )
+            elapsed_minutes = (now - completed_date).total_seconds()  # in minutes
+            if elapsed_minutes > keeping_period:
+                orders_to_delete.append(order_id)
+
+    # remove old orders from the TRANSFORMATION_ORDERS dictionary
+    for order_id in orders_to_delete:
+        TRANSFORMATION_ORDERS.pop(order_id, None)
+
+    # remove old orders from the USERS_TRANSFORMATIONS dictionary
+    for user_id, orders_ids in USERS_TRANSFORMATION_ORDERS.items():
+        orders_to_keep = orders_ids.difference(orders_to_delete)
+        USERS_TRANSFORMATION_ORDERS[user_id] = orders_to_keep
+    return orders_to_delete
+
+
+async def evict_orders(esa_tf_config_file=None):
+    """Evict orders from the TRANSFORMATION_ORDERS and USERS_TRANSFORMATIONS according to a
+    configurable keeping period parameter. The keeping period parameter is based on the CompletedDate
+    (i.e. the datetime when the output product of a TransformationOrders is available in the
+    staging area). The keeping period parameter is expressed in minutes and is defined in the
+    esa_tf.config file.
+
+    :param str esa_tf_config_file: full path to the `esa_tf.config` file
+    :return:
+    """
+    # if the "esa_tf_config_file" configuration file has been changed in the amount of time
+    # specified by the "FILE_MODIFICATION_INTERVAL" constant value, then the cache is cleared
+    if esa_tf_config_file is None:
+        esa_tf_config_file = os.getenv("ESA_TF_CONFIG_FILE", "./esa_tf.config")
+    if not os.path.isfile(esa_tf_config_file):
+        raise ValueError(
+            f"{esa_tf_config_file} not found, please define it using 'esa_tf_config_file' "
+            "keyword argument or the environment variable ESA_TF_CONFIG_FILE"
+        )
+    file_modification_time = datetime.fromtimestamp(
+        os.path.getmtime(esa_tf_config_file)
+    )
+    esa_tf_config = read_esa_tf_config(esa_tf_config_file)
+    keeping_period = esa_tf_config.get("keeping-period")
+    update_orders_dicts(keeping_period)
+    return keeping_period
 
 
 def submit_workflow(
@@ -486,6 +554,7 @@ def submit_workflow(
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
     check_user_quota(user_id, user_roles)
+    asyncio.create_task(evict_orders())
     workflow = get_workflow_by_id(workflow_id)
     product_type = workflow["InputProductType"]
     check_products_consistency(
@@ -542,9 +611,9 @@ def submit_workflow(
         TRANSFORMATION_ORDERS[order_id] = order
         future.add_done_callback(add_completed_info)
 
-    if user_id in USERS_TRANSFORMATIONS:
-        USERS_TRANSFORMATIONS[user_id].append(order_id)
+    if user_id in USERS_TRANSFORMATION_ORDERS:
+        USERS_TRANSFORMATION_ORDERS[user_id].add(order_id)
     else:
-        USERS_TRANSFORMATIONS[user_id] = [order_id]
+        USERS_TRANSFORMATION_ORDERS[user_id] = set((order_id,))
 
     return build_transformation_order(order, uri_root=uri_root)

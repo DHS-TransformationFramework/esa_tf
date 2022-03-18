@@ -15,7 +15,10 @@ services:
         volumes:
             - "${CONFIG_DIR:-./config}:/config"
         environment:
+            - ESA_TF_CONFIG_FILE=/config/esa_tf.config
             - USERS_QUOTA_FILE=/config/users_quota.yaml
+#            - TF_USERNAME_TEST=pippo1,pippo2
+#            - TF_ROLE_TEST=role1,role2,role3
             - FORWARDED_ALLOW_IPS=*
             - ROOT_PATH=${ROOT_PATH}
 
@@ -34,7 +37,7 @@ services:
         command: make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"
 
     esa_tf_proxy:
-        image: nginx:1.21.5
+        image: nginx:1.21.6
         volumes:
             - ./nginx/templates:/etc/nginx/templates
             - ./nginx/njs:/etc/nginx/njs
