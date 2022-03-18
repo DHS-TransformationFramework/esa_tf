@@ -345,7 +345,6 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
-@functools.lru_cache()
 def read_users_quota(users_quota_file):
     """Return the users' quota as read from the dedicated configuration file. The keys are the
     possible roles and the values are the roles' cap.
@@ -431,13 +430,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
             f"{users_quota_file} not found, please define it using 'users_quota_file' "
             "keyword argument or the environment variable USERS_QUOTA_FILE"
         )
-    # if the "users_quota_file" configuration file has been changed in the amount of time
-    # specified by the "FILE_MODIFICATION_INTERVAL" constant value, then the cache is cleared
     file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
-    if (
-        datetime.now() - file_modification_time
-    ).total_seconds() < FILE_MODIFICATION_INTERVAL:
-        read_users_quota.cache_clear()
 
     user_cap = reckon_user_quota_cap(user_roles, users_quota_file)
     if user_id not in USERS_TRANSFORMATIONS:
@@ -449,7 +442,6 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
         )
 
 
-@functools.lru_cache()
 def read_esa_tf_config(esa_tf_config_file):
     """
 
@@ -481,10 +473,9 @@ def update_orders_dicts(keeping_period):
             completed_date = datetime.strptime(
                 completed_date_str.split(".")[0], tformat
             )
-            elapsed_minutes = (now - completed_date).total_seconds() / 60  # in minutes
+            elapsed_minutes = (now - completed_date).total_seconds()  # in minutes
             if elapsed_minutes > keeping_period:
                 orders_to_delete.append(order_id)
-    logger.info(f"orders must be deleted: {orders_to_delete}")
 
     # remove old orders from the TRANSFORMATION_ORDERS dictionary
     for order_id in orders_to_delete:
@@ -492,10 +483,7 @@ def update_orders_dicts(keeping_period):
 
     # remove old orders from the USERS_TRANSFORMATIONS dictionary
     for user_id, orders_ids in USERS_TRANSFORMATIONS.items():
-        orders_ids_set = set(orders_ids)
-        logger.info(f"{user_id} orders before: {orders_ids_set}")
-        orders_to_keep = list(orders_ids_set.difference(orders_to_delete))
-        logger.info(f"{user_id} orders after: {orders_to_keep}")
+        orders_to_keep = orders_ids.difference(orders_to_delete)
         USERS_TRANSFORMATIONS[user_id] = orders_to_keep
     return orders_to_delete
 
@@ -522,10 +510,6 @@ async def evict_orders(esa_tf_config_file=None):
     file_modification_time = datetime.fromtimestamp(
         os.path.getmtime(esa_tf_config_file)
     )
-    if (
-        datetime.now() - file_modification_time
-    ).total_seconds() < FILE_MODIFICATION_INTERVAL:
-        read_esa_tf_config.cache_clear()
     esa_tf_config = read_esa_tf_config(esa_tf_config_file)
     keeping_period = esa_tf_config.get("keeping-period")
     update_orders_dicts(keeping_period)
@@ -626,8 +610,8 @@ def submit_workflow(
         future.add_done_callback(add_completed_info)
 
     if user_id in USERS_TRANSFORMATIONS:
-        USERS_TRANSFORMATIONS[user_id].append(order_id)
+        USERS_TRANSFORMATIONS[user_id].add(order_id)
     else:
-        USERS_TRANSFORMATIONS[user_id] = [order_id]
+        USERS_TRANSFORMATIONS[user_id] = set((order_id,))
 
     return build_transformation_order(order, uri_root=uri_root)
