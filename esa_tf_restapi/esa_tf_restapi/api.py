@@ -405,7 +405,7 @@ def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
     if not user_caps:
         logger.warning(
             f"all roles were not found in the configuration file {users_quota_file}, "
-            f"a general TF role will be used",
+            f"a default TF role will be used",
             extra=dict(user=user_id),
         )
     user_cap = max(
@@ -425,7 +425,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     """
     if user_roles is None or not any(user_roles):
         logger.warning(
-            f"no user-role is defined, a general TF role will be used",
+            f"no user-role is defined, a default TF role will be used",
             extra=dict(user=user_id),
         )
         user_roles = [DEFAULT_ESA_TF_ROLE]
@@ -484,7 +484,7 @@ def submit_workflow(
     of the environment variable "HUBS_CREDENTIALS_FILE"
     :param order_id:
     """
-    # a general role is used if user_roles is equal to None or [], [None], [None, None, ...]
+    # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
     check_user_quota(user_id, user_roles)
     workflow = get_workflow_by_id(workflow_id)
     product_type = workflow["InputProductType"]
