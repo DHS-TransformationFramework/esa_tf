@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 CLIENT = None
 TRANSFORMATION_ORDERS = {}
-USERS_TRANSFORMATIONS = {}
+USERS_TRANSFORMATION_ORDERS = {}
 DEFAULT_ESA_TF_ROLE = "default_esa_tf_role"
 FILE_MODIFICATION_INTERVAL = 86400  # sec
 
@@ -370,7 +370,7 @@ def reckon_running_process(user_id):
     :return int:
     """
     running_processes = 0
-    for order_id in USERS_TRANSFORMATIONS[user_id]:
+    for order_id in USERS_TRANSFORMATION_ORDERS[user_id]:
         order_status = get_transformation_order(order_id)["Status"]
         running_processes += order_status == "in_progress"
     return running_processes
@@ -433,7 +433,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
 
     user_cap = reckon_user_quota_cap(user_roles, users_quota_file)
-    if user_id not in USERS_TRANSFORMATIONS:
+    if user_id not in USERS_TRANSFORMATION_ORDERS:
         return
     running_processes = reckon_running_process(user_id)
     if running_processes >= user_cap:
@@ -482,9 +482,9 @@ def update_orders_dicts(keeping_period):
         TRANSFORMATION_ORDERS.pop(order_id, None)
 
     # remove old orders from the USERS_TRANSFORMATIONS dictionary
-    for user_id, orders_ids in USERS_TRANSFORMATIONS.items():
+    for user_id, orders_ids in USERS_TRANSFORMATION_ORDERS.items():
         orders_to_keep = orders_ids.difference(orders_to_delete)
-        USERS_TRANSFORMATIONS[user_id] = orders_to_keep
+        USERS_TRANSFORMATION_ORDERS[user_id] = orders_to_keep
     return orders_to_delete
 
 
@@ -609,9 +609,9 @@ def submit_workflow(
         TRANSFORMATION_ORDERS[order_id] = order
         future.add_done_callback(add_completed_info)
 
-    if user_id in USERS_TRANSFORMATIONS:
-        USERS_TRANSFORMATIONS[user_id].add(order_id)
+    if user_id in USERS_TRANSFORMATION_ORDERS:
+        USERS_TRANSFORMATION_ORDERS[user_id].add(order_id)
     else:
-        USERS_TRANSFORMATIONS[user_id] = set((order_id,))
+        USERS_TRANSFORMATION_ORDERS[user_id] = set((order_id,))
 
     return build_transformation_order(order, uri_root=uri_root)
