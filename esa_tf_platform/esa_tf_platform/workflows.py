@@ -350,7 +350,7 @@ def zip_product(output, output_dir):
 
 def load_workflow_runner(workflow_id):
     """Loads workflow runner function
-    :param str workflow_id: workflow_id
+    :param str workflow_id: workflow ID
     """
     # run workflow
     workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
@@ -437,7 +437,7 @@ def run_workflow(
         workflow_options=workflow_options,
     )
 
-    # re-package the ouput
+    # re-package the output
     logger.info(f"package output product: {output!r}")
 
     output_order_dir = os.path.join(output_dir, order_id)

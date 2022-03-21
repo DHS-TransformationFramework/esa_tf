@@ -11,6 +11,8 @@ from datetime import datetime
 import dask.distributed
 import yaml
 
+from .auth import DEFAULT_USER
+
 logger = logging.getLogger(__name__)
 
 CLIENT = None
@@ -376,13 +378,14 @@ def reckon_running_process(user_id):
     return running_processes
 
 
-def reckon_user_quota_cap(user_roles, users_quota_file):
+def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
     """Return the cap of "in_progress" processes according to the role(s). If more than a role has
     been specified, the cap is calculated as the largest cap among those corresponding to the roles
     list.
 
     :param list_or_tuple user_roles: list of the roles associated with the user
     :param str users_quota_file: path of the configuration file with the users' quota by roles
+    :param str user_id: user identifier
     :return int:
     """
     users_quota = read_users_quota(users_quota_file)
@@ -393,7 +396,8 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
         cap = users_quota.get(role, {}).get("submit_limit")
         if cap is None:
             logger.info(
-                f"role '{role}' not found in the configuration file {users_quota_file}"
+                f"role '{role}' not found in the configuration file {users_quota_file}",
+                extra=dict(user=user_id),
             )
         else:
             user_caps.append(cap)
@@ -401,7 +405,8 @@ def reckon_user_quota_cap(user_roles, users_quota_file):
     if not user_caps:
         logger.warning(
             f"no role among those defined for the user was found in the configuration file {users_quota_file}, "
-            f"a general TF role will be used"
+            f"a general TF role will be used",
+            extra=dict(user=user_id),
         )
     user_cap = max(
         user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit")
@@ -420,7 +425,8 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     """
     if user_roles is None or not any(user_roles):
         logger.warning(
-            f"no user-role is defined for the user '{user_id}', a general TF role will be used"
+            f"no user-role is defined, a default TF role will be used",
+            extra=dict(user=user_id),
         )
         user_roles = [DEFAULT_ESA_TF_ROLE]
     if users_quota_file is None:
@@ -430,9 +436,8 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
             f"{users_quota_file} not found, please define it using 'users_quota_file' "
             "keyword argument or the environment variable USERS_QUOTA_FILE"
         )
-    file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
 
-    user_cap = reckon_user_quota_cap(user_roles, users_quota_file)
+    user_cap = reckon_user_quota_cap(user_roles, users_quota_file, user_id)
     if user_id not in USERS_TRANSFORMATION_ORDERS:
         return
     running_processes = reckon_running_process(user_id)
@@ -507,9 +512,7 @@ async def evict_orders(esa_tf_config_file=None):
             f"{esa_tf_config_file} not found, please define it using 'esa_tf_config_file' "
             "keyword argument or the environment variable ESA_TF_CONFIG_FILE"
         )
-    file_modification_time = datetime.fromtimestamp(
-        os.path.getmtime(esa_tf_config_file)
-    )
+
     esa_tf_config = read_esa_tf_config(esa_tf_config_file)
     keeping_period = esa_tf_config.get("keeping-period")
     update_orders_dicts(keeping_period)
@@ -521,7 +524,7 @@ def submit_workflow(
     *,
     input_product_reference,
     workflow_options,
-    user_id=None,
+    user_id=DEFAULT_USER,
     user_roles=None,
     working_dir=None,
     output_dir=None,
@@ -546,7 +549,7 @@ def submit_workflow(
     of the environment variable "HUBS_CREDENTIALS_FILE"
     :param order_id:
     """
-    # a general role is used if user_roles is equal to None or [], [None], [None, None, ...]
+    # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
     check_user_quota(user_id, user_roles)
     asyncio.create_task(evict_orders())
     workflow = get_workflow_by_id(workflow_id)
@@ -558,12 +561,15 @@ def submit_workflow(
         order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
-
+    logger.info(
+        f"submitting transformation order {order_id!r}", extra=dict(user=user_id)
+    )
     workflow_options = fill_with_defaults(
         workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
+
     def task():
         import esa_tf_platform
 
@@ -578,13 +584,6 @@ def submit_workflow(
         )
 
     client = instantiate_client()
-
-    if user_id:
-        logger.info(
-            f"submitting transformation order {order_id!r} request by user {user_id!r}"
-        )
-    else:
-        logger.info(f"submitting transformation order {order_id!r}")
 
     if order_id in TRANSFORMATION_ORDERS:
         order = TRANSFORMATION_ORDERS[order_id]

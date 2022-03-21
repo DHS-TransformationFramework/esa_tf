@@ -16,7 +16,8 @@ ROI_OPTIONS_NAMES = {"row0", "col0", "nrow_win", "ncol_win"}
 OZONE_WINTER_VALUES = (0, 250, 290, 330, 377, 420, 460)
 OZONE_SUMMER_VALUES = (0, 250, 290, 331, 370, 410, 450)
 
-LOGGER = logging.getLogger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 def set_sen2cor_options(etree, options, srtm_dir):
@@ -198,7 +199,7 @@ def log_options(workflow_options):
         for option_name, option in sen2cor_l1c_l2a["WorkflowOptions"].items()
     }
     applied_options.update(workflow_options)
-    LOGGER.info(applied_options)
+    logger.info(applied_options)
     return applied_options
 
 
@@ -232,7 +233,7 @@ def run_command(cmd, processing_dir):
     :param str processing_dir: path fo the processing directory
     :return (str, str):
     """
-    LOGGER.info(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
+    logger.info(f"\nthe following Sen2Cor command will be executed:\n    {cmd}\n")
     sen2cor_log_path = os.path.join(processing_dir, "sen2cor_log.log")
     process = subprocess.Popen(
         cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
@@ -245,7 +246,7 @@ def run_command(cmd, processing_dir):
             except:
                 continue
             f_log.write(line)
-            LOGGER.info(line)
+            logger.info(line)
     process.stdout.close()
     exit_status = process.returncode
     if exit_status != 0:
