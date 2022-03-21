@@ -436,7 +436,6 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
             f"{users_quota_file} not found, please define it using 'users_quota_file' "
             "keyword argument or the environment variable USERS_QUOTA_FILE"
         )
-    file_modification_time = datetime.fromtimestamp(os.path.getmtime(users_quota_file))
 
     user_cap = reckon_user_quota_cap(user_roles, users_quota_file, user_id)
     if user_id not in USERS_TRANSFORMATION_ORDERS:
@@ -513,9 +512,7 @@ async def evict_orders(esa_tf_config_file=None):
             f"{esa_tf_config_file} not found, please define it using 'esa_tf_config_file' "
             "keyword argument or the environment variable ESA_TF_CONFIG_FILE"
         )
-    file_modification_time = datetime.fromtimestamp(
-        os.path.getmtime(esa_tf_config_file)
-    )
+
     esa_tf_config = read_esa_tf_config(esa_tf_config_file)
     keeping_period = esa_tf_config.get("keeping-period")
     update_orders_dicts(keeping_period)
