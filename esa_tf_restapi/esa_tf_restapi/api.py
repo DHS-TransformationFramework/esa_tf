@@ -427,17 +427,15 @@ def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
         cap = users_quota.get(role, {}).get("submit_limit")
         if cap is None:
             logger.info(
-                f"role '{role}' not found in the configuration file {users_quota_file}",
-                extra=dict(user=user_id),
+                f"user: {user_id} - role '{role}' not found in the configuration file {users_quota_file}",
             )
         else:
             user_caps.append(cap)
     # if all roles are not present on the configuration file, then the GENERAL_TF_ROLE is used
     if not user_caps:
         logger.warning(
-            f"no role among those defined for the user was found in the configuration file {users_quota_file}, "
+            f"user: {user_id} - no role among those defined for the user was found in the configuration file {users_quota_file}, "
             f"a general TF role will be used",
-            extra=dict(user=user_id),
         )
     user_cap = max(
         user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit")
@@ -456,8 +454,7 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
     """
     if user_roles is None or not any(user_roles):
         logger.warning(
-            f"no user-role is defined, a default TF role will be used",
-            extra=dict(user=user_id),
+            f"user: {user_id} - no user-role is defined, a default TF role will be used",
         )
         user_roles = [DEFAULT_ESA_TF_ROLE]
     if users_quota_file is None:
@@ -589,7 +586,7 @@ def submit_workflow(
             workflow_id, input_product_reference, workflow_options,
         )
     logger.info(
-        f"submitting transformation order {order_id!r}", extra=dict(user=user_id)
+        f"user: {user_id} - submitting transformation order {order_id!r}"
     )
     workflow_options = fill_with_defaults(
         workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
