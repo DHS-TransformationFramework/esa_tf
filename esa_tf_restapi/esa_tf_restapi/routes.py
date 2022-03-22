@@ -18,11 +18,9 @@ async def index():
 
 @app.get("/Workflows")
 async def workflows(
-    request: Request,
     x_username: Optional[str] = Header(None),
     x_roles: Optional[str] = Header(None),
 ):
-    # root = request.url_for("metadata")
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
     logger.info(f"required workflows configurations", extra=dict(user=user_id))
@@ -51,7 +49,6 @@ async def workflow(
         logging.exception("Invalid Worfklow id")
         raise HTTPException(status_code=404, detail=str(exc))
     base = request.url_for("workflows")
-    # root = request.url_for("metadata")
     return {
         "@odata.id": f"{base}('{id}')",
         "Id": id,
@@ -88,7 +85,7 @@ async def transformation_orders(
         logger.info(msg + msg_filter, extra=dict(user=user_id))
     uri_root = request.url_for("index")
     try:
-        data = api.get_transformation_orders(filters, uri_root=uri_root)
+        data = api.get_transformation_orders(filters)
     except ValueError as exc:
         logging.exception("Invalid request")
         raise HTTPException(status_code=422, detail=str(exc))
@@ -130,7 +127,7 @@ async def get_transformation_order(
     uri_root = request.url_for("index")
     data = None
     try:
-        data = api.get_transformation_order(id, uri_root=uri_root)
+        data = api.get_transformation_order(id)
     except KeyError as exc:
         logging.exception("Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))

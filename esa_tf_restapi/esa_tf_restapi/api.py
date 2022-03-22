@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import functools
 import logging
 import operator
@@ -21,13 +20,11 @@ USERS_TRANSFORMATION_ORDERS = {}
 DEFAULT_ESA_TF_ROLE = "default_esa_tf_role"
 FILE_MODIFICATION_INTERVAL = 86400  # sec
 
-
 STATUS_DASK_TO_API = {
     "pending": "in_progress",
     "finished": "completed",
     "error": "failed",
 }
-
 
 SENTINEL1 = [
     "S1_RAW__0S",
@@ -78,26 +75,106 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
-def _prepare_download_uri(
-    output_product_referece: list, root_uri: T.Optional[str] = None
-):
-    for product in output_product_referece:
-        if root_uri:
-            download_uri = f"{root_uri}download/{product['ReferenceBasePath']}/{product['Reference']}"
-        else:
-            download_uri = None
-        product["DownloadURI"] = download_uri
-        del product["ReferenceBasePath"]
-    return output_product_referece
+class TransformationOrder(object):
 
+    def __init__(
+        self,
+        future=None,
+        parameters=None,
+        uri_root=None,
+        order_info=None,
+    ):
+        self.future = future
+        self.parameters = parameters
+        self._uri_root = uri_root
+        self._order_info = order_info
 
-def add_completed_info(future):
-    order = TRANSFORMATION_ORDERS[future.key]
-    order["CompletedDate"] = datetime.now().isoformat()
-    basepath, reference = os.path.split(future.result())
-    order["OutputProductReference"] = [
-        {"Reference": reference, "ReferenceBasePath": basepath}
-    ]
+    @classmethod
+    def submit(
+        cls,
+        order_id,
+        product_reference,
+        workflow_id,
+        workflow_options,
+        uri_root=None
+    ):
+        parameters = {
+            "order_id": order_id,
+            "product_reference": product_reference,
+            "workflow_id": workflow_id,
+            "workflow_options": workflow_options,
+        }
+        # definition of the task must be internal
+        # to avoid dask to import esa_tf_restapi in the workers
+        def task():
+            import esa_tf_platform
+            return esa_tf_platform.run_workflow(** parameters)
+
+        client = instantiate_client()
+        future = client.submit(task, key=order_id)
+        transformation_order = TransformationOrder()
+        transformation_order.future = future
+        transformation_order.future.add_done_callback(transformation_order.add_completed_info)
+        transformation_order._order_info = {
+            "Id": order_id,
+            "SubmissionDate": datetime.now().isoformat(),
+            "InputProductReference": product_reference,
+            "WorkflowOptions": workflow_options,
+            "WorkflowId": workflow_id,
+            "WorkflowName": get_workflow_by_id(workflow_id)["WorkflowName"],
+        }
+        transformation_order._uri_root = uri_root
+        transformation_order.parameters = parameters
+        return transformation_order
+
+    def add_completed_info(self, future):
+        self._order_info["CompletedDate"] = datetime.now().isoformat()
+        self._order_info["Status"] = STATUS_DASK_TO_API[self.future.status]
+        if self.future.status == "finished":
+            basepath, reference = os.path.split(self.future.result())
+            self._order_info["OutputProductReference"] = [
+                {
+                    "Reference": reference,
+                    "DownloadURI": f"{self._uri_root!r}download/{reference}/{basepath}"
+                }
+            ]
+
+    def clean_completed_info(self):
+        self._order_info.pop("Status", None)
+        self._order_info.pop("CompletedDate", None)
+        self._order_info.pop("OutputProductReference", None)
+
+    def update_status(self):
+        # Note: the future must be extracted from the original order. The deepcopy breaks the future
+        self._order_info["Status"] = STATUS_DASK_TO_API[self.future.status]
+
+    def order_info(self):
+        self.update_status()
+        return self._order_info
+
+    def resubmit_if_failed(self):
+        if self.future.status == "error":
+            client = instantiate_client()
+            self.clean_completed_info()
+            self.transformation_order["SubmissionDate"] = datetime.now().isoformat()
+            client.retry(self.future)
+            self.future.add_done_callback(self.add_completed_info)
+
+    def get_log(self):
+        client = instantiate_client()
+        seconds_logs = client.get_events(self.future.key)
+        logs = []
+        for seconds, log in seconds_logs:
+            logs.append(log)
+        return logs
+
+    # @staticmethod
+    # def get_dask_orders_status():
+    #     def orders_status_on_scheduler(dask_scheduler):
+    #         return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
+    #
+    #     client = instantiate_client()
+    #     return client.run_on_scheduler(orders_status_on_scheduler)
 
 
 def check_products_consistency(
@@ -142,14 +219,6 @@ def instantiate_client(scheduler_addr=None):
     return CLIENT
 
 
-def filter_by_product_type(workflows, product_type=None):
-    filtered_workflows = {}
-    for name in workflows:
-        if product_type == workflows[name]["InputProductType"]:
-            filtered_workflows[name] = workflows[name]
-    return filtered_workflows
-
-
 @functools.lru_cache()
 def get_all_workflows(scheduler=None):
     """
@@ -159,7 +228,6 @@ def get_all_workflows(scheduler=None):
     # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
-
         return esa_tf_platform.get_all_workflows()
 
     client = instantiate_client(scheduler)
@@ -186,71 +254,34 @@ def get_workflow_by_id(workflow_id):
     return workflow
 
 
-def get_workflows(product=None):
+def get_workflows(product_type=None):
     """
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
     """
     workflows = get_all_workflows()
-    if product:
-        workflows = filter_by_product_type(workflows, product)
+    if product_type:
+        filtered_workflows = {}
+        for name in workflows:
+            if product_type == workflows[name]["InputProductType"]:
+                filtered_workflows[name] = workflows[name]
+        return filtered_workflows
     return workflows
-
-
-def build_transformation_order(order, uri_root=None):
-    # Note: the future must be extracted from the original order. The deepcopy breaks the future
-    future = order["future"]
-    transformation_order = copy.deepcopy(order)
-    transformation_order.pop("future")
-    transformation_order["Status"] = STATUS_DASK_TO_API[future.status]
-    if future.status == "finished":
-        transformation_order["OutputProductReference"] = _prepare_download_uri(
-            transformation_order["OutputProductReference"], uri_root
-        )
-    # if future.status == "error":
-    #     transformation_order["ErrorMessage"] = str(future.exception())
-    return transformation_order
-
-
-def get_dask_orders_status():
-    def orders_status_on_scheduler(dask_scheduler):
-        return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
-
-    client = instantiate_client()
-    return client.run_on_scheduler(orders_status_on_scheduler)
-
-
-def resubmit_transformation_order(future):
-    client = instantiate_client()
-    order = TRANSFORMATION_ORDERS[future.key]
-    client.retry(future)
-    order.pop("CompletedDate", None)
-    order.pop("OutputProductReference", None)
-    order["SubmissionDate"] = datetime.now().isoformat()
-    future.add_done_callback(add_completed_info)
-    return order
 
 
 def get_transformation_order_log(order_id):
     if order_id not in TRANSFORMATION_ORDERS:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    client = instantiate_client()
-    seconds_logs = client.get_events(order_id)
-    logs = []
-    for seconds, log in seconds_logs:
-        logs.append(log)
-    return logs
+    return TRANSFORMATION_ORDERS[order_id].get_log()
 
 
-def get_transformation_order(order_id, uri_root=None):
+def get_transformation_order(order_id):
     """
     Return the transformation order corresponding to the order_id
     """
-    order = TRANSFORMATION_ORDERS.get(order_id)
-    if order is None:
+    if order_id not in TRANSFORMATION_ORDERS:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    transformation_order = build_transformation_order(order, uri_root=uri_root)
-    return transformation_order
+    return TRANSFORMATION_ORDERS[order_id].order_info()
 
 
 def check_filter_validity(filters):
@@ -276,7 +307,7 @@ def check_filter_validity(filters):
 
 
 def get_transformation_orders(
-    filters: T.List[T.Tuple[str, str, str]] = [], uri_root: str = None,
+    filters: T.List[T.Tuple[str, str, str]] = []
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
@@ -287,7 +318,7 @@ def get_transformation_orders(
     check_filter_validity(filters)
     transformation_orders = []
     for order_id in TRANSFORMATION_ORDERS.keys():
-        transformation_order = get_transformation_order(order_id, uri_root=uri_root)
+        transformation_order = TRANSFORMATION_ORDERS[order_id].order_info()
         add_order = True
         for key, op, value in filters:
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:
@@ -449,7 +480,6 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
 
 def read_esa_tf_config(esa_tf_config_file):
     """
-
     :param str esa_tf_config_file: full path to the `esa_tf.config` file
     :return dict:
     """
@@ -472,13 +502,14 @@ def update_orders_dicts(keeping_period):
     # find completed or failed orders that are older than keeping_period
     orders_to_delete = []
     for order_id, order in TRANSFORMATION_ORDERS.items():
-        status = get_transformation_order(order_id)["Status"]
-        if status != "in_progress":
-            completed_date_str = order.get("CompletedDate", now.isoformat())
+        order_info = order.order_info()
+        status = order.order_info()["Status"]
+        if status in ("completed", "failed"):
+            completed_date_str = order_info.get("CompletedDate", now.isoformat())
             completed_date = datetime.strptime(
                 completed_date_str.split(".")[0], tformat
             )
-            elapsed_minutes = (now - completed_date).total_seconds()  # in minutes
+            elapsed_minutes = (now - completed_date).total_seconds() / 60  # in minutes
             if elapsed_minutes > keeping_period:
                 orders_to_delete.append(order_id)
 
@@ -526,10 +557,6 @@ def submit_workflow(
     workflow_options,
     user_id=DEFAULT_USER,
     user_roles=None,
-    working_dir=None,
-    output_dir=None,
-    hubs_credentials_file=None,
-    order_id=None,
     uri_root=None,
 ):
     """
@@ -553,12 +580,12 @@ def submit_workflow(
     check_user_quota(user_id, user_roles)
     asyncio.create_task(evict_orders())
     workflow = get_workflow_by_id(workflow_id)
-    product_type = workflow["InputProductType"]
     check_products_consistency(
-        product_type, input_product_reference["Reference"], workflow_id=workflow_id
+        workflow["InputProductType"],
+        input_product_reference["Reference"],
+        workflow_id=workflow_id
     )
-    if not order_id:
-        order_id = dask.base.tokenize(
+    order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
         )
     logger.info(
@@ -567,50 +594,24 @@ def submit_workflow(
     workflow_options = fill_with_defaults(
         workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
-    # definition of the task must be internal
-    # to avoid dask to import esa_tf_restapi in the workers
-
-    def task():
-        import esa_tf_platform
-
-        return esa_tf_platform.run_workflow(
-            workflow_id,
-            product_reference=input_product_reference,
-            workflow_options=workflow_options,
-            order_id=order_id,
-            working_dir=working_dir,
-            output_dir=output_dir,
-            hubs_credentials_file=hubs_credentials_file,
-        )
-
-    client = instantiate_client()
 
     if order_id in TRANSFORMATION_ORDERS:
-        order = TRANSFORMATION_ORDERS[order_id]
-        future = order["future"]
-        if future.status == "error":
-            client.retry(future)
-            order.pop("CompletedDate", None)
-            order.pop("OutputProductReference", None)
-            order["SubmissionDate"] = datetime.now().isoformat()
-            future.add_done_callback(add_completed_info)
+        transformation_order = TRANSFORMATION_ORDERS[order_id]
+        transformation_order.resubmit_if_failed()
     else:
-        future = client.submit(task, key=order_id)
-        order = {
-            "future": future,
-            "Id": order_id,
-            "SubmissionDate": datetime.now().isoformat(),
-            "InputProductReference": input_product_reference,
-            "WorkflowOptions": workflow_options,
-            "WorkflowId": workflow_id,
-            "WorkflowName": workflow["WorkflowName"],
-        }
-        TRANSFORMATION_ORDERS[order_id] = order
-        future.add_done_callback(add_completed_info)
+        transformation_order = TransformationOrder.submit(
+            order_id,
+            product_reference=input_product_reference,
+            workflow_id=workflow_id,
+            workflow_options=workflow_options,
+            uri_root=uri_root,
+        )
+
+        TRANSFORMATION_ORDERS[order_id] = transformation_order
 
     if user_id in USERS_TRANSFORMATION_ORDERS:
         USERS_TRANSFORMATION_ORDERS[user_id].add(order_id)
     else:
         USERS_TRANSFORMATION_ORDERS[user_id] = set((order_id,))
 
-    return build_transformation_order(order, uri_root=uri_root)
+    return transformation_order.order_info()
