@@ -34,13 +34,16 @@ class TransformationOrder(object):
 
         def task():
             import esa_tf_platform
+
             return esa_tf_platform.run_workflow(**parameters)
 
         future = client.submit(task, key=order_id)
         transformation_order = TransformationOrder()
         transformation_order.client = client
         transformation_order.future = future
-        transformation_order.future.add_done_callback(transformation_order.add_completed_info)
+        transformation_order.future.add_done_callback(
+            transformation_order.add_completed_info
+        )
         transformation_order._info = {
             "Id": order_id,
             "SubmissionDate": datetime.now().isoformat(),
@@ -68,7 +71,7 @@ class TransformationOrder(object):
             self._info["OutputProductReference"] = [
                 {
                     "Reference": reference,
-                    "DownloadURI": f"{uri_root}download/{reference}/{basepath}"
+                    "DownloadURI": f"{uri_root}download/{reference}/{basepath}",
                 }
             ]
 
@@ -143,7 +146,9 @@ class Queue(object):
         for order_id, order in self.transformation_orders.items():
             completed_date = order.get_info().get("CompletedDate", None)
             if completed_date:
-                elapsed_minutes = (now - datetime.fromisoformat(completed_date)).total_seconds() / 60  # in minutes
+                elapsed_minutes = (
+                    now - datetime.fromisoformat(completed_date)
+                ).total_seconds() / 60  # in minutes
                 if elapsed_minutes > keeping_period:
                     self.remove_order(order_id)
 
@@ -159,7 +164,3 @@ class Queue(object):
             order_status = self.transformation_orders[order_id].get_status()
             running_processes += order_status in ("in_progress", "queued")
         return running_processes
-
-
-
-

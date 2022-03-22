@@ -12,6 +12,7 @@ import yaml
 
 from .auth import DEFAULT_USER
 from .transformation_orders import Queue, TransformationOrder
+
 logger = logging.getLogger(__name__)
 
 queue = Queue()
@@ -119,6 +120,7 @@ def get_all_workflows(scheduler=None):
     # to avoid dask to import esa_tf_restapi in the workers
     def task():
         import esa_tf_platform
+
         return esa_tf_platform.get_all_workflows()
 
     client = instantiate_client(scheduler)
@@ -408,17 +410,15 @@ def submit_workflow(
     check_products_consistency(
         workflow["InputProductType"],
         input_product_reference["Reference"],
-        workflow_id=workflow_id
+        workflow_id=workflow_id,
     )
     workflow_options = fill_with_defaults(
         workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
     order_id = dask.base.tokenize(
-            workflow_id, input_product_reference, workflow_options,
-        )
-    logger.info(
-        f"user: {user_id} - submitting transformation order {order_id!r}"
+        workflow_id, input_product_reference, workflow_options,
     )
+    logger.info(f"user: {user_id} - submitting transformation order {order_id!r}")
     if order_id in queue.transformation_orders:
         transformation_order = queue.transformation_orders[order_id]
         transformation_order.resubmit()
@@ -430,11 +430,9 @@ def submit_workflow(
             product_reference=input_product_reference,
             workflow_id=workflow_id,
             workflow_options=workflow_options,
-            workflow_name=workflow["WorkflowName"]
+            workflow_name=workflow["WorkflowName"],
         )
         transformation_order.uri_root = uri_root
         queue.add_order(transformation_order, user_id=user_id)
 
     return transformation_order.get_info()
-
-
