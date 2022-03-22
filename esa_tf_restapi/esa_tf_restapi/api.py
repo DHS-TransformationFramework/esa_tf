@@ -11,20 +11,13 @@ import dask.distributed
 import yaml
 
 from .auth import DEFAULT_USER
-
+from .transformation_orders import Queue, TransformationOrder
 logger = logging.getLogger(__name__)
 
+queue = Queue()
 CLIENT = None
-TRANSFORMATION_ORDERS = {}
-USERS_TRANSFORMATION_ORDERS = {}
 DEFAULT_ESA_TF_ROLE = "default_esa_tf_role"
 FILE_MODIFICATION_INTERVAL = 86400  # sec
-
-STATUS_DASK_TO_API = {
-    "pending": "in_progress",
-    "finished": "completed",
-    "error": "failed",
-}
 
 SENTINEL1 = [
     "S1_RAW__0S",
@@ -73,101 +66,6 @@ SENTINEL1 = [
 ]
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
-
-
-class TransformationOrder(object):
-    __slots__ = ("future", "parameters", "_uri_root", "_order_info")
-
-    @classmethod
-    def submit(
-        cls,
-        order_id,
-        product_reference,
-        workflow_id,
-        workflow_options,
-        uri_root=None
-    ):
-        parameters = {
-            "order_id": order_id,
-            "product_reference": product_reference,
-            "workflow_id": workflow_id,
-            "workflow_options": workflow_options,
-        }
-        # definition of the task must be internal
-        # to avoid dask to import esa_tf_restapi in the workers
-        def task():
-            import esa_tf_platform
-            return esa_tf_platform.run_workflow(** parameters)
-
-        client = instantiate_client()
-        future = client.submit(task, key=order_id)
-        transformation_order = TransformationOrder()
-        transformation_order.future = future
-        transformation_order.future.add_done_callback(transformation_order.add_completed_info)
-        transformation_order._order_info = {
-            "Id": order_id,
-            "SubmissionDate": datetime.now().isoformat(),
-            "InputProductReference": product_reference,
-            "WorkflowOptions": workflow_options,
-            "WorkflowId": workflow_id,
-            "WorkflowName": get_workflow_by_id(workflow_id)["WorkflowName"],
-        }
-        transformation_order._uri_root = uri_root
-        transformation_order.parameters = parameters
-        return transformation_order
-
-    def add_completed_info(self, future):
-        self._order_info["CompletedDate"] = datetime.now().isoformat()
-        self._order_info["Status"] = STATUS_DASK_TO_API[self.future.status]
-        if self.future.status == "finished":
-            basepath, reference = os.path.split(self.future.result())
-            self._order_info["OutputProductReference"] = [
-                {
-                    "Reference": reference,
-                    "DownloadURI": f"{self._uri_root!r}download/{reference}/{basepath}"
-                }
-            ]
-
-    def clean_completed_info(self):
-        self._order_info.pop("Status", None)
-        self._order_info.pop("CompletedDate", None)
-        self._order_info.pop("OutputProductReference", None)
-
-    def update_status(self):
-        # Note: the future must be extracted from the original order. The deepcopy breaks the future
-        self._order_info["Status"] = STATUS_DASK_TO_API[self.future.status]
-
-    def order_info(self):
-        self.update_status()
-        return self._order_info
-
-    def resubmit_if_failed(self):
-        if self.future.status == "error":
-            client = instantiate_client()
-            self.clean_completed_info()
-            self._order_info["SubmissionDate"] = datetime.now().isoformat()
-            client.retry(self.future)
-            self.future.add_done_callback(self.add_completed_info)
-
-    def get_log(self):
-        client = instantiate_client()
-        seconds_logs = client.get_events(self.future.key)
-        logs = []
-        for seconds, log in seconds_logs:
-            logs.append(log)
-        return logs
-
-    # @staticmethod
-    # def get_dask_orders_status():
-    #     def orders_status_on_scheduler(dask_scheduler):
-    #         return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
-    #
-    #     client = instantiate_client()
-    #     return client.run_on_scheduler(orders_status_on_scheduler)
-
-
-class Queue(object):
-    __slots__ = ("transformation_orders",)
 
 
 def check_products_consistency(
@@ -263,18 +161,18 @@ def get_workflows(product_type=None):
 
 
 def get_transformation_order_log(order_id):
-    if order_id not in TRANSFORMATION_ORDERS:
+    if order_id not in queue.transformation_orders:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    return TRANSFORMATION_ORDERS[order_id].get_log()
+    return queue.transformation_orders[order_id].get_log()
 
 
 def get_transformation_order(order_id):
     """
     Return the transformation order corresponding to the order_id
     """
-    if order_id not in TRANSFORMATION_ORDERS:
+    if order_id not in queue.transformation_orders:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    return TRANSFORMATION_ORDERS[order_id].order_info()
+    return queue.transformation_orders[order_id].get_info()
 
 
 def check_filter_validity(filters):
@@ -309,9 +207,9 @@ def get_transformation_orders(
     """
     # check filters
     check_filter_validity(filters)
-    transformation_orders = []
-    for order_id in TRANSFORMATION_ORDERS.keys():
-        transformation_order = TRANSFORMATION_ORDERS[order_id].order_info()
+    valid_transformation_orders_orders = []
+    for order_id in queue.transformation_orders:
+        transformation_order = queue.transformation_orders[order_id].get_info()
         add_order = True
         for key, op, value in filters:
             if key == "CompletedDate" and "CompletedDate" not in transformation_order:
@@ -332,8 +230,8 @@ def get_transformation_orders(
                     )
             add_order = add_order and op(order_value, value)
         if add_order:
-            transformation_orders.append(transformation_order)
-    return transformation_orders
+            valid_transformation_orders_orders.append(transformation_order)
+    return valid_transformation_orders_orders
 
 
 def extract_workflow_defaults(config_workflow_options):
@@ -345,14 +243,6 @@ def extract_workflow_defaults(config_workflow_options):
         if "Default" in option:
             default_options[option_name] = option["Default"]
     return default_options
-
-
-def extract_config_options_names(config_workflow_options):
-    """extract options names from config_workflow_options"""
-    options_names = []
-    for option in config_workflow_options:
-        options_names.append(option["Name"])
-    return options_names
 
 
 def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=None):
@@ -371,13 +261,19 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
-def read_users_quota(users_quota_file):
+def read_users_quota():
     """Return the users' quota as read from the dedicated configuration file. The keys are the
     possible roles and the values are the roles' cap.
 
     :param str users_quota_file: full path to the users' quota configuration file
     :return dict:
     """
+    users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
+    if not os.path.isfile(users_quota_file):
+        raise ValueError(
+            f"{users_quota_file} not found, please define it using 'users_quota_file' "
+            "keyword argument or the environment variable USERS_QUOTA_FILE"
+        )
     with open(users_quota_file) as file:
         users_quota = yaml.load(file, Loader=yaml.FullLoader)
     if DEFAULT_ESA_TF_ROLE not in users_quota:
@@ -388,31 +284,16 @@ def read_users_quota(users_quota_file):
     return users_quota
 
 
-def reckon_running_process(user_id):
-    """Return the number of running processes (i.e. status equal to `in_progress`) among those
-    required by the `user_id`.
-
-    :param str user_id: user identifier
-    :return int:
-    """
-    running_processes = 0
-    for order_id in USERS_TRANSFORMATION_ORDERS[user_id]:
-        order_status = get_transformation_order(order_id)["Status"]
-        running_processes += order_status == "in_progress"
-    return running_processes
-
-
-def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
+def get_user_quota_cap(user_roles, user_id=DEFAULT_USER):
     """Return the cap of "in_progress" processes according to the role(s). If more than a role has
     been specified, the cap is calculated as the largest cap among those corresponding to the roles
     list.
 
     :param list_or_tuple user_roles: list of the roles associated with the user
-    :param str users_quota_file: path of the configuration file with the users' quota by roles
     :param str user_id: user identifier
     :return int:
     """
-    users_quota = read_users_quota(users_quota_file)
+    users_quota = read_users_quota()
     user_caps = []
     # please, note that the user_roles list is never empty because if no role has been defined the
     # GENERAL_TF_ROLE is set in submit_workflow function
@@ -420,14 +301,14 @@ def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
         cap = users_quota.get(role, {}).get("submit_limit")
         if cap is None:
             logger.info(
-                f"user: {user_id} - role '{role}' not found in the configuration file {users_quota_file}",
+                f"user: {user_id} - role '{role}' not found in the configuration file",
             )
         else:
             user_caps.append(cap)
     # if all roles are not present on the configuration file, then the GENERAL_TF_ROLE is used
     if not user_caps:
         logger.warning(
-            f"user: {user_id} - no role among those defined for the user was found in the configuration file {users_quota_file}, "
+            f"user: {user_id} - no role among those defined for the user was found in the configuration file, "
             f"a general TF role will be used",
         )
     user_cap = max(
@@ -436,13 +317,12 @@ def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
     return user_cap
 
 
-def check_user_quota(user_id, user_roles, users_quota_file=None):
+def check_user_quota(user_id, user_roles):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
     cap has been already reached, a RuntimeError is raised.
 
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
-    :param str users_quota_file: full path to the `users_quota.yaml` file
     :return:
     """
     if user_roles is None or not any(user_roles):
@@ -450,72 +330,35 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
             f"user: {user_id} - no user-role is defined, a default TF role will be used",
         )
         user_roles = [DEFAULT_ESA_TF_ROLE]
-    if users_quota_file is None:
-        users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
-    if not os.path.isfile(users_quota_file):
-        raise ValueError(
-            f"{users_quota_file} not found, please define it using 'users_quota_file' "
-            "keyword argument or the environment variable USERS_QUOTA_FILE"
-        )
 
-    user_cap = reckon_user_quota_cap(user_roles, users_quota_file, user_id)
-    if user_id not in USERS_TRANSFORMATION_ORDERS:
+    user_cap = get_user_quota_cap(user_roles, user_id)
+    if user_id not in queue.user_to_orders:
         return
-    running_processes = reckon_running_process(user_id)
+    running_processes = queue.get_count_uncompleted_orders(user_id)
     if running_processes >= user_cap:
         raise RuntimeError(
             f"the user {user_id} has reached his quota: {running_processes} processes are running"
         )
 
 
-def read_esa_tf_config(esa_tf_config_file):
+def read_esa_tf_config():
     """
     :param str esa_tf_config_file: full path to the `esa_tf.config` file
     :return dict:
     """
+    esa_tf_config_file = os.getenv("ESA_TF_CONFIG_FILE", "./esa_tf.config")
+    if not os.path.isfile(esa_tf_config_file):
+        raise ValueError(
+            f"{esa_tf_config_file} not found, please define it using 'esa_tf_config_file' "
+            "keyword argument or the environment variable ESA_TF_CONFIG_FILE"
+        )
     with open(esa_tf_config_file) as file:
         esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
     return esa_tf_config
 
 
-def update_orders_dicts(keeping_period):
-    """Update the TRANSFORMATION_ORDERS and USERS_TRANSFORMATIONS dictionaries removing only the
-    transformations with statuses `completed` or `failed` that are older than the `keeping_period`.
-    It returns the list of order-IDs that have been deleted.
-
-    :param int keeping_period: the minimum number of minutes from the CompletedDate that a
-    TransformationOrder will be kept in memory
-    :return list:
-    """
-    tformat = "%Y-%m-%dT%H:%M:%S"
-    now = datetime.now()
-    # find completed or failed orders that are older than keeping_period
-    orders_to_delete = []
-    for order_id, order in TRANSFORMATION_ORDERS.items():
-        order_info = order.order_info()
-        status = order.order_info()["Status"]
-        if status in ("completed", "failed"):
-            completed_date_str = order_info.get("CompletedDate", now.isoformat())
-            completed_date = datetime.strptime(
-                completed_date_str.split(".")[0], tformat
-            )
-            elapsed_minutes = (now - completed_date).total_seconds() / 60  # in minutes
-            if elapsed_minutes > keeping_period:
-                orders_to_delete.append(order_id)
-
-    # remove old orders from the TRANSFORMATION_ORDERS dictionary
-    for order_id in orders_to_delete:
-        TRANSFORMATION_ORDERS.pop(order_id, None)
-
-    # remove old orders from the USERS_TRANSFORMATIONS dictionary
-    for user_id, orders_ids in USERS_TRANSFORMATION_ORDERS.items():
-        orders_to_keep = orders_ids.difference(orders_to_delete)
-        USERS_TRANSFORMATION_ORDERS[user_id] = orders_to_keep
-    return orders_to_delete
-
-
-async def evict_orders(esa_tf_config_file=None):
-    """Evict orders from the TRANSFORMATION_ORDERS and USERS_TRANSFORMATIONS according to a
+async def evict_orders():
+    """Evict orders from the queue according to a
     configurable keeping period parameter. The keeping period parameter is based on the CompletedDate
     (i.e. the datetime when the output product of a TransformationOrders is available in the
     staging area). The keeping period parameter is expressed in minutes and is defined in the
@@ -526,17 +369,9 @@ async def evict_orders(esa_tf_config_file=None):
     """
     # if the "esa_tf_config_file" configuration file has been changed in the amount of time
     # specified by the "FILE_MODIFICATION_INTERVAL" constant value, then the cache is cleared
-    if esa_tf_config_file is None:
-        esa_tf_config_file = os.getenv("ESA_TF_CONFIG_FILE", "./esa_tf.config")
-    if not os.path.isfile(esa_tf_config_file):
-        raise ValueError(
-            f"{esa_tf_config_file} not found, please define it using 'esa_tf_config_file' "
-            "keyword argument or the environment variable ESA_TF_CONFIG_FILE"
-        )
-
-    esa_tf_config = read_esa_tf_config(esa_tf_config_file)
-    keeping_period = esa_tf_config.get("keeping-period")
-    update_orders_dicts(keeping_period)
+    esa_config = read_esa_tf_config()
+    keeping_period = esa_config.get("keeping-period")
+    queue.remove_old_orders(keeping_period)
     return keeping_period
 
 
@@ -567,13 +402,16 @@ def submit_workflow(
     :param order_id:
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
-    check_user_quota(user_id, user_roles)
     asyncio.create_task(evict_orders())
+    check_user_quota(user_id, user_roles)
     workflow = get_workflow_by_id(workflow_id)
     check_products_consistency(
         workflow["InputProductType"],
         input_product_reference["Reference"],
         workflow_id=workflow_id
+    )
+    workflow_options = fill_with_defaults(
+        workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
     )
     order_id = dask.base.tokenize(
             workflow_id, input_product_reference, workflow_options,
@@ -581,27 +419,22 @@ def submit_workflow(
     logger.info(
         f"user: {user_id} - submitting transformation order {order_id!r}"
     )
-    workflow_options = fill_with_defaults(
-        workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
-    )
-
-    if order_id in TRANSFORMATION_ORDERS:
-        transformation_order = TRANSFORMATION_ORDERS[order_id]
-        transformation_order.resubmit_if_failed()
+    if order_id in queue.transformation_orders:
+        transformation_order = queue.transformation_orders[order_id]
+        transformation_order.resubmit()
     else:
+        client = instantiate_client()
         transformation_order = TransformationOrder.submit(
-            order_id,
+            client=client,
+            order_id=order_id,
             product_reference=input_product_reference,
             workflow_id=workflow_id,
             workflow_options=workflow_options,
-            uri_root=uri_root,
+            workflow_name=workflow["WorkflowName"]
         )
+        transformation_order.uri_root = uri_root
+        queue.add_order(transformation_order, user_id=user_id)
 
-        TRANSFORMATION_ORDERS[order_id] = transformation_order
+    return transformation_order.get_info()
 
-    if user_id in USERS_TRANSFORMATION_ORDERS:
-        USERS_TRANSFORMATION_ORDERS[user_id].add(order_id)
-    else:
-        USERS_TRANSFORMATION_ORDERS[user_id] = set((order_id,))
 
-    return transformation_order.order_info()

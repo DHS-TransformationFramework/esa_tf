@@ -22,40 +22,40 @@ WORKFLOW_OPTIONS = {
 }
 
 TRANSFORMATION_ORDERS = {
-    "Id1": esa_tf_restapi.api.TransformationOrder(),
-    "Id2": esa_tf_restapi.api.TransformationOrder(),
-    "Id3": esa_tf_restapi.api.TransformationOrder(),
-    "Id4": esa_tf_restapi.api.TransformationOrder(),
-    "Id5": esa_tf_restapi.api.TransformationOrder(),
+    "Id1": esa_tf_restapi.transformation_orders.TransformationOrder(),
+    "Id2": esa_tf_restapi.transformation_orders.TransformationOrder(),
+    "Id3": esa_tf_restapi.transformation_orders.TransformationOrder(),
+    "Id4": esa_tf_restapi.transformation_orders.TransformationOrder(),
+    "Id5": esa_tf_restapi.transformation_orders.TransformationOrder(),
 }
 
-TRANSFORMATION_ORDERS["Id1"]._order_info = {
+TRANSFORMATION_ORDERS["Id1"]._info = {
         "Id": "Id1",
         "SubmissionDate": "2022-01-20T16:27:30.000000",
         "CompletedDate": "2022-01-20T16:27:50.000000",
         "Status": "completed",
         "InputProductReference": {"Reference": "product_b"},
     }
-TRANSFORMATION_ORDERS["Id2"]._order_info = {
+TRANSFORMATION_ORDERS["Id2"]._info = {
         "Id": "Id2",
         "SubmissionDate": "2022-01-22T16:27:30.000000",
         "CompletedDate": "2022-01-22T16:27:50.000000",
         "Status": "completed",
         "InputProductReference": {"Reference": "product_a"},
     }
-TRANSFORMATION_ORDERS["Id3"]._order_info = {
+TRANSFORMATION_ORDERS["Id3"]._info = {
         "Id": "Id3",
         "SubmissionDate": "2022-02-01T16:27:30.000000",
         "Status": "in_progress",
         "InputProductReference": {"Reference": "product_b"},
     }
-TRANSFORMATION_ORDERS["Id4"]._order_info = {
+TRANSFORMATION_ORDERS["Id4"]._info = {
         "Id": "Id4",
         "SubmissionDate": "2022-02-02T16:27:30.000000",
         "Status": "in_progress",
         "InputProductReference": {"Reference": "product_a"},
     }
-TRANSFORMATION_ORDERS["Id5"]._order_info = {
+TRANSFORMATION_ORDERS["Id5"]._info = {
         "Id": "Id5",
         "WorkflowId": "sen2cor_l1c_l2a",
         "InputProductReference": {
@@ -164,11 +164,11 @@ def test_error_fill_with_defaults():
     side_effect=None,
 )
 def test_get_transformation_orders(function):
-    esa_tf_restapi.api.TRANSFORMATION_ORDERS.update(TRANSFORMATION_ORDERS)
+    esa_tf_restapi.api.queue.update_orders(TRANSFORMATION_ORDERS.values())
 
     orders = esa_tf_restapi.api.get_transformation_orders([("Id", "eq", "Id1")])
 
-    assert orders == [TRANSFORMATION_ORDERS["Id1"].order_info()]
+    assert orders == [TRANSFORMATION_ORDERS["Id1"].get_info()]
     orders = esa_tf_restapi.api.get_transformation_orders(
         {("Status", "eq", "completed"), ("SubmissionDate", "ge", "2022-01-22")}
     )
