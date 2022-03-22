@@ -2,7 +2,6 @@ import os
 import random
 from typing import Optional
 
-from fastapi import Depends
 from pydantic import BaseModel
 
 DEFAULT_USER = "no_user"
