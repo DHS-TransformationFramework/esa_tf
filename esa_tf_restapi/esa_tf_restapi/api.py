@@ -162,7 +162,8 @@ def get_workflows(product_type=None):
     return workflows
 
 
-def get_transformation_order_log(order_id):
+def get_transformation_order_log(order_id, user_id):
+    user_id
     if order_id not in queue.transformation_orders:
         raise KeyError(f"Transformation Order {order_id!r} not found")
     return queue.transformation_orders[order_id].get_log()
@@ -200,17 +201,26 @@ def check_filter_validity(filters):
 
 
 def get_transformation_orders(
-    filters: T.List[T.Tuple[str, str, str]] = []
+    filters: T.List[T.Tuple[str, str, str]] = [],
+    user_id: str = None,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
     They can be filtered by the SubmissionDate, CompletedDate, Status
-    :param T.List[T.Tuple[str, str, str]] filters: list of tuple
+    :param T.List[T.Tuple[str, str, str]] filters: list of tuple defining the filter to be applied
+    :param str user_id: user ID used to filter the transformation. If None, the transformation will not filtered by user ID
+    :param bool admin
     """
     # check filters
     check_filter_validity(filters)
     valid_transformation_orders_orders = []
-    for order_id in queue.transformation_orders:
+
+    if user_id:
+        orders = queue.transformation_orders
+    else:
+        orders = queue.user_to_oders.get(user_id, {})
+
+    for order_id in orders:
         transformation_order = queue.transformation_orders[order_id].get_info()
         add_order = True
         for key, op, value in filters:
