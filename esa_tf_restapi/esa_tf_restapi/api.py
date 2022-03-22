@@ -76,18 +76,7 @@ SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
 class TransformationOrder(object):
-
-    def __init__(
-        self,
-        future=None,
-        parameters=None,
-        uri_root=None,
-        order_info=None,
-    ):
-        self.future = future
-        self.parameters = parameters
-        self._uri_root = uri_root
-        self._order_info = order_info
+    __slots__ = ("future", "parameters", "_uri_root", "_order_info")
 
     @classmethod
     def submit(
@@ -156,7 +145,7 @@ class TransformationOrder(object):
         if self.future.status == "error":
             client = instantiate_client()
             self.clean_completed_info()
-            self.transformation_order["SubmissionDate"] = datetime.now().isoformat()
+            self._order_info["SubmissionDate"] = datetime.now().isoformat()
             client.retry(self.future)
             self.future.add_done_callback(self.add_completed_info)
 
@@ -175,6 +164,10 @@ class TransformationOrder(object):
     #
     #     client = instantiate_client()
     #     return client.run_on_scheduler(orders_status_on_scheduler)
+
+
+class Queue(object):
+    __slots__ = ("transformation_orders",)
 
 
 def check_products_consistency(

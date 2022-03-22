@@ -21,35 +21,41 @@ WORKFLOW_OPTIONS = {
     "Name4": {"Description": "", "Type": "number"},
 }
 
-
 TRANSFORMATION_ORDERS = {
-    "Id1": esa_tf_restapi.api.TransformationOrder(order_info={
+    "Id1": esa_tf_restapi.api.TransformationOrder(),
+    "Id2": esa_tf_restapi.api.TransformationOrder(),
+    "Id3": esa_tf_restapi.api.TransformationOrder(),
+    "Id4": esa_tf_restapi.api.TransformationOrder(),
+    "Id5": esa_tf_restapi.api.TransformationOrder(),
+}
+
+TRANSFORMATION_ORDERS["Id1"]._order_info = {
         "Id": "Id1",
         "SubmissionDate": "2022-01-20T16:27:30.000000",
         "CompletedDate": "2022-01-20T16:27:50.000000",
         "Status": "completed",
         "InputProductReference": {"Reference": "product_b"},
-    }),
-    "Id2": esa_tf_restapi.api.TransformationOrder(order_info={
+    }
+TRANSFORMATION_ORDERS["Id2"]._order_info = {
         "Id": "Id2",
         "SubmissionDate": "2022-01-22T16:27:30.000000",
         "CompletedDate": "2022-01-22T16:27:50.000000",
         "Status": "completed",
         "InputProductReference": {"Reference": "product_a"},
-    }),
-    "Id3": esa_tf_restapi.api.TransformationOrder(order_info={
+    }
+TRANSFORMATION_ORDERS["Id3"]._order_info = {
         "Id": "Id3",
         "SubmissionDate": "2022-02-01T16:27:30.000000",
         "Status": "in_progress",
         "InputProductReference": {"Reference": "product_b"},
-    }),
-    "Id4": esa_tf_restapi.api.TransformationOrder(order_info={
+    }
+TRANSFORMATION_ORDERS["Id4"]._order_info = {
         "Id": "Id4",
         "SubmissionDate": "2022-02-02T16:27:30.000000",
         "Status": "in_progress",
         "InputProductReference": {"Reference": "product_a"},
-    }),
-    "Id5": esa_tf_restapi.api.TransformationOrder(order_info={
+    }
+TRANSFORMATION_ORDERS["Id5"]._order_info = {
         "Id": "Id5",
         "WorkflowId": "sen2cor_l1c_l2a",
         "InputProductReference": {
@@ -59,8 +65,7 @@ TRANSFORMATION_ORDERS = {
         "WorkflowOptions": {},
         "SubmissionDate": "2022-02-02T16:27:30.000000",
         "Status": "failed",
-    }),
-}
+    }
 
 
 @pytest.mark.parametrize(
