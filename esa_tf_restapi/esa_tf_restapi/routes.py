@@ -76,7 +76,7 @@ async def transformation_orders(
     odata_params = parse_qs(filter=rawfilter)
     filters = [(f.name, f.operator, f.value) for f in odata_params.filter]
     if not count:
-        msg = f"required the transformation orders list"
+        msg = f"user: {user_id} - required the transformation orders list"
         msg_filter = ""
         if filters:
             msg_filter = (
