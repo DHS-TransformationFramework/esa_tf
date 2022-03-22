@@ -13,11 +13,15 @@ apihub:
   password: my-apihub-password
 endef
 
-define USERS_QUOTA
+define ROLES_CONFIG
 # this is the default role if no specific role is associated to a given user. Please, change only
-# the "submit_limit" value, do not change the role name "general_tf_role"
+# the "submit_limit" value, do not change the role name "default_tf_role"
 default_esa_tf_role:
-  submit_limit: 10
+  quota: 100
+  profile: user
+# <role>:
+#   quota: 1000
+#   profile: manager
 endef
 
 define ESA_TF_CONFIG
@@ -49,11 +53,11 @@ config/hubs_credentials.yaml:
 
 setup: config/hubs_credentials.yaml
 
-export USERS_QUOTA
-config/users_quota.yaml:
-	echo "$$USERS_QUOTA" > $@
+export ROLES_CONFIG
+config/roles.config:
+	echo "$$ROLES_CONFIG" > $@
 
-setup: config/users_quota.yaml
+setup: config/roles.config
 
 export ESA_TF_CONFIG
 config/esa_tf.config:

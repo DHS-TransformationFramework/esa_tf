@@ -76,6 +76,7 @@ async def transformation_orders(
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
+    user_roles = user.roles if user_id != DEFAULT_USER else None
     odata_params = parse_qs(filter=rawfilter)
     filters = [(f.name, f.operator, f.value) for f in odata_params.filter]
     if not count:
@@ -88,7 +89,9 @@ async def transformation_orders(
         logger.info(msg + msg_filter, extra=dict(user=user_id))
     uri_root = request.url_for("index")
     try:
-        data = api.get_transformation_orders(filters, uri_root=uri_root)
+        data = api.get_transformation_orders(
+            filters, user_id=user_id, user_roles=user_roles, uri_root=uri_root
+        )
     except ValueError as exc:
         logging.exception("Invalid request")
         raise HTTPException(status_code=422, detail=str(exc))

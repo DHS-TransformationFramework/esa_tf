@@ -275,18 +275,76 @@ def check_filter_validity(filters):
             )
 
 
+def read_roles_config(roles_config_file):
+    """Return the users' quota as read from the dedicated configuration file. The keys are the
+    possible roles and the values are the roles' cap.
+
+    :param str roles_config_file: full path to the roles' configuration file
+    :return dict:
+    """
+    with open(roles_config_file) as file:
+        users_quota = yaml.load(file, Loader=yaml.FullLoader)
+    if DEFAULT_ESA_TF_ROLE not in users_quota:
+        raise RuntimeError(
+            f"default role 'default_tf_role' not found in {roles_config_file}. "
+            f"Please, add the default role into the configuration file {roles_config_file}"
+        )
+    return users_quota
+
+
+def get_roles_config_filepath(roles_config_file=None):
+    """Return the path of `roles.config` file and perform a check about the existence of the
+    path.
+
+    :param str roles_config_file: full path to the roles' configuration file
+    :return str:
+    """
+    if roles_config_file is None:
+        roles_config_file = os.getenv("ROLES_CONFIG_FILE", "./roles.config")
+    if not os.path.isfile(roles_config_file):
+        raise ValueError(
+            f"{roles_config_file} not found, please define it using 'role_config_file' "
+            "keyword argument or the environment variable ROLES_CONFIG_FILE"
+        )
+    return roles_config_file
+
+
+def get_profiles(user_roles, roles_config_file=None):
+    """Return the profiles associated with the user's roles input list.
+
+    :param list user_roles: user roles
+    :param str roles_config_file: full path to the roles' configuration file
+    :return set:
+    """
+    roles_config_file = get_roles_config_filepath(roles_config_file)
+    roles = read_roles_config(roles_config_file)
+    profiles = set()
+    for role in user_roles:
+        profiles.add(roles.get(role, roles[DEFAULT_ESA_TF_ROLE]).get("profile"))
+    return profiles
+
+
 def get_transformation_orders(
-    filters: T.List[T.Tuple[str, str, str]] = [], uri_root: str = None,
+    filters: T.List[T.Tuple[str, str, str]] = [],
+    user_id: str = DEFAULT_USER,
+    user_roles: list = None,
+    uri_root: str = None,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
     They can be filtered by the SubmissionDate, CompletedDate, Status
     :param T.List[T.Tuple[str, str, str]] filters: list of tuple
+    :param str user_id: user identifier
+    :param str user_roles: user role
     """
     # check filters
     check_filter_validity(filters)
     transformation_orders = []
-    for order_id in TRANSFORMATION_ORDERS.keys():
+    if "manager" not in get_profiles(user_roles):
+        orders_ids = USERS_TRANSFORMATION_ORDERS.get(user_id, [])
+    else:
+        orders_ids = list(TRANSFORMATION_ORDERS)
+    for order_id in orders_ids:
         transformation_order = get_transformation_order(order_id, uri_root=uri_root)
         add_order = True
         for key, op, value in filters:
@@ -347,23 +405,6 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
-def read_users_quota(users_quota_file):
-    """Return the users' quota as read from the dedicated configuration file. The keys are the
-    possible roles and the values are the roles' cap.
-
-    :param str users_quota_file: full path to the users' quota configuration file
-    :return dict:
-    """
-    with open(users_quota_file) as file:
-        users_quota = yaml.load(file, Loader=yaml.FullLoader)
-    if DEFAULT_ESA_TF_ROLE not in users_quota:
-        raise RuntimeError(
-            f"default role 'default_tf_role' not found in {users_quota_file}. "
-            f"Please, add the default role into the configuration file {users_quota_file}"
-        )
-    return users_quota
-
-
 def reckon_running_process(user_id):
     """Return the number of running processes (i.e. status equal to `in_progress`) among those
     required by the `user_id`.
@@ -378,25 +419,25 @@ def reckon_running_process(user_id):
     return running_processes
 
 
-def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
+def reckon_user_quota_cap(user_roles, roles_config_file, user_id=DEFAULT_USER):
     """Return the cap of "in_progress" processes according to the role(s). If more than a role has
     been specified, the cap is calculated as the largest cap among those corresponding to the roles
     list.
 
     :param list_or_tuple user_roles: list of the roles associated with the user
-    :param str users_quota_file: path of the configuration file with the users' quota by roles
+    :param str roles_config_file: path of the configuration file with the users' quota by roles
     :param str user_id: user identifier
     :return int:
     """
-    users_quota = read_users_quota(users_quota_file)
+    users_quota = read_roles_config(roles_config_file)
     user_caps = []
     # please, note that the user_roles list is never empty because if no role has been defined the
     # GENERAL_TF_ROLE is set in submit_workflow function
     for role in user_roles:
-        cap = users_quota.get(role, {}).get("submit_limit")
+        cap = users_quota.get(role, {}).get("quota")
         if cap is None:
             logger.info(
-                f"role '{role}' not found in the configuration file {users_quota_file}",
+                f"role '{role}' not found in the configuration file {roles_config_file}",
                 extra=dict(user=user_id),
             )
         else:
@@ -404,23 +445,21 @@ def reckon_user_quota_cap(user_roles, users_quota_file, user_id=DEFAULT_USER):
     # if all roles are not present on the configuration file, then the GENERAL_TF_ROLE is used
     if not user_caps:
         logger.warning(
-            f"no role among those defined for the user was found in the configuration file {users_quota_file}, "
+            f"no role among those defined for the user was found in the configuration file {roles_config_file}, "
             f"a general TF role will be used",
             extra=dict(user=user_id),
         )
-    user_cap = max(
-        user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit")
-    )
+    user_cap = max(user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("quota"))
     return user_cap
 
 
-def check_user_quota(user_id, user_roles, users_quota_file=None):
+def check_user_quota(user_id, user_roles, roles_config_file=None):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
     cap has been already reached, a RuntimeError is raised.
 
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
-    :param str users_quota_file: full path to the `users_quota.yaml` file
+    :param str roles_config_file: full path to the `roles.config` file
     :return:
     """
     if user_roles is None or not any(user_roles):
@@ -429,15 +468,9 @@ def check_user_quota(user_id, user_roles, users_quota_file=None):
             extra=dict(user=user_id),
         )
         user_roles = [DEFAULT_ESA_TF_ROLE]
-    if users_quota_file is None:
-        users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
-    if not os.path.isfile(users_quota_file):
-        raise ValueError(
-            f"{users_quota_file} not found, please define it using 'users_quota_file' "
-            "keyword argument or the environment variable USERS_QUOTA_FILE"
-        )
+    roles_config_file = get_roles_config_filepath(roles_config_file)
 
-    user_cap = reckon_user_quota_cap(user_roles, users_quota_file, user_id)
+    user_cap = reckon_user_quota_cap(user_roles, roles_config_file, user_id)
     if user_id not in USERS_TRANSFORMATION_ORDERS:
         return
     running_processes = reckon_running_process(user_id)
@@ -478,7 +511,9 @@ def update_orders_dicts(keeping_period):
             completed_date = datetime.strptime(
                 completed_date_str.split(".")[0], tformat
             )
-            elapsed_minutes = (now - completed_date).total_seconds()  # in minutes
+            elapsed_minutes = (
+                now - completed_date
+            ).total_seconds() / 60  # from sec to minutes
             if elapsed_minutes > keeping_period:
                 orders_to_delete.append(order_id)
 
