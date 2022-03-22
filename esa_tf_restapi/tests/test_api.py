@@ -30,42 +30,42 @@ TRANSFORMATION_ORDERS = {
 }
 
 TRANSFORMATION_ORDERS["Id1"]._info = {
-        "Id": "Id1",
-        "SubmissionDate": "2022-01-20T16:27:30.000000",
-        "CompletedDate": "2022-01-20T16:27:50.000000",
-        "Status": "completed",
-        "InputProductReference": {"Reference": "product_b"},
-    }
+    "Id": "Id1",
+    "SubmissionDate": "2022-01-20T16:27:30.000000",
+    "CompletedDate": "2022-01-20T16:27:50.000000",
+    "Status": "completed",
+    "InputProductReference": {"Reference": "product_b"},
+}
 TRANSFORMATION_ORDERS["Id2"]._info = {
-        "Id": "Id2",
-        "SubmissionDate": "2022-01-22T16:27:30.000000",
-        "CompletedDate": "2022-01-22T16:27:50.000000",
-        "Status": "completed",
-        "InputProductReference": {"Reference": "product_a"},
-    }
+    "Id": "Id2",
+    "SubmissionDate": "2022-01-22T16:27:30.000000",
+    "CompletedDate": "2022-01-22T16:27:50.000000",
+    "Status": "completed",
+    "InputProductReference": {"Reference": "product_a"},
+}
 TRANSFORMATION_ORDERS["Id3"]._info = {
-        "Id": "Id3",
-        "SubmissionDate": "2022-02-01T16:27:30.000000",
-        "Status": "in_progress",
-        "InputProductReference": {"Reference": "product_b"},
-    }
+    "Id": "Id3",
+    "SubmissionDate": "2022-02-01T16:27:30.000000",
+    "Status": "in_progress",
+    "InputProductReference": {"Reference": "product_b"},
+}
 TRANSFORMATION_ORDERS["Id4"]._info = {
-        "Id": "Id4",
-        "SubmissionDate": "2022-02-02T16:27:30.000000",
-        "Status": "in_progress",
-        "InputProductReference": {"Reference": "product_a"},
-    }
+    "Id": "Id4",
+    "SubmissionDate": "2022-02-02T16:27:30.000000",
+    "Status": "in_progress",
+    "InputProductReference": {"Reference": "product_a"},
+}
 TRANSFORMATION_ORDERS["Id5"]._info = {
-        "Id": "Id5",
-        "WorkflowId": "sen2cor_l1c_l2a",
-        "InputProductReference": {
-            "Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip",
-            "DataSourceName": "scihub",
-        },
-        "WorkflowOptions": {},
-        "SubmissionDate": "2022-02-02T16:27:30.000000",
-        "Status": "failed",
-    }
+    "Id": "Id5",
+    "WorkflowId": "sen2cor_l1c_l2a",
+    "InputProductReference": {
+        "Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip",
+        "DataSourceName": "scihub",
+    },
+    "WorkflowOptions": {},
+    "SubmissionDate": "2022-02-02T16:27:30.000000",
+    "Status": "failed",
+}
 
 
 @pytest.mark.parametrize(
@@ -160,8 +160,7 @@ def test_error_fill_with_defaults():
 
 
 @mock.patch(
-    "esa_tf_restapi.api.TransformationOrder.update_status",
-    side_effect=None,
+    "esa_tf_restapi.api.TransformationOrder.update_status", side_effect=None,
 )
 def test_get_transformation_orders(function):
     esa_tf_restapi.api.queue.update_orders(TRANSFORMATION_ORDERS.values())
