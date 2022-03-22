@@ -17,8 +17,6 @@ services:
         environment:
             - ESA_TF_CONFIG_FILE=/config/esa_tf.config
             - ROLES_CONFIG_FILE=/config/roles.config
-#            - TF_USERNAME_TEST=user1,user2
-#            - TF_ROLE_TEST=role1,role2,role3,administrator
             - FORWARDED_ALLOW_IPS=*
             - ROOT_PATH=${ROOT_PATH}
 

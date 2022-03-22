@@ -1,12 +1,26 @@
+# Copyright 2021-2022, European Space Agency (ESA)
+#
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://opensource.org/licenses/AGPL-3.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
 from typing import Optional
 
 from fastapi import Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
-from . import api, app, models
-from .auth import DEFAULT_USER, get_user
-from .odata import parse_qs
+from .. import api, app, models
+from ..auth import DEFAULT_USER, get_user
+from ..odata import parse_qs
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +90,7 @@ async def transformation_orders(
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
-    user_roles = user.roles if user_id != DEFAULT_USER else None
+    user_roles = user.roles if user_id != DEFAULT_USER else []
     odata_params = parse_qs(filter=rawfilter)
     filters = [(f.name, f.operator, f.value) for f in odata_params.filter]
     if not count:
@@ -206,3 +220,8 @@ async def transformation_order_create(
     url = request.url_for("transformation_order", id=running_transformation.get("Id"))
     response.headers["Location"] = url
     return {**running_transformation}
+
+
+from .admin import router
+
+app.include_router(router)

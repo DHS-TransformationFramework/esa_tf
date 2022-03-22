@@ -324,10 +324,14 @@ def get_profiles(user_roles, roles_config_file=None):
     return profiles
 
 
+def has_manager_profile(user_roles: list = []):
+    return "manager" in get_profiles(user_roles)
+
+
 def get_transformation_orders(
     filters: T.List[T.Tuple[str, str, str]] = [],
     user_id: str = DEFAULT_USER,
-    user_roles: list = None,
+    user_roles: list = [],
     uri_root: str = None,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
@@ -340,7 +344,7 @@ def get_transformation_orders(
     # check filters
     check_filter_validity(filters)
     transformation_orders = []
-    if "manager" not in get_profiles(user_roles):
+    if not has_manager_profile(user_roles):
         orders_ids = USERS_TRANSFORMATION_ORDERS.get(user_id, [])
     else:
         orders_ids = list(TRANSFORMATION_ORDERS)

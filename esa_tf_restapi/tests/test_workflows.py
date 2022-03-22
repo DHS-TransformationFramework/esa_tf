@@ -63,7 +63,7 @@ def tr_orders():
     orig = api.get_transformation_orders
 
     def get_transformation_orders(
-        filters: T.List[T.Tuple[str, str, str]] = [], uri_root=None
+        filters: T.List[T.Tuple[str, str, str]] = [], uri_root=None, **kwargs
     ):
         entries = [
             {"Id": "foo", "Status": "in_progress"},
