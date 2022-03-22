@@ -17,7 +17,7 @@ from fastapi import Header, HTTPException, status
 from .api import has_manager_profile
 
 
-async def get_roles_header(x_roles: str = Header(None)):
+async def has_manager_role_header(x_roles: str = Header(None)):
     if not x_roles or not has_manager_profile(x_roles.split(",")):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Resource is forbidden"

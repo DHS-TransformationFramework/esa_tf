@@ -187,7 +187,6 @@ You can also inspect the current output from the transformation itself.
 curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')/Log/\$value"
 ```
 
-
 ## License information
 
 ```text

@@ -331,7 +331,6 @@ def has_manager_profile(user_roles: list = []):
 def get_transformation_orders(
     filters: T.List[T.Tuple[str, str, str]] = [],
     user_id: str = DEFAULT_USER,
-    user_roles: list = [],
     uri_root: str = None,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
@@ -344,10 +343,11 @@ def get_transformation_orders(
     # check filters
     check_filter_validity(filters)
     transformation_orders = []
-    if not has_manager_profile(user_roles):
-        orders_ids = USERS_TRANSFORMATION_ORDERS.get(user_id, [])
-    else:
+    if user_id == DEFAULT_USER:
         orders_ids = list(TRANSFORMATION_ORDERS)
+    else:
+        orders_ids = USERS_TRANSFORMATION_ORDERS.get(user_id, [])
+
     for order_id in orders_ids:
         transformation_order = get_transformation_order(order_id, uri_root=uri_root)
         add_order = True

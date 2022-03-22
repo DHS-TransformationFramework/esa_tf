@@ -18,21 +18,18 @@ from fastapi import (
     APIRouter,
     Depends,
     Header,
-    HTTPException,
     Query,
     Request,
-    Response,
-    status,
 )
-from fastapi.responses import HTMLResponse, PlainTextResponse
 
-from ..dependencies import get_roles_header
+from ..auth import DEFAULT_USER
+from ..dependencies import has_manager_role_header
 from . import transformation_orders
 
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
-    dependencies=[Depends(get_roles_header)],
+    dependencies=[Depends(has_manager_role_header)],
     responses={404: {"description": "Not found"}},
 )
 
@@ -49,7 +46,12 @@ async def admin_transformation_orders(
         title="OData $count flag",
         description='Include number of results in the "odata.count" field',
     ),
-    x_username: Optional[str] = Header(None),
     x_roles: Optional[str] = Header(None),
 ):
-    return await transformation_orders(request, rawfilter, count, x_username, x_roles)
+    return await transformation_orders(
+        request=request,
+        rawfilter=rawfilter,
+        count=count,
+        x_username=DEFAULT_USER,
+        x_roles=x_roles,
+    )

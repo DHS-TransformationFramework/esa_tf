@@ -104,7 +104,7 @@ async def transformation_orders(
     uri_root = request.url_for("index")
     try:
         data = api.get_transformation_orders(
-            filters, user_id=user_id, user_roles=user_roles, uri_root=uri_root
+            filters, user_id=user_id, uri_root=uri_root
         )
     except ValueError as exc:
         logging.exception("Invalid request")
