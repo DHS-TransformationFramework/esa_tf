@@ -14,13 +14,7 @@
 
 from typing import Optional
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    Header,
-    Query,
-    Request,
-)
+from fastapi import APIRouter, Depends, Header, Query, Request
 
 from ..auth import DEFAULT_USER
 from ..dependencies import has_manager_role_header
