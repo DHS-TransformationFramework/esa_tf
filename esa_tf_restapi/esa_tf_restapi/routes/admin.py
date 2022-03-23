@@ -16,9 +16,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 
+from .. import app
 from ..auth import DEFAULT_USER
 from ..dependencies import has_manager_role_header
-from . import transformation_orders
+from .user import transformation_orders
 
 router = APIRouter(
     prefix="/admin",
@@ -49,3 +50,6 @@ async def admin_transformation_orders(
         x_username=DEFAULT_USER,
         x_roles=x_roles,
     )
+
+
+app.include_router(router)
