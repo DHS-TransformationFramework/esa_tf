@@ -128,21 +128,23 @@ class Queue(object):
         for user_id in users_ids:
             self.user_to_orders[user_id].discard(order_id)
 
-    def update_orders(self, orders):
+    def update_orders(self, orders, user_id=DEFAULT_USER):
         for order in orders:
-            self.add_order(order)
+            self.add_order(order, user_id=user_id)
 
-    def remove_old_orders(self, keeping_period):
+    def remove_old_orders(self, keeping_period, reference_time=None):
         """Update the queue removing only the
         transformations with statuses `completed` or `failed` that are older than the `keeping_period`.
         It returns the list of order-IDs that have been deleted.
 
         :param int keeping_period: the minimum number of minutes from the CompletedDate that a
         TransformationOrder will be kept in memory
+        :param datetime.datetime reference_time: the time w.r.t. the keeping_period is calculated
         :return list:
         """
-        now = datetime.now()
+        now = datetime.now() if reference_time is None else reference_time
         # find completed or failed orders that are older than keeping_period
+        orders_to_remove = []
         for order_id, order in self.transformation_orders.items():
             completed_date = order.get_info().get("CompletedDate", None)
             if completed_date:
@@ -150,7 +152,9 @@ class Queue(object):
                     now - datetime.fromisoformat(completed_date)
                 ).total_seconds() / 60  # in minutes
                 if elapsed_minutes > keeping_period:
-                    self.remove_order(order_id)
+                    orders_to_remove.append(order_id)
+        for order_id in orders_to_remove:
+            self.remove_order(order_id)
 
     def get_count_uncompleted_orders(self, user_id):
         """Return the number of running processes (i.e. status equal to `in_progress`) among those
