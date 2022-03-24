@@ -162,8 +162,7 @@ def get_workflows(product_type=None):
     return workflows
 
 
-def get_transformation_order_log(order_id, user_id):
-    user_id
+def get_transformation_order_log(order_id):
     if order_id not in queue.transformation_orders:
         raise KeyError(f"Transformation Order {order_id!r} not found")
     return queue.transformation_orders[order_id].get_log()
@@ -218,7 +217,7 @@ def get_transformation_orders(
     if user_id:
         orders = queue.transformation_orders
     else:
-        orders = queue.user_to_oders.get(user_id, {})
+        orders = queue.user_to_orders.get(user_id, {})
 
     for order_id in orders:
         transformation_order = queue.transformation_orders[order_id].get_info()
