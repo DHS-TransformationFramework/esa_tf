@@ -254,19 +254,21 @@ def has_manager_profile(user_roles: list = []):
 
 def get_transformation_orders(
     filters: T.List[T.Tuple[str, str, str]] = [],
-    user_id: str = None,
+    user_id: str = DEFAULT_USER,
+    filter_by_user_id: str = True,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
     They can be filtered by the SubmissionDate, CompletedDate, Status
     :param T.List[T.Tuple[str, str, str]] filters: list of tuple
     :param str user_id: user identifier
+    :param bool filter_by_user_id: if True
     """
     # check filters
     check_filter_validity(filters)
     valid_transformation_orders_orders = []
 
-    if user_id:
+    if filter_by_user_id:
         orders = queue.user_to_orders.get(user_id, {})
     else:
         orders = queue.transformation_orders
@@ -398,7 +400,7 @@ def read_esa_tf_config():
     return esa_tf_config
 
 
-async def evict_orders(esa_tf_config_file=None):
+async def evict_orders():
     """Evict orders from the queue according to a
     configurable keeping period parameter. The keeping period parameter is based on the CompletedDate
     (i.e. the datetime when the output product of a TransformationOrders is available in the
@@ -470,8 +472,9 @@ def submit_workflow(
             workflow_id=workflow_id,
             workflow_options=workflow_options,
             workflow_name=workflow["WorkflowName"],
+            uri_root=uri_root,
         )
-        transformation_order.uri_root = uri_root
-        queue.add_order(transformation_order, user_id=user_id)
+
+    queue.add_order(transformation_order, user_id=user_id)
 
     return transformation_order.get_info()
