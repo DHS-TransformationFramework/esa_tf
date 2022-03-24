@@ -38,9 +38,7 @@ async def workflow(
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
-    logger.info(
-        f"user: {user_id} - required the configuration about '{id}' workflow"
-    )
+    logger.info(f"user: {user_id} - required the configuration about '{id}' workflow")
     data = {}
     try:
         data = api.get_workflow_by_id(id)

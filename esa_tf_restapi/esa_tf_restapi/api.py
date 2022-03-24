@@ -200,8 +200,7 @@ def check_filter_validity(filters):
 
 
 def get_transformation_orders(
-    filters: T.List[T.Tuple[str, str, str]] = [],
-    user_id: str = None,
+    filters: T.List[T.Tuple[str, str, str]] = [], user_id: str = None,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
@@ -215,9 +214,9 @@ def get_transformation_orders(
     valid_transformation_orders_orders = []
 
     if user_id:
-        orders = queue.transformation_orders
-    else:
         orders = queue.user_to_orders.get(user_id, {})
+    else:
+        orders = queue.transformation_orders
 
     for order_id in orders:
         transformation_order = queue.transformation_orders[order_id].get_info()

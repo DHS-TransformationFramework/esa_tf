@@ -136,7 +136,7 @@ def test_queue_remove_old_orders(function):
 
     keeping_period = 10  #  minutes
     now = datetime.datetime(2022, 1, 20, 16, 40)
-    queue.remove_old_orders(keeping_period, now=now)
+    queue.remove_old_orders(keeping_period, reference_time=now)
     assert "Id1" not in queue.transformation_orders
     assert len(queue.transformation_orders) == 4
     assert queue.user_to_orders == {
