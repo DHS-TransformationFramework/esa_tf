@@ -324,30 +324,7 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
-def read_users_quota():
-    """Return the users' quota as read from the dedicated configuration file. The keys are the
-    possible roles and the values are the roles' cap.
-
-    :param str users_quota_file: full path to the users' quota configuration file
-    :return dict:
-    """
-    users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
-    if not os.path.isfile(users_quota_file):
-        raise ValueError(
-            f"{users_quota_file} not found, please define it using 'users_quota_file' "
-            "keyword argument or the environment variable USERS_QUOTA_FILE"
-        )
-    with open(users_quota_file) as file:
-        users_quota = yaml.load(file, Loader=yaml.FullLoader)
-    if DEFAULT_ESA_TF_ROLE not in users_quota:
-        raise RuntimeError(
-            f"default role 'default_tf_role' not found in {users_quota_file}. "
-            f"Please, add the default role into the configuration file {users_quota_file}"
-        )
-    return users_quota
-
-
-def get_user_quota_cap(user_roles, roles_config_file,  user_id=DEFAULT_USER):
+def get_user_quota_cap(user_roles, roles_config_file, user_id=DEFAULT_USER):
     """Return the cap of "in_progress" processes according to the role(s). If more than a role has
     been specified, the cap is calculated as the largest cap among those corresponding to the roles
     list.
