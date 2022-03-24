@@ -22,6 +22,7 @@ class TransformationOrder(object):
         workflow_id,
         workflow_options,
         workflow_name=None,
+        uri_root=None,
     ):
         parameters = {
             "order_id": order_id,
@@ -53,6 +54,7 @@ class TransformationOrder(object):
             "WorkflowName": workflow_name,
         }
         transformation_order.parameters = parameters
+        transformation_order.uri_root = uri_root
         return transformation_order
 
     def resubmit(self, resubmit_if_failed=False):
@@ -118,7 +120,8 @@ class Queue(object):
 
     def add_order(self, transformation_order, user_id=DEFAULT_USER):
         order_id = transformation_order.get_info()["Id"]
-        self.transformation_orders[order_id] = transformation_order
+        if order_id not in self.transformation_orders:
+            self.transformation_orders[order_id] = transformation_order
         self.user_to_orders.setdefault(user_id, set()).add(order_id)
         self.order_to_users.setdefault(order_id, set()).add(user_id)
 
