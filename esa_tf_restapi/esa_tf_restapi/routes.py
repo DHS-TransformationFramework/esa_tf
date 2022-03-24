@@ -22,7 +22,7 @@ async def workflows(
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
-    logger.info(f"required workflows configurations", extra=dict(user=user_id))
+    logger.info(f"user: {user_id} - required workflows configurations")
     data = api.get_workflows()
     return {
         "value": [{"Id": id, **ops} for id, ops in data.items()],
@@ -39,13 +39,13 @@ async def workflow(
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
     logger.info(
-        f"required the configuration about '{id}' workflow", extra=dict(user=user_id),
+        f"user: {user_id} - required the configuration about '{id}' workflow"
     )
     data = {}
     try:
         data = api.get_workflow_by_id(id)
     except KeyError as exc:
-        logging.exception("Invalid Worfklow id")
+        logging.exception("user: {user_id} - Invalid Worfklow id")
         raise HTTPException(status_code=404, detail=str(exc))
     base = request.url_for("workflows")
     return {
@@ -81,7 +81,7 @@ async def transformation_orders(
             msg_filter = (
                 f" filtered by '{' and '.join([' '.join(f) for f in filters])}'"
             )
-        logger.info(msg + msg_filter, extra=dict(user=user_id))
+        logger.info(msg + msg_filter)
     uri_root = request.url_for("index")
     try:
         data = api.get_transformation_orders(filters)
@@ -103,7 +103,7 @@ async def transformation_orders_count(
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
-    logger.info("required the transformation orders count", extra=dict(user=user_id))
+    logger.info(f"user: {user_id} - required the transformation orders count")
     results = await transformation_orders(
         request, rawfilter=None, count=True, x_username=x_username, x_roles=x_roles
     )
@@ -120,7 +120,7 @@ async def get_transformation_order(
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
     logger.info(
-        f"required info about the transformation order '{id}'", extra=dict(user=user_id)
+        f"user: {user_id} - required info about the transformation order '{id}'"
     )
     base = request.url_for("transformation_orders")
     uri_root = request.url_for("index")
@@ -128,7 +128,7 @@ async def get_transformation_order(
     try:
         data = api.get_transformation_order(id)
     except KeyError as exc:
-        logging.exception("Invalid Transformation Order id")
+        logging.exception(f"user: {user_id} - Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
 
     return {
@@ -147,13 +147,12 @@ async def get_transformation_order_log(
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
     logger.info(
-        f"required the log-file for the transformation order '{id}'",
-        extra=dict(user=user_id),
+        f"user: {user_id} - required the log-file for the transformation order '{id}'"
     )
     try:
         log = api.get_transformation_order_log(id)
     except KeyError as exc:
-        logging.exception("Invalid Transformation Order id")
+        logging.exception(f"user: {user_id} - Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
     return {
         "value": log,
@@ -194,7 +193,7 @@ async def transformation_order_create(
             uri_root=uri_root,
         )
     except ValueError as exc:
-        logging.exception("Invalid Transformation Order")
+        logging.exception(f"user: {user_id} - Invalid Transformation Order")
         raise HTTPException(status_code=422, detail=str(exc))
     url = request.url_for("transformation_order", id=running_transformation.get("Id"))
     response.headers["Location"] = url
