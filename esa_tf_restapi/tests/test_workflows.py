@@ -84,7 +84,7 @@ def tr_orders():
 def tr_order():
     orig = api.get_transformation_order
 
-    def get_transformation_order(id, uri_root=None):
+    def get_transformation_order(id, uri_root=None, user_id=None):
         if id == "foo":
             return {"Id": id}
         raise KeyError(f"Cannot find {id}")
