@@ -17,7 +17,6 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header, Query, Request
 
 from .. import app
-from ..auth import DEFAULT_USER, get_user
 from ..dependencies import has_manager_role_header
 from .user import transformation_orders
 
