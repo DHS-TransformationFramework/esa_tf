@@ -11,15 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 
 from .. import app
-from ..auth import DEFAULT_USER
+from ..auth import DEFAULT_USER, get_user
 from ..dependencies import has_manager_role_header
 from .user import transformation_orders
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/admin",
@@ -31,7 +33,6 @@ router = APIRouter(
 
 @router.get("/TransformationOrders")
 async def admin_transformation_orders(
-    request: Request,
     rawfilter: Optional[str] = Query(
         None, alias="$filter", title="OData $filter query",
     ),
@@ -41,14 +42,15 @@ async def admin_transformation_orders(
         title="OData $count flag",
         description='Include number of results in the "odata.count" field',
     ),
+    x_username: Optional[str] = Header(None),
     x_roles: Optional[str] = Header(None),
 ):
     return await transformation_orders(
-        request=request,
         rawfilter=rawfilter,
         count=count,
-        x_username=DEFAULT_USER,
+        x_username=x_username,
         x_roles=x_roles,
+        filter_by_user_id=False,
     )
 
 

@@ -1,3 +1,17 @@
+# Copyright 2021-2022, European Space Agency (ESA)
+#
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://opensource.org/licenses/AGPL-3.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
 from typing import Optional
 
@@ -57,7 +71,6 @@ async def workflow(
 
 @app.get("/TransformationOrders")
 async def transformation_orders(
-    request: Request,
     rawfilter: Optional[str] = Query(
         None, alias="$filter", title="OData $filter query",
     ),
@@ -69,10 +82,12 @@ async def transformation_orders(
     ),
     x_username: Optional[str] = Header(None),
     x_roles: Optional[str] = Header(None),
+    filter_by_user_id: bool = True,
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
     user_roles = user.roles if user_id != DEFAULT_USER else []
+    # user_id = user.username if user else None
     odata_params = parse_qs(filter=rawfilter)
     filters = [(f.name, f.operator, f.value) for f in odata_params.filter]
     if not count:
@@ -83,10 +98,9 @@ async def transformation_orders(
                 f" filtered by '{' and '.join([' '.join(f) for f in filters])}'"
             )
         logger.info(msg + msg_filter)
-    uri_root = request.url_for("index")
     try:
         data = api.get_transformation_orders(
-            filters, user_id=user_id
+            filters, user_id=user_id, filter_by_user_id=filter_by_user_id
         )
     except ValueError as exc:
         logging.exception("Invalid request")
@@ -108,7 +122,7 @@ async def transformation_orders_count(
     user_id = user.username if user else DEFAULT_USER
     logger.info(f"user: {user_id} - required the transformation orders count")
     results = await transformation_orders(
-        request, rawfilter=None, count=True, x_username=x_username, x_roles=x_roles
+        rawfilter=None, count=True, x_username=x_username, x_roles=x_roles
     )
     return results["odata.count"]
 
@@ -126,7 +140,6 @@ async def get_transformation_order(
         f"user: {user_id} - required info about the transformation order '{id}'"
     )
     base = request.url_for("transformation_orders")
-    uri_root = request.url_for("index")
     data = None
     try:
         data = api.get_transformation_order(id)
