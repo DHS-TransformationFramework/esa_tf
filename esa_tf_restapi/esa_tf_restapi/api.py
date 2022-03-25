@@ -162,19 +162,27 @@ def get_workflows(product_type=None):
     return workflows
 
 
-def get_transformation_order_log(order_id):
-    if order_id not in queue.transformation_orders:
+def get_transformation_order_log(
+    order_id, user_id=DEFAULT_USER, filter_by_user_id=True
+):
+    transformation_orders = queue.get_transformation_orders(
+        user_id=user_id, filter_by_user_id=filter_by_user_id
+    )
+    if order_id not in transformation_orders:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    return queue.transformation_orders[order_id].get_log()
+    return transformation_orders[order_id].get_log()
 
 
-def get_transformation_order(order_id):
+def get_transformation_order(order_id, user_id=DEFAULT_USER, filter_by_user_id=True):
     """
     Return the transformation order corresponding to the order_id
     """
-    if order_id not in queue.transformation_orders:
+    transformation_orders = queue.get_transformation_orders(
+        user_id=user_id, filter_by_user_id=filter_by_user_id
+    )
+    if order_id not in transformation_orders:
         raise KeyError(f"Transformation Order {order_id!r} not found")
-    return queue.transformation_orders[order_id].get_info()
+    return transformation_orders[order_id].get_info()
 
 
 def check_filter_validity(filters):
@@ -266,25 +274,23 @@ def get_transformation_orders(
     """
     # check filters
     check_filter_validity(filters)
-    valid_transformation_orders_orders = []
 
-    if filter_by_user_id:
-        orders = queue.user_to_orders.get(user_id, {})
-    else:
-        orders = queue.transformation_orders
-
-    for order_id in orders:
-        transformation_order = queue.transformation_orders[order_id].get_info()
+    transformation_orders = queue.get_transformation_orders(
+        user_id=user_id, filter_by_user_id=filter_by_user_id
+    )
+    valid_orders_info = []
+    for order_id, order in transformation_orders.items():
+        order_info = queue.transformation_orders[order_id].get_info()
         add_order = True
         for key, op, value in filters:
-            if key == "CompletedDate" and "CompletedDate" not in transformation_order:
+            if key == "CompletedDate" and "CompletedDate" not in order_info:
                 add_order = False
                 continue
             op = getattr(operator, op)
             if key == "InputProductReference":
-                order_value = transformation_order["InputProductReference"]["Reference"]
+                order_value = order_info["InputProductReference"]["Reference"]
             else:
-                order_value = transformation_order[key]
+                order_value = order_info[key]
             if key in {"CompletedDate", "SubmissionDate"}:
                 order_value = datetime.fromisoformat(order_value)
                 try:
@@ -295,8 +301,8 @@ def get_transformation_orders(
                     )
             add_order = add_order and op(order_value, value)
         if add_order:
-            valid_transformation_orders_orders.append(transformation_order)
-    return valid_transformation_orders_orders
+            valid_orders_info.append(order_info)
+    return valid_orders_info
 
 
 def extract_workflow_defaults(config_workflow_options):

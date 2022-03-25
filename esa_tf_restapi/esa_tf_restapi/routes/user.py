@@ -142,7 +142,7 @@ async def get_transformation_order(
     base = request.url_for("transformation_orders")
     data = None
     try:
-        data = api.get_transformation_order(id)
+        data = api.get_transformation_order(id, user_id=user_id)
     except KeyError as exc:
         logging.exception(f"user: {user_id} - Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))
@@ -166,7 +166,7 @@ async def get_transformation_order_log(
         f"user: {user_id} - required the log-file for the transformation order '{id}'"
     )
     try:
-        log = api.get_transformation_order_log(id)
+        log = api.get_transformation_order_log(id, user_id=user_id)
     except KeyError as exc:
         logging.exception(f"user: {user_id} - Invalid Transformation Order id")
         raise HTTPException(status_code=404, detail=str(exc))

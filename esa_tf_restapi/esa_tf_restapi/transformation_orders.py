@@ -184,4 +184,3 @@ class Queue(object):
                 for order_id in self.user_to_orders.get(user_id, [])
             }
         return transformation_orders
-
