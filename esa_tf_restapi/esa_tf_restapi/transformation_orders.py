@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -8,6 +9,8 @@ STATUS_DASK_TO_API = {
     "finished": "completed",
     "error": "failed",
 }
+
+logger = logging.getLogger(__name__)
 
 
 class TransformationOrder(object):
@@ -171,3 +174,14 @@ class Queue(object):
             order_status = self.transformation_orders[order_id].get_status()
             running_processes += order_status in ("in_progress", "queued")
         return running_processes
+
+    def get_transformation_orders(self, user_id=DEFAULT_USER, filter_by_user_id=True):
+        if not filter_by_user_id:
+            transformation_orders = self.transformation_orders.copy()
+        else:
+            transformation_orders = {
+                order_id: self.transformation_orders[order_id]
+                for order_id in self.user_to_orders.get(user_id, [])
+            }
+        return transformation_orders
+
