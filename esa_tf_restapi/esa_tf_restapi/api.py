@@ -137,7 +137,7 @@ def get_workflow_by_id(workflow_id):
     """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
-    workflows = get_all_workflows()
+    workflows = get_workflows()
     try:
         workflow = workflows[workflow_id]
     except KeyError:
@@ -152,7 +152,12 @@ def get_workflows(product_type=None):
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
     """
-    workflows = get_all_workflows()
+    exclude_workflow = read_esa_tf_config()["exclude-workflow"]
+    workflows = {}
+    for workflow_id, workflow in get_all_workflows().items():
+        if workflow_id not in exclude_workflow:
+            workflows[workflow_id] = workflow
+
     if product_type:
         filtered_workflows = {}
         for name in workflows:
