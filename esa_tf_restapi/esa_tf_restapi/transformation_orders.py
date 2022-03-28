@@ -170,7 +170,7 @@ class Queue(object):
         :return int: count of uncompleted orders
         """
         running_processes = 0
-        for order_id in self.user_to_orders[user_id]:
+        for order_id in self.user_to_orders.get(user_id, []):
             order_status = self.transformation_orders[order_id].get_status()
             running_processes += order_status in ("in_progress", "queued")
         return running_processes
