@@ -19,21 +19,19 @@ from . import api, auth
 
 
 async def has_manager_role_header(
-    x_username: T.Optional[str] = Header(None),
-    x_roles: str = Header(None)
+    x_username: T.Optional[str] = Header(None), x_roles: str = Header(None)
 ):
     user = auth.get_user(x_username, x_roles)
     profile = api.get_profile(user_roles=user.roles, user_id=user.username)
     if profile != "manager":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Resource is forbidden for role profile {profile}:"
+            detail=f"Resource is forbidden for role profile {profile}:",
         )
 
 
 async def role_has_authorized_profile(
-    x_username: T.Optional[str] = Header(None),
-    x_roles: str = Header(None)
+    x_username: T.Optional[str] = Header(None), x_roles: str = Header(None)
 ):
     user = auth.get_user(x_username, x_roles)
     profile = api.get_authorization(user.roles, user_id=user.username)
@@ -41,4 +39,3 @@ async def role_has_authorized_profile(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Resource is forbidden"
         )
-

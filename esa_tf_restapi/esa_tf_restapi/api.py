@@ -209,12 +209,7 @@ def check_filter_validity(filters):
             )
 
 
-def extract_roles_key(
-    roles_config,
-    user_roles=[],
-    key="profile",
-    user_id=DEFAULT_USER
-):
+def extract_roles_key(roles_config, user_roles=[], key="profile", user_id=DEFAULT_USER):
     """Return the profiles associated with the user's roles input list.
     :param dict roles_config: role configuration_dictionary
     :param list user_roles: user roles
@@ -225,19 +220,25 @@ def extract_roles_key(
     default = roles_config.get("default") or UNAUTHORIZED_ROLE_CONFIG
 
     if not user_roles:
-        logger.warning(f"user: {user_id!r} - role not defined, a default {key!r} will be used: {default[key]!r}")
+        logger.warning(
+            f"user: {user_id!r} - role not defined, a default {key!r} will be used: {default[key]!r}"
+        )
         return [default[key]]
 
     values = []
     for user_role in user_roles:
         value = roles_config.get(user_role, {}).get(key)
         if value is None:
-            logger.warning(f"user: {user_id} - {key} not defined for user role {user_role}")
+            logger.warning(
+                f"user: {user_id} - {key} not defined for user role {user_role}"
+            )
         else:
             values.append(value)
 
     if not values:
-        logger.warning(f"user: {user_id} - {key!r} not defined for user roles {user_roles!r}, a default will be used: {default[key]!r}")
+        logger.warning(
+            f"user: {user_id} - {key!r} not defined for user roles {user_roles!r}, a default will be used: {default[key]!r}"
+        )
         values.append(default[key])
 
     return values
@@ -248,7 +249,9 @@ def get_profile(user_roles: list = [], user_id=DEFAULT_USER):
     if not esa_tf_config.get("enable_authorization_check", True):
         return "manager"
 
-    user_profiles = extract_roles_key(esa_tf_config["roles"], user_roles, key='profile', user_id=user_id)
+    user_profiles = extract_roles_key(
+        esa_tf_config["roles"], user_roles, key="profile", user_id=user_id
+    )
     if "manager" in user_profiles:
         return "manager"
     elif "user" in user_profiles:
@@ -341,7 +344,9 @@ def check_user_quota(user_id, user_roles=None):
     if not esa_tf_config.get("enable_quota_check", True):
         return
 
-    user_quotas = extract_roles_key(esa_tf_config["roles"], user_roles, key='quota', user_id=user_id)
+    user_quotas = extract_roles_key(
+        esa_tf_config["roles"], user_roles, key="quota", user_id=user_id
+    )
     user_cap = max(user_quotas)
     running_processes = queue.get_count_uncompleted_orders(user_id)
     if running_processes >= user_cap:
