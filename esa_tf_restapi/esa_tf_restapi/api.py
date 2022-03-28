@@ -268,9 +268,9 @@ def get_transformation_orders(
     """
     Return the all the transformation orders.
     They can be filtered by the SubmissionDate, CompletedDate, Status
-    :param T.List[T.Tuple[str, str, str]] filters: list of tuple
-    :param str user_id: user identifier
-    :param bool filter_by_user_id: if True
+    :param T.List[T.Tuple[str, str, str]] filters: list of tuple defining the filter to be applied
+    :param str user_id: user ID
+    :param bool filter_by_user_id: if True the transformation orders are filtered by the user_id
     """
     # check filters
     check_filter_validity(filters)
