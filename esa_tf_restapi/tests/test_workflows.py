@@ -63,7 +63,7 @@ def tr_orders():
     orig = api.get_transformation_orders
 
     def get_transformation_orders(
-        filters: T.List[T.Tuple[str, str, str]] = [], uri_root=None
+        filters: T.List[T.Tuple[str, str, str]] = [], uri_root=None, **kwargs
     ):
         entries = [
             {"Id": "foo", "Status": "in_progress"},
@@ -84,7 +84,7 @@ def tr_orders():
 def tr_order():
     orig = api.get_transformation_order
 
-    def get_transformation_order(id, uri_root=None):
+    def get_transformation_order(id, uri_root=None, user_id=None):
         if id == "foo":
             return {"Id": id}
         raise KeyError(f"Cannot find {id}")

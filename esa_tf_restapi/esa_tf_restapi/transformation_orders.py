@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -8,6 +9,8 @@ STATUS_DASK_TO_API = {
     "finished": "completed",
     "error": "failed",
 }
+
+logger = logging.getLogger(__name__)
 
 
 class TransformationOrder(object):
@@ -22,6 +25,7 @@ class TransformationOrder(object):
         workflow_id,
         workflow_options,
         workflow_name=None,
+        uri_root=None,
     ):
         parameters = {
             "order_id": order_id,
@@ -53,6 +57,7 @@ class TransformationOrder(object):
             "WorkflowName": workflow_name,
         }
         transformation_order.parameters = parameters
+        transformation_order.uri_root = uri_root
         return transformation_order
 
     def resubmit(self, resubmit_if_failed=False):
@@ -118,7 +123,8 @@ class Queue(object):
 
     def add_order(self, transformation_order, user_id=DEFAULT_USER):
         order_id = transformation_order.get_info()["Id"]
-        self.transformation_orders[order_id] = transformation_order
+        if order_id not in self.transformation_orders:
+            self.transformation_orders[order_id] = transformation_order
         self.user_to_orders.setdefault(user_id, set()).add(order_id)
         self.order_to_users.setdefault(order_id, set()).add(user_id)
 
@@ -168,3 +174,13 @@ class Queue(object):
             order_status = self.transformation_orders[order_id].get_status()
             running_processes += order_status in ("in_progress", "queued")
         return running_processes
+
+    def get_transformation_orders(self, user_id=DEFAULT_USER, filter_by_user_id=True):
+        if not filter_by_user_id:
+            transformation_orders = self.transformation_orders.copy()
+        else:
+            transformation_orders = {
+                order_id: self.transformation_orders[order_id]
+                for order_id in self.user_to_orders.get(user_id, [])
+            }
+        return transformation_orders
