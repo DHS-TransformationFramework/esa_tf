@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 
 queue = Queue()
 CLIENT = None
-DEFAULT_ESA_TF_ROLE = "default_esa_tf_role"
 FILE_MODIFICATION_INTERVAL = 86400  # sec
+
+DEFAULT_ROLE = "default"
+UNAUTHORIZED_ROLE_CONFIG = {"profile": "unauthorized", "quota": 0}
 
 SENTINEL1 = [
     "S1_RAW__0S",
@@ -207,57 +209,52 @@ def check_filter_validity(filters):
             )
 
 
-def read_roles_config(roles_config_file):
-    """Return the users' quota as read from the dedicated configuration file. The keys are the
-    possible roles and the values are the roles' cap.
-
-    :param str roles_config_file: full path to the roles' configuration file
-    :return dict:
-    """
-    with open(roles_config_file) as file:
-        users_quota = yaml.load(file, Loader=yaml.FullLoader)
-    if DEFAULT_ESA_TF_ROLE not in users_quota:
-        raise RuntimeError(
-            f"default role 'default_tf_role' not found in {roles_config_file}. "
-            f"Please, add the default role into the configuration file {roles_config_file}"
-        )
-    return users_quota
-
-
-def get_roles_config_filepath(roles_config_file=None):
-    """Return the path of `roles.config` file and perform a check about the existence of the
-    path.
-
-    :param str roles_config_file: full path to the roles' configuration file
-    :return str:
-    """
-    if roles_config_file is None:
-        roles_config_file = os.getenv("ROLES_CONFIG_FILE", "./roles.config")
-    if not os.path.isfile(roles_config_file):
-        raise ValueError(
-            f"{roles_config_file} not found, please define it using 'role_config_file' "
-            "keyword argument or the environment variable ROLES_CONFIG_FILE"
-        )
-    return roles_config_file
-
-
-def get_profiles(user_roles, roles_config_file=None):
+def extract_roles_key(
+    roles_config,
+    user_roles=[],
+    key="profile",
+    user_id=DEFAULT_USER
+):
     """Return the profiles associated with the user's roles input list.
-
+    :param dict roles_config: role configuration_dictionary
     :param list user_roles: user roles
-    :param str roles_config_file: full path to the roles' configuration file
+    :param str key: it can be "profile" or "quota"
+    :param str user_id: user ID
     :return set:
     """
-    roles_config_file = get_roles_config_filepath(roles_config_file)
-    roles = read_roles_config(roles_config_file)
-    profiles = set()
-    for role in user_roles:
-        profiles.add(roles.get(role, roles[DEFAULT_ESA_TF_ROLE]).get("profile"))
-    return profiles
+    default = roles_config.get("default") or UNAUTHORIZED_ROLE_CONFIG
+
+    if not user_roles:
+        logger.warning(f"user: {user_id!r} - role not defined, a default {key!r} will be used: {default[key]!r}")
+        return [default[key]]
+
+    values = []
+    for user_role in user_roles:
+        value = roles_config.get(user_role, {}).get(key)
+        if value is None:
+            logger.warning(f"user: {user_id} - {key} not defined for user role {user_role}")
+        else:
+            values.append(value)
+
+    if not values:
+        logger.warning(f"user: {user_id} - {key!r} not defined for user roles {user_roles!r}, a default will be used: {default[key]!r}")
+        values.append(default[key])
+
+    return values
 
 
-def has_manager_profile(user_roles: list = []):
-    return "manager" in get_profiles(user_roles)
+def get_profile(user_roles: list = [], user_id=DEFAULT_USER):
+    esa_tf_config = read_esa_tf_config()
+    if not esa_tf_config.get("enable_authorization_check", True):
+        return "manager"
+
+    user_profiles = extract_roles_key(esa_tf_config["roles"], user_roles, key='profile', user_id=user_id)
+    if "manager" in user_profiles:
+        return "manager"
+    elif "user" in user_profiles:
+        return "user"
+    else:
+        return "unauthorized"
 
 
 def get_transformation_orders(
@@ -332,74 +329,36 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
-def get_user_quota_cap(user_roles, roles_config_file, user_id=DEFAULT_USER):
-    """Return the cap of "in_progress" processes according to the role(s). If more than a role has
-    been specified, the cap is calculated as the largest cap among those corresponding to the roles
-    list.
-
-    :param list_or_tuple user_roles: list of the roles associated with the user
-    :param str roles_config_file: path of the configuration file with the users' quota by roles
-    :param str user_id: user identifier
-    :return int:
-    """
-    users_quota = read_roles_config(roles_config_file)
-    user_caps = []
-    # please, note that the user_roles list is never empty because if no role has been defined the
-    # GENERAL_TF_ROLE is set in submit_workflow function
-    for role in user_roles:
-        cap = users_quota.get(role, {}).get("quota")
-        if cap is None:
-            logger.info(
-                f"user: {user_id} - role '{role}' not found in the configuration file {roles_config_file}",
-            )
-        else:
-            user_caps.append(cap)
-    # if all roles are not present on the configuration file, then the GENERAL_TF_ROLE is used
-    if not user_caps:
-        logger.warning(
-            f"user: {user_id} - no role among those defined for the user was found in the configuration file {roles_config_file}, "
-            f"a general TF role will be used",
-        )
-    user_cap = max(user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("quota"))
-    return user_cap
-
-
-def check_user_quota(user_id, user_roles, roles_config_file=None):
+def check_user_quota(user_id, user_roles=None):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
-    cap has been already reached, a RuntimeError is raised.
+    cap has been already reached, a UserException is raised.
 
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
-    :param str roles_config_file: full path to the `roles.config` file
     :return:
     """
-    if user_roles is None or not any(user_roles):
-        logger.warning(
-            f"user: {user_id} - no user-role is defined, a default TF role will be used",
-        )
-        user_roles = [DEFAULT_ESA_TF_ROLE]
-    roles_config_file = get_roles_config_filepath(roles_config_file)
-
-    user_cap = get_user_quota_cap(user_roles, roles_config_file, user_id)
-    if user_id not in queue.user_to_orders:
+    esa_tf_config = read_esa_tf_config()
+    if not esa_tf_config.get("enable_quota_check", True):
         return
+
+    user_quotas = extract_roles_key(esa_tf_config["roles"], user_roles, key='quota', user_id=user_id)
+    user_cap = max(user_quotas)
     running_processes = queue.get_count_uncompleted_orders(user_id)
     if running_processes >= user_cap:
         raise RuntimeError(
-            f"the user {user_id} has reached his quota: {running_processes} processes are running"
+            f"the user {user_id!r} has reached his quota: {running_processes!r} processes are running"
         )
 
 
 def read_esa_tf_config():
     """
-    :param str esa_tf_config_file: full path to the `esa_tf.config` file
-    :return dict:
+    :return dict: returns esa_tf_config dictionary
     """
     esa_tf_config_file = os.getenv("ESA_TF_CONFIG_FILE", "./esa_tf.config")
     if not os.path.isfile(esa_tf_config_file):
         raise ValueError(
-            f"{esa_tf_config_file} not found, please define it using 'esa_tf_config_file' "
-            "keyword argument or the environment variable ESA_TF_CONFIG_FILE"
+            f"{esa_tf_config_file!r} not found, please define the correct path "
+            f"it using the environment variable ESA_TF_CONFIG_FILE"
         )
     with open(esa_tf_config_file) as file:
         esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
@@ -442,13 +401,9 @@ def submit_workflow(
     :param dict workflow_options: dictionary containing the workflow kwargs
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
-    :param str working_dir: optional working directory within which will be created the processing directory.
     If it is None it is used the value of the environment variable "WORKING_DIR"
-    :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
-    :param str hubs_credentials_file: optional file of credentials. If it is None is used the value
     of the environment variable "HUBS_CREDENTIALS_FILE"
-    :param order_id:
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
     asyncio.create_task(evict_orders())
