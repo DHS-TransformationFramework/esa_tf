@@ -334,7 +334,7 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
 
 def check_user_quota(user_id, user_roles=None):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
-    cap has been already reached, a UserException is raised.
+    cap has been already reached, a RuntimeError is raised.
 
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
@@ -363,7 +363,7 @@ def read_esa_tf_config():
     if not os.path.isfile(esa_tf_config_file):
         raise ValueError(
             f"{esa_tf_config_file!r} not found, please define the correct path "
-            f"it using the environment variable ESA_TF_CONFIG_FILE"
+            f"using the environment variable ESA_TF_CONFIG_FILE"
         )
     with open(esa_tf_config_file) as file:
         esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
