@@ -19,7 +19,7 @@ define ESA_TF_CONFIG
 keeping-period: 14400  # minutes
 
 # The list of workflows to be excluded
-exclude-workflow:
+excluded-workflows:
 
 # enable authorization check
 enable_authorization_check: true

@@ -151,10 +151,10 @@ def get_workflows(product_type=None):
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
     """
-    exclude_workflow = read_esa_tf_config()["exclude-workflow"]
+    excluded_workflows = read_esa_tf_config()["excluded-workflows"]
     workflows = {}
     for workflow_id, workflow in get_all_workflows().items():
-        if workflow_id not in exclude_workflow:
+        if workflow_id not in excluded_workflows:
             workflows[workflow_id] = workflow
 
     if product_type:
