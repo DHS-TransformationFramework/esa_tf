@@ -27,15 +27,17 @@ enable_authorization_check: true
 # enable quota configuration
 enable_quota_check: true
 
-# roles configuration
+# role configuration
 # - quota is maximum number of transformation orders in progress or queued per user
-# - profile can ben "manager", "user" or "unauthorized"
-# default define the defaults if no specific role is associated to a given user
-# or if the user's roles are not explicit defined in the current config file
+# - profile can ben "manager" or "user"
+
+# default role configuration
+default_role:
+    quota: 1
+    profile: user
+
+# custom roles configuration
 roles:
-  default:
-    quota: 0
-    profile: unauthorized
 #   <role>:
 #       quota: 1000
 #       profile: manager

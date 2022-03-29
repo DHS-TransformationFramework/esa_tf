@@ -28,15 +28,3 @@ async def role_has_manager_profile(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Resource is forbidden for role profile {profile}",
         )
-
-
-async def role_has_authorized_profile(
-    x_username: T.Optional[str] = Header(None), x_roles: str = Header(None)
-):
-    user = auth.get_user(x_username, x_roles)
-    profile = api.get_profile(user.roles, user_id=user.username)
-    if profile not in ("manager", "user"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Resource is forbidden for role profile {profile}",
-        )

@@ -178,13 +178,13 @@ curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Referen
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')" | jq
+curl "http://localhost:8080/TransformationOrders('f6ca5782c3b1f7127cc4d78a26d02a5d')" | jq
 ```
 
 You can also inspect the current output from the transformation itself.
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('9e58ff8a4553a15607eae4ce85736811')/Log/\$value"
+curl "http://localhost:8080/TransformationOrders('f6ca5782c3b1f7127cc4d78a26d02a5d')/Log/\$value"
 ```
 
 ## License information

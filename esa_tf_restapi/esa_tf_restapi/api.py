@@ -19,9 +19,6 @@ queue = Queue()
 CLIENT = None
 FILE_MODIFICATION_INTERVAL = 86400  # sec
 
-DEFAULT_ROLE = "default"
-UNAUTHORIZED_ROLE_CONFIG = {"profile": "unauthorized", "quota": 0}
-
 SENTINEL1 = [
     "S1_RAW__0S",
     "S2_RAW__0S",
@@ -209,7 +206,9 @@ def check_filter_validity(filters):
             )
 
 
-def extract_roles_key(roles_config, user_roles=[], key="profile", user_id=DEFAULT_USER):
+def extract_roles_key(
+    esa_tf_config, user_roles=[], key="profile", user_id=DEFAULT_USER
+):
     """Return the profiles associated with the user's roles input list.
     :param dict roles_config: role configuration_dictionary
     :param list user_roles: user roles
@@ -217,13 +216,14 @@ def extract_roles_key(roles_config, user_roles=[], key="profile", user_id=DEFAUL
     :param str user_id: user ID
     :return set:
     """
-    default = roles_config.get("default") or UNAUTHORIZED_ROLE_CONFIG
+    roles_config = esa_tf_config["roles"]
+    default_role = esa_tf_config["default_role"]
 
     if not user_roles:
         logger.warning(
-            f"user: {user_id!r} - role not defined, a default {key!r} will be used: {default[key]!r}"
+            f"user: {user_id!r} - role not defined, a default {key!r} will be used: {default_role[key]!r}"
         )
-        return [default[key]]
+        return [default_role[key]]
 
     values = []
     for user_role in user_roles:
@@ -237,9 +237,9 @@ def extract_roles_key(roles_config, user_roles=[], key="profile", user_id=DEFAUL
 
     if not values:
         logger.warning(
-            f"user: {user_id} - {key!r} not defined for user roles {user_roles!r}, a default will be used: {default[key]!r}"
+            f"user: {user_id} - {key!r} not defined for user roles {user_roles!r}, a default will be used: {default_role[key]!r}"
         )
-        values.append(default[key])
+        values.append(default_role[key])
 
     return values
 
@@ -250,7 +250,7 @@ def get_profile(user_roles: list = [], user_id=DEFAULT_USER):
         return "manager"
 
     user_profiles = extract_roles_key(
-        esa_tf_config["roles"], user_roles, key="profile", user_id=user_id
+        esa_tf_config, user_roles, key="profile", user_id=user_id
     )
     if "manager" in user_profiles:
         return "manager"
@@ -345,7 +345,7 @@ def check_user_quota(user_id, user_roles=None):
         return
 
     user_quotas = extract_roles_key(
-        esa_tf_config["roles"], user_roles, key="quota", user_id=user_id
+        esa_tf_config, user_roles, key="quota", user_id=user_id
     )
     user_cap = max(user_quotas)
     running_processes = queue.get_count_uncompleted_orders(user_id)

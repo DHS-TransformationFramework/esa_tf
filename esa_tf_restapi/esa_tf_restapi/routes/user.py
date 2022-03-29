@@ -15,38 +15,22 @@
 import logging
 from typing import Optional
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    Header,
-    HTTPException,
-    Query,
-    Request,
-    Response,
-    status,
-)
+from fastapi import Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
-from .. import api, app, dependencies, models
+from .. import api, app, models
 from ..auth import DEFAULT_USER, get_user
 from ..odata import parse_qs
 
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(
-    tags=["user"],
-    dependencies=[Depends(dependencies.role_has_authorized_profile)],
-    responses={404: {"description": "Not found"}},
-)
-
-
-@router.get("/", status_code=status.HTTP_404_NOT_FOUND, response_class=HTMLResponse)
+@app.get("/", status_code=status.HTTP_404_NOT_FOUND, response_class=HTMLResponse)
 async def index():
     pass
 
 
-@router.get("/Workflows")
+@app.get("/Workflows")
 async def workflows(
     request: Request,
     x_username: Optional[str] = Header(None),
@@ -61,7 +45,7 @@ async def workflows(
     }
 
 
-@router.get("/Workflows('{id}')", name="workflow")
+@app.get("/Workflows('{id}')", name="workflow")
 async def workflow(
     request: Request,
     id: str,
@@ -85,7 +69,7 @@ async def workflow(
     }
 
 
-@router.get("/TransformationOrders")
+@app.get("/TransformationOrders")
 async def transformation_orders(
     rawfilter: Optional[str] = Query(
         None, alias="$filter", title="OData $filter query",
@@ -128,7 +112,7 @@ async def transformation_orders(
     }
 
 
-@router.get("/TransformationOrders/$count")
+@app.get("/TransformationOrders/$count")
 async def transformation_orders_count(
     request: Request,
     x_username: Optional[str] = Header(None),
@@ -143,7 +127,7 @@ async def transformation_orders_count(
     return results["odata.count"]
 
 
-@router.get("/TransformationOrders('{id}')", name="transformation_order")
+@app.get("/TransformationOrders('{id}')", name="transformation_order")
 async def get_transformation_order(
     request: Request,
     id: str,
@@ -170,7 +154,7 @@ async def get_transformation_order(
     }
 
 
-@router.get("/TransformationOrders('{id}')/Log")
+@app.get("/TransformationOrders('{id}')/Log")
 async def get_transformation_order_log(
     id: str,
     x_username: Optional[str] = Header(None),
@@ -191,9 +175,7 @@ async def get_transformation_order_log(
     }
 
 
-@router.get(
-    "/TransformationOrders('{id}')/Log/$value", response_class=PlainTextResponse
-)
+@app.get("/TransformationOrders('{id}')/Log/$value", response_class=PlainTextResponse)
 async def get_transformation_order_log_raw(
     id: str,
     x_username: Optional[str] = Header(None),
@@ -203,7 +185,7 @@ async def get_transformation_order_log_raw(
     return "\n".join(log.get("value", []))
 
 
-@router.post("/TransformationOrders", status_code=201)
+@app.post("/TransformationOrders", status_code=201)
 async def transformation_order_create(
     request: Request,
     response: Response,
@@ -232,6 +214,3 @@ async def transformation_order_create(
     url = request.url_for("transformation_order", id=running_transformation.get("Id"))
     response.headers["Location"] = url
     return {**running_transformation}
-
-
-app.include_router(router)

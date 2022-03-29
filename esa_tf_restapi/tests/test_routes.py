@@ -92,7 +92,7 @@ def test_get_workflow(workflow, profile):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", side_effect=["user", "user", "unauthorized"],
+    "esa_tf_restapi.api.get_profile", return_value="user",
 )
 @mock.patch(
     "esa_tf_restapi.api.get_transformation_orders",
@@ -106,9 +106,6 @@ def test_list_tranformation_orders(tr_orders, profile):
     response = client.get("/TransformationOrders?$filter=Status eq 'completed'")
     assert response.status_code == 200
     result = response.json()
-    assert len(result["value"]) == 1
-    response = client.get("/TransformationOrders")
-    assert response.status_code == 403
 
 
 @mock.patch(

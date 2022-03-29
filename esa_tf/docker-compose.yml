@@ -18,7 +18,6 @@ services:
             - "${CONFIG_DIR:-./config}:/config"
         environment:
             - ESA_TF_CONFIG_FILE=/config/esa_tf.config
-            - ROLES_CONFIG_FILE=/config/roles.config
             - FORWARDED_ALLOW_IPS=*
             - ROOT_PATH=${ROOT_PATH}
 
