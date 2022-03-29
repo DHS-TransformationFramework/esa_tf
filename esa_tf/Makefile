@@ -13,17 +13,6 @@ apihub:
   password: my-apihub-password
 endef
 
-define ROLES_CONFIG
-# this is the default role if no specific role is associated to a given user. Please, change only
-# the "submit_limit" value, do not change the role name "default_tf_role"
-default_esa_tf_role:
-  quota: 100
-  profile: user
-# <role>:
-#   quota: 1000
-#   profile: manager
-endef
-
 define ESA_TF_CONFIG
 # The keeping_period shall be an integer. It represents the minimum number of minutes from the
 # CompletedDate that a TransformationOrder will be kept in memory.
@@ -31,6 +20,27 @@ keeping-period: 14400  # minutes
 
 # The list of workflows to be excluded
 exclude-workflow:
+
+# enable authorization check
+enable_authorization_check: true
+
+# enable quota configuration
+enable_quota_check: true
+
+# role configuration
+# - quota is maximum number of transformation orders in progress or queued per user
+# - profile can ben "manager" or "user"
+
+# default role configuration
+default_role:
+    quota: 1
+    profile: user
+
+# custom roles configuration
+roles:
+#   <role>:
+#       quota: 1000
+#       profile: manager
 endef
 
 # default target
@@ -52,12 +62,6 @@ config/hubs_credentials.yaml:
 	echo "$$HUBS_CREDENTIALS" > $@
 
 setup: config/hubs_credentials.yaml
-
-export ROLES_CONFIG
-config/roles.config:
-	echo "$$ROLES_CONFIG" > $@
-
-setup: config/roles.config
 
 export ESA_TF_CONFIG
 config/esa_tf.config:

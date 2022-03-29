@@ -11,14 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing as T
 
 from fastapi import Header, HTTPException, status
 
-from .api import has_manager_profile
+from . import api, auth
 
 
-async def has_manager_role_header(x_roles: str = Header(None)):
-    if not x_roles or not has_manager_profile(x_roles.split(",")):
+async def role_has_manager_profile(
+    x_username: T.Optional[str] = Header(None), x_roles: str = Header(None)
+):
+    user = auth.get_user(x_username, x_roles)
+    profile = api.get_profile(user_roles=user.roles, user_id=user.username)
+    if profile != "manager":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Resource is forbidden"
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Resource is forbidden",
         )

@@ -17,7 +17,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header, Query, Request
 
 from .. import app
-from ..dependencies import has_manager_role_header
+from ..dependencies import role_has_manager_profile
 from .user import transformation_orders
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
-    dependencies=[Depends(has_manager_role_header)],
+    dependencies=[Depends(role_has_manager_profile)],
     responses={404: {"description": "Not found"}},
 )
 
