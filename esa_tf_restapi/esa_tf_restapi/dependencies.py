@@ -18,7 +18,7 @@ from fastapi import Header, HTTPException, status
 from . import api, auth
 
 
-async def has_manager_role_header(
+async def role_has_manager_profile(
     x_username: T.Optional[str] = Header(None), x_roles: str = Header(None)
 ):
     user = auth.get_user(x_username, x_roles)
@@ -26,7 +26,7 @@ async def has_manager_role_header(
     if profile != "manager":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Resource is forbidden for role profile {profile}:",
+            detail=f"Resource is forbidden for role profile {profile}",
         )
 
 
@@ -34,8 +34,9 @@ async def role_has_authorized_profile(
     x_username: T.Optional[str] = Header(None), x_roles: str = Header(None)
 ):
     user = auth.get_user(x_username, x_roles)
-    profile = api.get_authorization(user.roles, user_id=user.username)
+    profile = api.get_profile(user.roles, user_id=user.username)
     if profile not in ("manager", "user"):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Resource is forbidden"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Resource is forbidden for role profile {profile}",
         )
