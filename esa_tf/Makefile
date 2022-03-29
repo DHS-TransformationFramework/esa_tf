@@ -14,30 +14,37 @@ apihub:
 endef
 
 define ESA_TF_CONFIG
-# The keeping_period shall be an integer. It represents the minimum number of minutes from the
-# CompletedDate that a TransformationOrder will be kept in memory.
-keeping-period: 14400  # minutes
+# Mandatory
+# it is the minimum number of minutes from the CompletedDate
+# that a TransformationOrder will be kept in memory.
+# The keeping_period shall be an integer.
+keeping_period: 14400  # minutes
 
-# The list of workflows to be excluded
-excluded-workflows:
+# Optional, default empty list
+# The list of workflows id to be excluded
+excluded_workflows: []
 
-# enable authorization check
+# Optional, default true
+# it enables authorization check
 enable_authorization_check: true
 
-# enable quota configuration
+# Optional, default true
+# it enables quota configuration
 enable_quota_check: true
 
 # role configuration
 # - quota is maximum number of transformation orders in progress or queued per user
 # - profile can ben "manager" or "user"
 
-# default role configuration
+# Optional, default quota: 2, profile: user
+# Default role configuration
 default_role:
-    quota: 1
+    quota: 2
     profile: user
 
-# custom roles configuration
-roles:
+# Optional, default empty dictionary
+# Custom roles configuration
+# roles:
 #   <role>:
 #       quota: 1000
 #       profile: manager
