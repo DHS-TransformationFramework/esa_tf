@@ -1,4 +1,5 @@
 import typing as T
+from unittest import mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,91 +11,67 @@ from .test_models import register_workflows
 client = TestClient(app)
 
 
-@pytest.fixture()
-def workflows():
-    orig = api.get_workflows
+TRANSFORMATION_ORDER = {
+    "Id": "foo-bar-baz",
+    "SubmissionDate": "2021-11-24T15:11:38",
+    "InputProductReference": {
+        "Reference": "S2B_MSIL1C_20211109T110159_N0301_R094_T29QQB_20211109T114303.zip",
+        "DataSourceName": "scihub",
+    },
+    "WorkflowOptions": {"Aerosol_Type": "RURAL"},
+    "WorkflowId": "sen2cor_l1c_l2a",
+    "Status": "in_progress",
+}
 
-    def get_workflows():
-        return {"sen2cor_l1c_l2a": {}}
-
-    api.get_workflows = get_workflows
-    yield
-    api.get_workflows = orig
-
-
-@pytest.fixture()
-def workflow():
-    orig = api.get_workflow_by_id
-
-    def get_workflow_by_id(id):
-        if id == "sen2cor_l1c_l2a":
-            return {"Id": id}
-        raise KeyError(f"Cannot find {id}")
-
-    api.get_workflow_by_id = get_workflow_by_id
-    yield
-    api.get_workflow_by_id = orig
-
-
-@pytest.fixture()
-def to_payload():
-    orig = api.submit_workflow
-
-    def submit_workflow(id, **kwargs):
-        return {
-            "Id": "foo-bar-baz",
-            "SubmissionDate": "2021-11-24T15:11:38",
-            "InputProductReference": {
-                "Reference": "S2B_MSIL1C_20211109T110159_N0301_R094_T29QQB_20211109T114303.zip",
-                "DataSourceName": "scihub",
+WORKFLOWS = {
+    "workflow_1": {
+        "Name": "Workflow 1",
+        "WorkflowOptions": {
+            "Case 1": {"Type": "string", "Default": "foo", "Enum": ["foo", "bar"],},
+            "Case 2": {"Type": "boolean", "Default": False,},
+            "Case 3": {
+                "Type": "integer",
+                "Default": 331,
+                "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
             },
-            "WorkflowOptions": {"Aerosol_Type": "RURAL"},
-            "WorkflowId": "sen2cor_l1c_l2a",
-            "Status": "in_progress",
-        }
-
-    api.submit_workflow = submit_workflow
-    yield
-    api.submit_workflow = orig
+            "Case 4": {"Type": "integer", "Default": 331,},
+        },
+        "Id": "workflow_1",
+    }
+}
 
 
-@pytest.fixture()
-def tr_orders():
-    orig = api.get_transformation_orders
-
-    def get_transformation_orders(
-        filters: T.List[T.Tuple[str, str, str]] = [], uri_root=None, **kwargs
-    ):
-        entries = [
-            {"Id": "foo", "Status": "in_progress"},
-            {"Id": "bar", "Status": "completed"},
-        ]
-        for filter in filters:
-            name, _op, value = filter
-            if name == "Status":
-                entries = [e for e in entries if e[name] == value]
-        return entries
-
-    api.get_transformation_orders = get_transformation_orders
-    yield
-    api.get_transformation_orders = orig
+def get_transformation_order(id, uri_root=None, user_id=None):
+    if id == "foo":
+        return {"Id": id}
+    raise KeyError(f"Cannot find {id}")
 
 
-@pytest.fixture()
-def tr_order():
-    orig = api.get_transformation_order
-
-    def get_transformation_order(id, uri_root=None, user_id=None):
-        if id == "foo":
-            return {"Id": id}
-        raise KeyError(f"Cannot find {id}")
-
-    api.get_transformation_order = get_transformation_order
-    yield
-    api.get_transformation_order = orig
+def get_workflow_by_id(id):
+    if id == "sen2cor_l1c_l2a":
+        return {"Id": id}
+    raise KeyError(f"Cannot find {id}")
 
 
-def test_list_workflows(workflows):
+def get_transformation_orders(
+    filters: T.List[T.Tuple[str, str, str]] = [], uri_root=None, **kwargs
+):
+    entries = [
+        {"Id": "foo", "Status": "in_progress"},
+        {"Id": "bar", "Status": "completed"},
+    ]
+    for filter in filters:
+        name, _op, value = filter
+        if name == "Status":
+            entries = [e for e in entries if e[name] == value]
+    return entries
+
+
+@mock.patch(
+    "esa_tf_restapi.api.get_profile", return_value="user",
+)
+@mock.patch("esa_tf_restapi.api.get_workflows", return_value={"sen2cor_l1c_l2a": {}})
+def test_list_workflows(workflows, profile):
     response = client.get("/Workflows")
     assert response.status_code == 200
     result = response.json()
@@ -102,7 +79,11 @@ def test_list_workflows(workflows):
     assert result["value"][0]["Id"] == "sen2cor_l1c_l2a"
 
 
-def test_get_workflow(workflow):
+@mock.patch(
+    "esa_tf_restapi.api.get_profile", return_value="user",
+)
+@mock.patch("esa_tf_restapi.api.get_workflow_by_id", side_effect=get_workflow_by_id)
+def test_get_workflow(workflow, profile):
     response = client.get("/Workflows('sen2cor_l1c_l2a')")
     assert response.status_code == 200
     result = response.json()
@@ -111,7 +92,14 @@ def test_get_workflow(workflow):
     assert response.status_code == 404
 
 
-def test_list_tranformation_orders(tr_orders):
+@mock.patch(
+    "esa_tf_restapi.api.get_profile", return_value="user",
+)
+@mock.patch(
+    "esa_tf_restapi.api.get_transformation_orders",
+    side_effect=get_transformation_orders,
+)
+def test_list_tranformation_orders(tr_orders, profile):
     response = client.get("/TransformationOrders")
     assert response.status_code == 200
     result = response.json()
@@ -122,14 +110,27 @@ def test_list_tranformation_orders(tr_orders):
     assert len(result["value"]) == 1
 
 
-def test_list_tranformation_orders_count(tr_orders):
+@mock.patch(
+    "esa_tf_restapi.api.get_profile", return_value="user",
+)
+@mock.patch(
+    "esa_tf_restapi.api.get_transformation_orders",
+    side_effect=get_transformation_orders,
+)
+def test_list_tranformation_orders_count(tr_orders, profile):
     response = client.get("/TransformationOrders/$count")
     assert response.status_code == 200
     result = response.json()
     assert result == 2
 
 
-def test_get_tranformation_order(tr_order):
+@mock.patch(
+    "esa_tf_restapi.api.get_profile", return_value="user",
+)
+@mock.patch(
+    "esa_tf_restapi.api.get_transformation_order", side_effect=get_transformation_order
+)
+def test_get_tranformation_order(tr_order, profile):
     response = client.get("/TransformationOrders('foo')")
     assert response.status_code == 200
     result = response.json()
@@ -138,7 +139,16 @@ def test_get_tranformation_order(tr_order):
     assert response.status_code == 404
 
 
-def test_run_tranformation_order(to_payload, register_workflows):
+@mock.patch(
+    "esa_tf_restapi.api.get_profile", return_value="user",
+)
+@mock.patch(
+    "esa_tf_restapi.api.submit_workflow", return_value=TRANSFORMATION_ORDER,
+)
+@mock.patch(
+    "esa_tf_restapi.api.get_workflows", return_value=WORKFLOWS,
+)
+def test_run_tranformation_order(to_payload, register_workflows, profile):
     response = client.post(
         "/TransformationOrders",
         json={
