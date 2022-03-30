@@ -68,6 +68,27 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+class RequestError(Exception):
+    def __init__(self, user_id, message):
+        self.user_id = user_id
+        self.message = message
+        super().__init__(self.message)
+
+
+class ExceededQuota(Exception):
+    def __init__(self, user_id, message):
+        self.user_id = user_id
+        self.message = message
+        super().__init__(self.message)
+
+
+class ItemNotFound(Exception):
+    def __init__(self, user_id, message):
+        self.user_id = user_id
+        self.message = message
+        super().__init__(self.message)
+
+
 class Configuration(pydantic.BaseModel):
 
     keeping_period: int = 14400
@@ -82,7 +103,7 @@ class Configuration(pydantic.BaseModel):
 
 
 def check_products_consistency(
-    product_type, input_product_reference_name, workflow_id=None
+    product_type, input_product_reference_name, workflow_id=None, user_id=DEFAULT_USER
 ):
     """
     Check if the workflow product type is consistent with the product name.
@@ -100,10 +121,11 @@ def check_products_consistency(
         )
 
     if not re.match(exp, str(input_product_reference_name)):
-        raise ValueError(
+        raise RequestError(
+            user_id,
             f"input product name {input_product_reference_name!r} does not comply "
             f"to the naming convention for the {product_type!r} product type required by "
-            f"{workflow_id!r}"
+            f"{workflow_id!r}",
         )
 
 
@@ -143,7 +165,7 @@ def get_all_workflows(scheduler=None):
     return workflows
 
 
-def get_workflow_by_id(workflow_id, esa_tf_config=None):
+def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER):
     """
     Return the workflow configuration corresponding to the workflow_id.
     """
@@ -153,8 +175,9 @@ def get_workflow_by_id(workflow_id, esa_tf_config=None):
     try:
         workflow = workflows[workflow_id]
     except KeyError:
-        raise KeyError(
-            f"Workflow {workflow_id!r} not found, the available workflows are {list(workflows)!r}"
+        raise ItemNotFound(
+            user_id,
+            f"Workflow {workflow_id!r} not found, the available workflows are {list(workflows)!r}",
         )
     return workflow
 
@@ -188,7 +211,7 @@ def get_transformation_order_log(
         user_id=user_id, filter_by_user_id=filter_by_user_id
     )
     if order_id not in transformation_orders:
-        raise KeyError(f"Transformation Order {order_id!r} not found")
+        raise ItemNotFound(user_id, f"Transformation Order {order_id!r} not found")
     return transformation_orders[order_id].get_log()
 
 
@@ -200,11 +223,11 @@ def get_transformation_order(order_id, user_id=DEFAULT_USER, filter_by_user_id=T
         user_id=user_id, filter_by_user_id=filter_by_user_id
     )
     if order_id not in transformation_orders:
-        raise KeyError(f"Transformation Order {order_id!r} not found")
+        raise ItemNotFound(user_id, f"Transformation Order {order_id!r} not found")
     return transformation_orders[order_id].get_info()
 
 
-def check_filter_validity(filters):
+def check_filter_validity(filters, user_id=DEFAULT_USER):
     allowed_filters = {
         "Id": ("eq",),
         "SubmissionDate": ("le", "ge", "lt", "gt", "eq"),
@@ -215,21 +238,23 @@ def check_filter_validity(filters):
     }
     for key, op, value in filters:
         if key not in set(allowed_filters):
-            raise ValueError(
+            raise RequestError(
+                user_id,
                 f"{key!r} is not an allowed key, Transformation Orders can "
-                f"be filtered using only the following keys: {list(allowed_filters)}"
+                f"be filtered using only the following keys: {list(allowed_filters)}",
             )
         if op not in allowed_filters[key]:
-            raise ValueError(
+            raise RequestError(
+                user_id,
                 f"{op!r} is not an allowed operator for key {key!r}; "
-                f"the valid operators are: {allowed_filters[key]!r}"
+                f"the valid operators are: {allowed_filters[key]!r}",
             )
         if key in {"CompletedDate", "SubmissionDate"}:
             try:
                 datetime.fromisoformat(value)
             except ValueError:
-                raise ValueError(
-                    f"{key!r} is not a valid isoformat string: {value}"
+                raise RequestError(
+                    user_id, f"{key!r} is not a valid isoformat string: {value}"
                 )
 
 
@@ -301,7 +326,7 @@ def get_transformation_orders(
     :param bool filter_by_user_id: if True the transformation orders are filtered by the user_id
     """
     # check filters
-    check_filter_validity(filters)
+    check_filter_validity(filters, user_id=user_id)
     transformation_orders = queue.get_transformation_orders(
         filters=filters, user_id=user_id, filter_by_user_id=filter_by_user_id
     )
@@ -319,7 +344,9 @@ def extract_workflow_defaults(config_workflow_options):
     return default_options
 
 
-def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=None):
+def fill_with_defaults(
+    workflow_options, config_workflow_options, workflow_id=None, user_id=DEFAULT_USER
+):
     """
     Fill the missing workflow options with the defaults values declared in the plugin
     """
@@ -328,16 +355,17 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
 
     missing_options_values = set(config_workflow_options) - set(workflow_options)
     if len(missing_options_values):
-        raise ValueError(
+        raise RequestError(
+            user_id,
             f"the following missing options are mandatory for {workflow_id!r} Workflow:"
-            f"{list(missing_options_values)!r} "
+            f"{list(missing_options_values)!r} ",
         )
     return workflow_options
 
 
 def check_user_quota(user_id, user_roles=None, esa_tf_config=None):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
-    cap has been already reached, a RuntimeError is raised.
+    cap has been already reached, a ExceededQuota is raised.
 
     :param dict esa_tf_config: esa_tf configuration dictionary containing the quotas and the key enable_quota_check
     :param str user_id: user identifier
@@ -355,8 +383,9 @@ def check_user_quota(user_id, user_roles=None, esa_tf_config=None):
     user_cap = max(user_quotas)
     running_processes = queue.get_count_uncompleted_orders(user_id)
     if running_processes >= user_cap:
-        raise RuntimeError(
-            f"the user {user_id!r} has reached his quota: {running_processes!r} processes are running"
+        raise ExceededQuota(
+            user_id,
+            f"the user {user_id!r} has reached his quota: {running_processes!r} processes are running",
         )
 
 
@@ -372,7 +401,8 @@ def read_esa_tf_config():
         )
     with open(esa_tf_config_file) as file:
         esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
-    return Configuration(**esa_tf_config).dict()
+    esa_tf_configuration_object = Configuration(**esa_tf_config)
+    return esa_tf_configuration_object.dict()
 
 
 async def evict_orders(esa_tf_config=None):
@@ -419,21 +449,27 @@ def submit_workflow(
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
     esa_tf_config = read_esa_tf_config()
     asyncio.create_task(evict_orders(esa_tf_config=esa_tf_config))
-    check_user_quota(user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config)
+    check_user_quota(
+        user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config
+    )
     workflow = get_workflow_by_id(workflow_id, esa_tf_config=esa_tf_config)
 
     check_products_consistency(
         workflow["InputProductType"],
         input_product_reference["Reference"],
         workflow_id=workflow_id,
+        user_id=user_id,
     )
     workflow_options = fill_with_defaults(
-        workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
+        workflow_options,
+        workflow["WorkflowOptions"],
+        workflow_id=workflow_id,
+        user_id=user_id,
     )
     order_id = dask.base.tokenize(
         workflow_id, input_product_reference, workflow_options,
     )
-    logger.info(f"user: {user_id} - submitting transformation order {order_id!r}")
+    logger.info(f"user: {user_id!r} - submitting transformation order {order_id!r}")
     if order_id in queue.transformation_orders:
         transformation_order = queue.transformation_orders[order_id]
         transformation_order.resubmit()

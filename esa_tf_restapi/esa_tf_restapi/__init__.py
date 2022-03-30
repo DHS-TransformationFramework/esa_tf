@@ -15,7 +15,7 @@
 import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.responses import JSONResponse
 from odata_query.exceptions import ODataException
 
@@ -23,12 +23,36 @@ __version__ = "0.8.2"
 
 app = FastAPI(root_path=os.environ.get("ROOT_PATH", ""))
 
-from . import logger_setup, routes
+from . import api, logger_setup, routes
 
 logger_setup.logger_setup()
 
 
 @app.exception_handler(ODataException)
 async def validation_exception_handler(request, exc):
-    logging.exception("Invalid OData query")
+    logging.exception("Internal Server Error")
     return JSONResponse(content={"detail": "Invalid OData query"}, status_code=422,)
+
+
+@app.exception_handler(api.RequestError)
+async def validation_exception_handler(request, exc):
+    logging.exception(f"user: {exc.user_id!r}: invalid request")
+    return JSONResponse(content={"detail": str(exc)}, status_code=422,)
+
+
+@app.exception_handler(api.ItemNotFound)
+async def validation_exception_handler(request, exc):
+    logging.exception(f"user: {exc.user_id!r}: item not found")
+    return JSONResponse(content={"detail": str(exc)}, status_code=404,)
+
+
+@app.exception_handler(api.ExceededQuota)
+async def validation_exception_handler(request, exc):
+    logging.exception(f"user: {exc.user_id!r}: exceeded user quota")
+    return JSONResponse(content={"detail": str(exc)}, status_code=429,)
+
+
+@app.exception_handler(Exception)
+async def validation_exception_handler(request, exc):
+    logging.exception("internal server error")
+    return JSONResponse(content={"detail": "internal server error"}, status_code=500,)
