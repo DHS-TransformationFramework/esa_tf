@@ -68,6 +68,10 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+class ConfigurationError(Exception):
+    pass
+
+
 class RequestError(Exception):
     def __init__(self, user_id, message):
         self.user_id = user_id
@@ -395,13 +399,16 @@ def read_esa_tf_config():
     """
     esa_tf_config_file = os.getenv("ESA_TF_CONFIG_FILE", "./esa_tf.config")
     if not os.path.isfile(esa_tf_config_file):
-        raise ValueError(
+        raise FileNotFoundError(
             f"{esa_tf_config_file!r} not found, please define the correct path "
             f"using the environment variable ESA_TF_CONFIG_FILE"
         )
     with open(esa_tf_config_file) as file:
         esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
-    esa_tf_configuration_object = Configuration(**esa_tf_config)
+    try:
+        esa_tf_configuration_object = Configuration(**esa_tf_config)
+    except ValueError as exc:
+        raise ConfigurationError(f"invalid configuration file esa_tf.config: {exc!r}") from exc
     return esa_tf_configuration_object.dict()
 
 
