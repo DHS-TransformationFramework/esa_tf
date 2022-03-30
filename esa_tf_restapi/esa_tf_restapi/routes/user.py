@@ -32,9 +32,7 @@ async def index():
 
 @app.get("/Workflows")
 async def workflows(
-    request: Request,
-    x_username: Optional[str] = Header(None),
-    x_roles: Optional[str] = Header(None),
+    x_username: Optional[str] = Header(None), x_roles: Optional[str] = Header(None),
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
