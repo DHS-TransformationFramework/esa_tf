@@ -144,13 +144,13 @@ def get_all_workflows(scheduler=None):
     return workflows
 
 
-def get_workflow_by_id(workflow_id):
+def get_workflow_by_id(workflow_id, esa_tf_config=None):
     """
     Return the workflow configuration corresponding to the workflow_id.
     """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
-    workflows = get_workflows()
+    workflows = get_workflows(esa_tf_config=esa_tf_config)
     try:
         workflow = workflows[workflow_id]
     except KeyError:
@@ -160,12 +160,13 @@ def get_workflow_by_id(workflow_id):
     return workflow
 
 
-def get_workflows(product_type=None):
+def get_workflows(product_type=None, esa_tf_config=None):
     """
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
     """
-    esa_tf_config = read_esa_tf_config()
+    if esa_tf_config is None:
+        esa_tf_config = read_esa_tf_config()
     excluded_workflows = esa_tf_config["excluded_workflows"]
     workflows = {}
     for workflow_id, workflow in get_all_workflows().items():
@@ -224,13 +225,20 @@ def check_filter_validity(filters):
                 f"{op!r} is not an allowed operator for key {key!r}; "
                 f"the valid operators are: {allowed_filters[key]!r}"
             )
+        if key in {"CompletedDate", "SubmissionDate"}:
+            try:
+                datetime.fromisoformat(value)
+            except ValueError:
+                raise ValueError(
+                    f"{key!r} is not a valid isoformat string: {value}"
+                )
 
 
 def extract_roles_key(
     esa_tf_config, user_roles=[], key="profile", user_id=DEFAULT_USER
 ):
     """Return the profiles associated with the user's roles input list.
-    :param dict roles_config: role configuration_dictionary
+    :param dict esa_tf_config: esa_tf configuration dictionary
     :param list user_roles: user roles
     :param str key: it can be "profile" or "quota"
     :param str user_id: user ID
@@ -295,35 +303,10 @@ def get_transformation_orders(
     """
     # check filters
     check_filter_validity(filters)
-
     transformation_orders = queue.get_transformation_orders(
-        user_id=user_id, filter_by_user_id=filter_by_user_id
+        filters=filters, user_id=user_id, filter_by_user_id=filter_by_user_id
     )
-    valid_orders_info = []
-    for order_id, order in transformation_orders.items():
-        order_info = queue.transformation_orders[order_id].get_info()
-        add_order = True
-        for key, op, value in filters:
-            if key == "CompletedDate" and "CompletedDate" not in order_info:
-                add_order = False
-                continue
-            op = getattr(operator, op)
-            if key == "InputProductReference":
-                order_value = order_info["InputProductReference"]["Reference"]
-            else:
-                order_value = order_info[key]
-            if key in {"CompletedDate", "SubmissionDate"}:
-                order_value = datetime.fromisoformat(order_value)
-                try:
-                    value = datetime.fromisoformat(value)
-                except ValueError:
-                    raise ValueError(
-                        f"{key!r} is not a valid isoformat string: {value}"
-                    )
-            add_order = add_order and op(order_value, value)
-        if add_order:
-            valid_orders_info.append(order_info)
-    return valid_orders_info
+    return transformation_orders
 
 
 def extract_workflow_defaults(config_workflow_options):
@@ -353,15 +336,17 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
     return workflow_options
 
 
-def check_user_quota(user_id, user_roles=None):
+def check_user_quota(user_id, user_roles=None, esa_tf_config=None):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
     cap has been already reached, a RuntimeError is raised.
 
+    :param dict esa_tf_config: esa_tf configuration dictionary containing the quotas and the key enable_quota_check
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
     :return:
     """
-    esa_tf_config = read_esa_tf_config()
+    if esa_tf_config is None:
+        esa_tf_config = read_esa_tf_config()
     if not esa_tf_config["enable_quota_check"]:
         return
 
@@ -391,22 +376,23 @@ def read_esa_tf_config():
     return Configuration(**esa_tf_config).dict()
 
 
-async def evict_orders():
+async def evict_orders(esa_tf_config=None):
     """Evict orders from the queue according to a
     configurable keeping period parameter. The keeping period parameter is based on the CompletedDate
     (i.e. the datetime when the output product of a TransformationOrders is available in the
     staging area). The keeping period parameter is expressed in minutes and is defined in the
     esa_tf.config file.
 
-    :param str esa_tf_config_file: full path to the `esa_tf.config` file
+    :param dict esa_tf_config: esa_tf configuration dictionary containing key keeping_period
+
     :return:
     """
     # if the "esa_tf_config_file" configuration file has been changed in the amount of time
     # specified by the "FILE_MODIFICATION_INTERVAL" constant value, then the cache is cleared
-    esa_config = read_esa_tf_config()
-    keeping_period = esa_config["keeping_period"]
+    if esa_tf_config is None:
+        esa_tf_config = read_esa_tf_config()
+    keeping_period = esa_tf_config["keeping_period"]
     queue.remove_old_orders(keeping_period)
-    return keeping_period
 
 
 def submit_workflow(
@@ -432,9 +418,11 @@ def submit_workflow(
     of the environment variable "HUBS_CREDENTIALS_FILE"
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
-    asyncio.create_task(evict_orders())
-    check_user_quota(user_id, user_roles)
-    workflow = get_workflow_by_id(workflow_id)
+    esa_tf_config = read_esa_tf_config()
+    asyncio.create_task(evict_orders(esa_tf_config=esa_tf_config))
+    check_user_quota(user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config)
+    workflow = get_workflow_by_id(workflow_id, esa_tf_config=esa_tf_config)
+
     check_products_consistency(
         workflow["InputProductType"],
         input_product_reference["Reference"],
