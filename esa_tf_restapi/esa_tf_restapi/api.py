@@ -8,6 +8,7 @@ import typing as T
 from datetime import datetime
 
 import dask.distributed
+import pydantic
 import yaml
 
 from .auth import DEFAULT_USER
@@ -66,6 +67,19 @@ SENTINEL1 = [
 ]
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
+
+
+class Configuration(pydantic.BaseModel):
+
+    keeping_period: int = 14400
+    excluded_workflows: T.List[str] = []
+    enable_authorization_check: bool = True
+    enable_quota_check: bool = True
+    default_role: T.TypedDict("Role", quota=int, profile=str) = {
+        "quota": 1,
+        "profile": "user",
+    }
+    roles: T.Dict[str, T.TypedDict("Role", quota=int, profile=str)] = {}
 
 
 def check_products_consistency(
@@ -136,7 +150,7 @@ def get_workflow_by_id(workflow_id):
     """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
-    workflows = get_all_workflows()
+    workflows = get_workflows()
     try:
         workflow = workflows[workflow_id]
     except KeyError:
@@ -151,7 +165,13 @@ def get_workflows(product_type=None):
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
     """
-    workflows = get_all_workflows()
+    esa_tf_config = read_esa_tf_config()
+    excluded_workflows = esa_tf_config["excluded_workflows"]
+    workflows = {}
+    for workflow_id, workflow in get_all_workflows().items():
+        if workflow_id not in excluded_workflows:
+            workflows[workflow_id] = workflow
+
     if product_type:
         filtered_workflows = {}
         for name in workflows:
@@ -216,7 +236,7 @@ def extract_roles_key(
     :param str user_id: user ID
     :return set:
     """
-    roles_config = esa_tf_config["roles"]
+    roles_config = esa_tf_config.get("roles", {})
     default_role = esa_tf_config["default_role"]
 
     if not user_roles:
@@ -226,6 +246,7 @@ def extract_roles_key(
         return [default_role[key]]
 
     values = []
+
     for user_role in user_roles:
         value = roles_config.get(user_role, {}).get(key)
         if value is None:
@@ -246,7 +267,7 @@ def extract_roles_key(
 
 def get_profile(user_roles: list = [], user_id=DEFAULT_USER):
     esa_tf_config = read_esa_tf_config()
-    if not esa_tf_config.get("enable_authorization_check", True):
+    if not esa_tf_config["enable_authorization_check"]:
         return "manager"
 
     user_profiles = extract_roles_key(
@@ -341,7 +362,7 @@ def check_user_quota(user_id, user_roles=None):
     :return:
     """
     esa_tf_config = read_esa_tf_config()
-    if not esa_tf_config.get("enable_quota_check", True):
+    if not esa_tf_config["enable_quota_check"]:
         return
 
     user_quotas = extract_roles_key(
@@ -367,7 +388,7 @@ def read_esa_tf_config():
         )
     with open(esa_tf_config_file) as file:
         esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
-    return esa_tf_config
+    return Configuration(**esa_tf_config).dict()
 
 
 async def evict_orders():
@@ -383,7 +404,7 @@ async def evict_orders():
     # if the "esa_tf_config_file" configuration file has been changed in the amount of time
     # specified by the "FILE_MODIFICATION_INTERVAL" constant value, then the cache is cleared
     esa_config = read_esa_tf_config()
-    keeping_period = esa_config.get("keeping-period")
+    keeping_period = esa_config["keeping_period"]
     queue.remove_old_orders(keeping_period)
     return keeping_period
 
