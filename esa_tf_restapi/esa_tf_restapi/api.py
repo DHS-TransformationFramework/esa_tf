@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import logging
-import operator
 import os
 import re
 import typing as T
