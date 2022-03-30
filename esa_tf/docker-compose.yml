@@ -29,11 +29,14 @@ services:
             - "${DATA_DIR:-./data}:/data"
             - "${OUTPUT_DIR:-./output}:/output"
             - "${CONFIG_DIR:-./config}:/config"
+            - "${PLUGINS_DIR:-./plugins}:/plugins"
         environment:
             - HUBS_CREDENTIALS_FILE=/config/hubs_credentials.yaml
             - OUTPUT_DIR=/output
             - OUTPUT_OWNER_ID=${OUTPUT_OWNER_ID:-0}
-        command: make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"
+        command: >
+          sh -c 'pip install /plugins/* &&
+                 make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"'
 
     esa_tf_proxy:
         image: nginx:1.21.6
