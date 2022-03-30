@@ -408,7 +408,9 @@ def read_esa_tf_config():
     try:
         esa_tf_configuration_object = Configuration(**esa_tf_config)
     except ValueError as exc:
-        raise ConfigurationError(f"invalid configuration file esa_tf.config: {exc!r}") from exc
+        raise ConfigurationError(
+            f"invalid configuration file esa_tf.config: {exc!r}"
+        ) from exc
     return esa_tf_configuration_object.dict()
 
 
