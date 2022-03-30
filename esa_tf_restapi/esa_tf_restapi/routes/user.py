@@ -54,7 +54,7 @@ async def workflow(
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
-    logger.info(f"user: {user_id} - required the configuration about '{id}' workflow")
+    logger.info(f"user: {user.username} - required the configuration about '{id}' workflow")
     data = api.get_workflow_by_id(id, user_id=user_id)
     base = request.url_for("workflows")
     return {
@@ -80,13 +80,10 @@ async def transformation_orders(
     filter_by_user_id: bool = True,
 ):
     user = get_user(x_username, x_roles)
-    user_id = user.username if user else DEFAULT_USER
-    user_roles = user.roles if user_id != DEFAULT_USER else []
-    # user_id = user.username if user else None
     odata_params = parse_qs(filter=rawfilter)
     filters = [(f.name, f.operator, f.value) for f in odata_params.filter]
     if not count:
-        msg = f"user: {user_id} - required the transformation orders list"
+        msg = f"user: {user.username} - required the transformation orders list"
         msg_filter = ""
         if filters:
             msg_filter = (
@@ -94,7 +91,7 @@ async def transformation_orders(
             )
         logger.info(msg + msg_filter)
     data = api.get_transformation_orders(
-        filters, user_id=user_id, filter_by_user_id=filter_by_user_id
+        filters, user_id=user.username, filter_by_user_id=filter_by_user_id
     )
     return {
         **({"odata.count": len(data)} if count else {}),
@@ -109,8 +106,7 @@ async def transformation_orders_count(
     x_roles: Optional[str] = Header(None),
 ):
     user = get_user(x_username, x_roles)
-    user_id = user.username if user else DEFAULT_USER
-    logger.info(f"user: {user_id} - required the transformation orders count")
+    logger.info(f"user: {user.username} - required the transformation orders count")
     results = await transformation_orders(
         rawfilter=None, count=True, x_username=x_username, x_roles=x_roles
     )
@@ -176,7 +172,6 @@ async def transformation_order_create(
     uri_root = request.url_for("index")
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
-    running_transformation = None
     running_transformation = api.submit_workflow(
         data.workflow_id,
         input_product_reference=data.product_reference.dict(
