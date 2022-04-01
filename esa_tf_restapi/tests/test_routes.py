@@ -43,13 +43,13 @@ WORKFLOWS = {
 def get_transformation_order(id, uri_root=None, user_id=None):
     if id == "foo":
         return {"Id": id}
-    raise KeyError(f"Cannot find {id}")
+    raise api.ItemNotFound(user_id, f"Cannot find {id}")
 
 
-def get_workflow_by_id(id):
+def get_workflow_by_id(id, user_id):
     if id == "sen2cor_l1c_l2a":
         return {"Id": id}
-    raise KeyError(f"Cannot find {id}")
+    raise api.ItemNotFound(user_id, f"Cannot find {id}")
 
 
 def get_transformation_orders(

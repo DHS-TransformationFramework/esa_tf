@@ -1,4 +1,5 @@
 import logging
+import operator
 import os
 from datetime import datetime
 
@@ -175,7 +176,9 @@ class Queue(object):
             running_processes += order_status in ("in_progress", "queued")
         return running_processes
 
-    def get_transformation_orders(self, user_id=DEFAULT_USER, filter_by_user_id=True):
+    def get_transformation_orders(
+        self, filters=[], user_id=DEFAULT_USER, filter_by_user_id=True,
+    ):
         if not filter_by_user_id:
             transformation_orders = self.transformation_orders.copy()
         else:
@@ -183,4 +186,25 @@ class Queue(object):
                 order_id: self.transformation_orders[order_id]
                 for order_id in self.user_to_orders.get(user_id, [])
             }
-        return transformation_orders
+
+        valid_orders_info = []
+        for order_id, order in transformation_orders.items():
+            order_info = self.transformation_orders[order_id].get_info()
+            add_order = True
+            for key, op, value in filters:
+                if key == "CompletedDate" and "CompletedDate" not in order_info:
+                    add_order = False
+                    continue
+                op = getattr(operator, op)
+                if key == "InputProductReference":
+                    order_value = order_info["InputProductReference"]["Reference"]
+                else:
+                    order_value = order_info[key]
+                if key in {"CompletedDate", "SubmissionDate"}:
+                    order_value = datetime.fromisoformat(order_value)
+                    value = datetime.fromisoformat(value)
+                add_order = add_order and op(order_value, value)
+            if add_order:
+                valid_orders_info.append(order_info)
+
+        return valid_orders_info
