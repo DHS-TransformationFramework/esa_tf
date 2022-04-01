@@ -30,7 +30,7 @@ logger_setup.logger_setup()
 
 @app.exception_handler(ODataException)
 async def validation_exception_handler(request, exc):
-    logging.exception("Internal Server Error")
+    logging.exception("Invalid OData query")
     return JSONResponse(content={"detail": "Invalid OData query"}, status_code=422,)
 
 
