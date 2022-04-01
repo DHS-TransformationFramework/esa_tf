@@ -35,19 +35,19 @@ async def validation_exception_handler(request, exc):
 
 
 @app.exception_handler(api.RequestError)
-async def validation_exception_handler(request, exc):
+async def request_exception_handler(request, exc):
     logging.exception(f"user: {exc.user_id!r}: invalid request")
     return JSONResponse(content={"detail": str(exc)}, status_code=422,)
 
 
 @app.exception_handler(api.ItemNotFound)
-async def validation_exception_handler(request, exc):
+async def key_exception_handler(request, exc):
     logging.exception(f"user: {exc.user_id!r}: item not found")
     return JSONResponse(content={"detail": str(exc)}, status_code=404,)
 
 
 @app.exception_handler(api.ExceededQuota)
-async def validation_exception_handler(request, exc):
+async def quota_exception_handler(request, exc):
     logging.exception(f"user: {exc.user_id!r}: exceeded user quota")
     return JSONResponse(content={"detail": str(exc)}, status_code=429,)
 
