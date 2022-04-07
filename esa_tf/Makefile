@@ -76,6 +76,11 @@ config/esa_tf.config:
 
 setup: config/esa_tf.config
 
+plugins:
+	mkdir $@
+
+setup: plugins
+
 build: setup
 	make -C ../esa_tf_restapi image
 	make -C ../esa_tf_platform image
