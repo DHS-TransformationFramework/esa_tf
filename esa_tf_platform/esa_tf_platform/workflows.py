@@ -444,6 +444,7 @@ def run_workflow(
     os.makedirs(output_order_dir, exist_ok=True)
     output_zip_file = zip_product(output, output_order_dir)
     shutil.chown(output_zip_file, user=output_owner)
+    shutil.chown(output_order_dir, user=output_owner)
 
     # delete workflow processing dir
     shutil.rmtree(processing_dir, ignore_errors=True)
