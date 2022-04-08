@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.8.2"
+__version__ = "0.9"
 
 from .logger_setup import logger_setup
 from .workflows import get_all_workflows, run_workflow
