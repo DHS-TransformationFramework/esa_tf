@@ -190,6 +190,7 @@ class Queue(object):
 
         valid_orders = {}
         for order_id, order in transformation_orders.items():
+            order_info = self.transformation_orders[order_id].get_info()
             add_order = True
             for key, op, value in filters:
                 if key == "CompletedDate" and "CompletedDate" not in order_info:
