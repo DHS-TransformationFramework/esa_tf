@@ -9,6 +9,7 @@ STATUS_DASK_TO_API = {
     "pending": "in_progress",
     "finished": "completed",
     "error": "failed",
+    "lost": "failed",
 }
 
 logger = logging.getLogger(__name__)
@@ -61,16 +62,16 @@ class TransformationOrder(object):
         transformation_order.uri_root = uri_root
         return transformation_order
 
-    def resubmit(self, resubmit_if_failed=False):
-        if not resubmit_if_failed or self.future.status == "error":
+    def resubmit(self):
+        if self.get_status() == "failed":
             self.clean_completed_info()
             self._info["SubmissionDate"] = datetime.now().isoformat()
-            self.client.retry(self.future)
+            self.future.retry()
             self.future.add_done_callback(self.add_completed_info)
 
     def add_completed_info(self, future):
         self._info["CompletedDate"] = datetime.now().isoformat()
-        self._info["Status"] = STATUS_DASK_TO_API[self.future.status]
+        self._info["Status"] = STATUS_DASK_TO_API.get(self.future.status, self.future.status)
         if self.future.status == "finished":
             basepath, reference = os.path.split(self.future.result())
             uri_root = self.uri_root or ""
@@ -99,7 +100,7 @@ class TransformationOrder(object):
 
     def update_status(self):
         # Note: the future must be extracted from the original order. The deepcopy breaks the future
-        self._info["Status"] = STATUS_DASK_TO_API[self.future.status]
+        self._info["Status"] = STATUS_DASK_TO_API.get(self.future.status, self.future.status)
 
     def get_status(self):
         self.update_status()
@@ -187,9 +188,8 @@ class Queue(object):
                 for order_id in self.user_to_orders.get(user_id, [])
             }
 
-        valid_orders_info = []
+        valid_orders = {}
         for order_id, order in transformation_orders.items():
-            order_info = self.transformation_orders[order_id].get_info()
             add_order = True
             for key, op, value in filters:
                 if key == "CompletedDate" and "CompletedDate" not in order_info:
@@ -205,6 +205,6 @@ class Queue(object):
                     value = datetime.fromisoformat(value)
                 add_order = add_order and op(order_value, value)
             if add_order:
-                valid_orders_info.append(order_info)
+                valid_orders[order_id] = order
 
-        return valid_orders_info
+        return valid_orders

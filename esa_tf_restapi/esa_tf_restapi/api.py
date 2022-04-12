@@ -334,7 +334,7 @@ def get_transformation_orders(
     transformation_orders = queue.get_transformation_orders(
         filters=filters, user_id=user_id, filter_by_user_id=filter_by_user_id
     )
-    return transformation_orders
+    return [order.get_info() for order in transformation_orders.values()]
 
 
 def extract_workflow_defaults(config_workflow_options):
