@@ -370,6 +370,7 @@ def run_workflow(
     output_dir=None,
     hubs_credentials_file=None,
     output_owner=-1,
+    output_group_owner=-1,
 ):
     """
     Run the workflow defined by 'workflow_id':
@@ -384,6 +385,8 @@ def run_workflow(
     :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
     :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
+    :param int output_owner: id of output files owner.
+    :param int output_group_owner: id of output files group owner.
     """
     # define create directories
     try:
