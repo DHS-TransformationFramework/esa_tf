@@ -78,7 +78,7 @@ class TransformationOrder(object):
             self._info["OutputProductReference"] = [
                 {
                     "Reference": reference,
-                    "DownloadURI": f"{uri_root}download/{reference}/{basepath}",
+                    "DownloadURI": f"{uri_root}download/{basepath}/{reference}",
                 }
             ]
 
