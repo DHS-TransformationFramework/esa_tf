@@ -370,6 +370,7 @@ def run_workflow(
     output_dir=None,
     hubs_credentials_file=None,
     output_owner=-1,
+    output_group_owner=-1,
 ):
     """
     Run the workflow defined by 'workflow_id':
@@ -384,6 +385,8 @@ def run_workflow(
     :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
     :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
+    :param int output_owner: id of output files owner.
+    :param int output_group_owner: id of output files group owner.
     """
     # define create directories
     try:
@@ -398,6 +401,8 @@ def run_workflow(
         output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
     if output_owner == -1:
         output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
+    if output_group_owner == -1:
+        output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
     if hubs_credentials_file is None:
         hubs_credentials_file = os.getenv(
             "HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml"
@@ -443,8 +448,8 @@ def run_workflow(
     output_order_dir = os.path.join(output_dir, order_id)
     os.makedirs(output_order_dir, exist_ok=True)
     output_zip_file = zip_product(output, output_order_dir)
-    shutil.chown(output_zip_file, user=output_owner)
-    shutil.chown(output_order_dir, user=output_owner)
+    shutil.chown(output_zip_file, user=output_owner, group=output_group_owner)
+    shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
 
     # delete workflow processing dir
     shutil.rmtree(processing_dir, ignore_errors=True)
