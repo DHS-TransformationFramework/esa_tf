@@ -13,20 +13,41 @@ apihub:
   password: my-apihub-password
 endef
 
-define USERS_QUOTA
-# this is the default role if no specific role is associated to a given user. Please, change only
-# the "submit_limit" value, do not change the role name "general_tf_role"
-default_esa_tf_role:
-  submit_limit: 10
-endef
-
 define ESA_TF_CONFIG
-# The keeping_period shall be an integer. It represents the minimum number of minutes from the
-# CompletedDate that a TransformationOrder will be kept in memory.
-keeping-period: 14400  # minutes
+# Mandatory
+# it is the minimum number of minutes from the CompletedDate
+# that a TransformationOrder will be kept in memory.
+# The keeping_period shall be an integer.
+keeping_period: 14400  # minutes
 
-# The list of workflows to be excluded
-exclude-workflow:
+# Optional, default empty list
+# The list of workflows id to be excluded
+excluded_workflows: []
+
+# Optional, default true
+# it enables authorization check
+enable_authorization_check: true
+
+# Optional, default true
+# it enables quota configuration
+enable_quota_check: true
+
+# role configuration
+# - quota is maximum number of transformation orders in progress or queued per user
+# - profile can ben "manager" or "user"
+
+# Optional, default quota: 2, profile: user
+# Default role configuration
+default_role:
+    quota: 2
+    profile: user
+
+# Optional, default empty dictionary
+# Custom roles configuration
+# roles:
+#   <role>:
+#       quota: 1000
+#       profile: manager
 endef
 
 # default target
@@ -49,17 +70,16 @@ config/hubs_credentials.yaml:
 
 setup: config/hubs_credentials.yaml
 
-export USERS_QUOTA
-config/users_quota.yaml:
-	echo "$$USERS_QUOTA" > $@
-
-setup: config/users_quota.yaml
-
 export ESA_TF_CONFIG
 config/esa_tf.config:
 	echo "$$ESA_TF_CONFIG" > $@
 
 setup: config/esa_tf.config
+
+plugins:
+	mkdir $@
+
+setup: plugins
 
 build: setup
 	make -C ../esa_tf_restapi image

@@ -101,7 +101,7 @@ def test_check_products_consistency_wrong_product(
     product_type, input_product_reference_name
 ):
 
-    with pytest.raises(ValueError, match=r"input product name"):
+    with pytest.raises(esa_tf_restapi.api.RequestError, match=r"input product name"):
         esa_tf_restapi.api.check_products_consistency(
             product_type, input_product_reference_name, workflow_id="sen2cor_l1c_l2a"
         )
@@ -155,7 +155,7 @@ def test_fill_with_defaults():
 def test_error_fill_with_defaults():
 
     workflow_options = {"Name3": False}
-    with pytest.raises(ValueError, match=r"missing options"):
+    with pytest.raises(esa_tf_restapi.api.RequestError, match=r"missing options"):
         esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
 
 
@@ -210,12 +210,12 @@ def test_get_transformation_orders(function):
     )
     assert set([order["Id"] for order in orders]) == {"Id5"}
 
-    with pytest.raises(ValueError, match=r"allowed key"):
+    with pytest.raises(esa_tf_restapi.api.RequestError, match=r"allowed key"):
         esa_tf_restapi.api.get_transformation_orders(
             {("WrongKey", "op", "value"),}
         )
 
-    with pytest.raises(ValueError, match=r"allowed operator"):
+    with pytest.raises(esa_tf_restapi.api.RequestError, match=r"allowed operator"):
         esa_tf_restapi.api.get_transformation_orders(
             {("Status", "le", "value"),}
         )
@@ -223,8 +223,8 @@ def test_get_transformation_orders(function):
 
 def test_check_filter_validity():
 
-    with pytest.raises(ValueError, match=r"allowed key"):
+    with pytest.raises(esa_tf_restapi.api.RequestError, match=r"allowed key"):
         esa_tf_restapi.api.check_filter_validity([("WrongKey", "op", "value")])
 
-    with pytest.raises(ValueError, match=r"allowed operator"):
+    with pytest.raises(esa_tf_restapi.api.RequestError, match=r"allowed operator"):
         esa_tf_restapi.api.check_filter_validity([("Status", "le", "value")])

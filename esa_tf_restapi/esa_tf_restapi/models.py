@@ -48,7 +48,11 @@ class TranformationOrder(BaseModel):
 
     @validator("workflow_options")
     def validate_wf_options(cls, v, values):
-        workflows = api.get_workflows()
+        try:
+            workflows = api.get_workflows()
+        except ValueError as exc:
+            # This is needed because we don't want to capture internal pydantic exceptions
+            raise Exception(exc.args[0]) from exc
         workflow_id = values.get("workflow_id")
         # workflow id check has been done previously
         # if workflow_id is None there is no point in checking the workflow options.

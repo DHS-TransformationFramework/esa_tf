@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from odata_query.ast import And, BoolOp, Eq, Gt, GtE, Lt, LtE, Or
+from odata_query.ast import And, BoolOp
 from odata_query.grammar import ODataLexer, ODataParser
 
 ODataParams = namedtuple("OData", ["filter", "count"], defaults=[[], False])

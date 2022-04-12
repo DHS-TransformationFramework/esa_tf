@@ -11,10 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing as T
 
-__version__ = "0.9"
+from fastapi import Header, HTTPException, status
 
-from .logger_setup import logger_setup
-from .workflows import get_all_workflows, run_workflow
+from . import api, auth
 
-logger_setup()
+
+async def role_has_manager_profile(
+    x_username: T.Optional[str] = Header(None), x_roles: str = Header(None)
+):
+    user = auth.get_user(x_username, x_roles)
+    profile = api.get_profile(user_roles=user.roles, user_id=user.username)
+    if profile != "manager":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Resource is forbidden",
+        )

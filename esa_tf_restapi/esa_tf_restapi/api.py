@@ -1,13 +1,13 @@
 import asyncio
 import functools
 import logging
-import operator
 import os
 import re
 import typing as T
 from datetime import datetime
 
 import dask.distributed
+import pydantic
 import yaml
 
 from .auth import DEFAULT_USER
@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 queue = Queue()
 CLIENT = None
-DEFAULT_ESA_TF_ROLE = "default_esa_tf_role"
 FILE_MODIFICATION_INTERVAL = 86400  # sec
 
 SENTINEL1 = [
@@ -69,8 +68,46 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+class ConfigurationError(Exception):
+    pass
+
+
+class RequestError(Exception):
+    def __init__(self, user_id, message):
+        self.user_id = user_id
+        self.message = message
+        super().__init__(self.message)
+
+
+class ExceededQuota(Exception):
+    def __init__(self, user_id, message):
+        self.user_id = user_id
+        self.message = message
+        super().__init__(self.message)
+
+
+class ItemNotFound(Exception):
+    def __init__(self, user_id, message):
+        self.user_id = user_id
+        self.message = message
+        super().__init__(self.message)
+
+
+class Configuration(pydantic.BaseModel):
+
+    keeping_period: int = 14400
+    excluded_workflows: T.List[str] = []
+    enable_authorization_check: bool = True
+    enable_quota_check: bool = True
+    default_role: T.TypedDict("Role", quota=int, profile=str) = {
+        "quota": 1,
+        "profile": "user",
+    }
+    roles: T.Dict[str, T.TypedDict("Role", quota=int, profile=str)] = {}
+
+
 def check_products_consistency(
-    product_type, input_product_reference_name, workflow_id=None
+    product_type, input_product_reference_name, workflow_id=None, user_id=DEFAULT_USER
 ):
     """
     Check if the workflow product type is consistent with the product name.
@@ -88,10 +125,11 @@ def check_products_consistency(
         )
 
     if not re.match(exp, str(input_product_reference_name)):
-        raise ValueError(
+        raise RequestError(
+            user_id,
             f"input product name {input_product_reference_name!r} does not comply "
             f"to the naming convention for the {product_type!r} product type required by "
-            f"{workflow_id!r}"
+            f"{workflow_id!r}",
         )
 
 
@@ -131,28 +169,36 @@ def get_all_workflows(scheduler=None):
     return workflows
 
 
-def get_workflow_by_id(workflow_id):
+def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER):
     """
     Return the workflow configuration corresponding to the workflow_id.
     """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
-    workflows = get_all_workflows()
+    workflows = get_workflows(esa_tf_config=esa_tf_config)
     try:
         workflow = workflows[workflow_id]
     except KeyError:
-        raise KeyError(
-            f"Workflow {workflow_id!r} not found, the available workflows are {list(workflows)!r}"
+        raise ItemNotFound(
+            user_id,
+            f"Workflow {workflow_id!r} not found, the available workflows are {list(workflows)!r}",
         )
     return workflow
 
 
-def get_workflows(product_type=None):
+def get_workflows(product_type=None, esa_tf_config=None):
     """
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
     """
-    workflows = get_all_workflows()
+    if esa_tf_config is None:
+        esa_tf_config = read_esa_tf_config()
+    excluded_workflows = esa_tf_config["excluded_workflows"]
+    workflows = {}
+    for workflow_id, workflow in get_all_workflows().items():
+        if workflow_id not in excluded_workflows:
+            workflows[workflow_id] = workflow
+
     if product_type:
         filtered_workflows = {}
         for name in workflows:
@@ -162,22 +208,30 @@ def get_workflows(product_type=None):
     return workflows
 
 
-def get_transformation_order_log(order_id):
-    if order_id not in queue.transformation_orders:
-        raise KeyError(f"Transformation Order {order_id!r} not found")
-    return queue.transformation_orders[order_id].get_log()
+def get_transformation_order_log(
+    order_id, user_id=DEFAULT_USER, filter_by_user_id=True
+):
+    transformation_orders = queue.get_transformation_orders(
+        user_id=user_id, filter_by_user_id=filter_by_user_id
+    )
+    if order_id not in transformation_orders:
+        raise ItemNotFound(user_id, f"Transformation Order {order_id!r} not found")
+    return transformation_orders[order_id].get_log()
 
 
-def get_transformation_order(order_id):
+def get_transformation_order(order_id, user_id=DEFAULT_USER, filter_by_user_id=True):
     """
     Return the transformation order corresponding to the order_id
     """
-    if order_id not in queue.transformation_orders:
-        raise KeyError(f"Transformation Order {order_id!r} not found")
-    return queue.transformation_orders[order_id].get_info()
+    transformation_orders = queue.get_transformation_orders(
+        user_id=user_id, filter_by_user_id=filter_by_user_id
+    )
+    if order_id not in transformation_orders:
+        raise ItemNotFound(user_id, f"Transformation Order {order_id!r} not found")
+    return transformation_orders[order_id].get_info()
 
 
-def check_filter_validity(filters):
+def check_filter_validity(filters, user_id=DEFAULT_USER):
     allowed_filters = {
         "Id": ("eq",),
         "SubmissionDate": ("le", "ge", "lt", "gt", "eq"),
@@ -188,60 +242,99 @@ def check_filter_validity(filters):
     }
     for key, op, value in filters:
         if key not in set(allowed_filters):
-            raise ValueError(
+            raise RequestError(
+                user_id,
                 f"{key!r} is not an allowed key, Transformation Orders can "
-                f"be filtered using only the following keys: {list(allowed_filters)}"
+                f"be filtered using only the following keys: {list(allowed_filters)}",
             )
         if op not in allowed_filters[key]:
-            raise ValueError(
+            raise RequestError(
+                user_id,
                 f"{op!r} is not an allowed operator for key {key!r}; "
-                f"the valid operators are: {allowed_filters[key]!r}"
+                f"the valid operators are: {allowed_filters[key]!r}",
             )
+        if key in {"CompletedDate", "SubmissionDate"}:
+            try:
+                datetime.fromisoformat(value)
+            except ValueError:
+                raise RequestError(
+                    user_id, f"{key!r} is not a valid isoformat string: {value}"
+                )
+
+
+def extract_roles_key(
+    esa_tf_config, user_roles=[], key="profile", user_id=DEFAULT_USER
+):
+    """Return the profiles associated with the user's roles input list.
+    :param dict esa_tf_config: esa_tf configuration dictionary
+    :param list user_roles: user roles
+    :param str key: it can be "profile" or "quota"
+    :param str user_id: user ID
+    :return set:
+    """
+    roles_config = esa_tf_config.get("roles", {})
+    default_role = esa_tf_config["default_role"]
+
+    if not user_roles:
+        logger.warning(
+            f"user: {user_id!r} - role not defined, a default {key!r} will be used: {default_role[key]!r}"
+        )
+        return [default_role[key]]
+
+    values = []
+
+    for user_role in user_roles:
+        value = roles_config.get(user_role, {}).get(key)
+        if value is None:
+            logger.warning(
+                f"user: {user_id} - {key} not defined for user role {user_role}"
+            )
+        else:
+            values.append(value)
+
+    if not values:
+        logger.warning(
+            f"user: {user_id} - {key!r} not defined for user roles {user_roles!r}, a default will be used: {default_role[key]!r}"
+        )
+        values.append(default_role[key])
+
+    return values
+
+
+def get_profile(user_roles: list = [], user_id=DEFAULT_USER):
+    esa_tf_config = read_esa_tf_config()
+    if not esa_tf_config["enable_authorization_check"]:
+        return "manager"
+
+    user_profiles = extract_roles_key(
+        esa_tf_config, user_roles, key="profile", user_id=user_id
+    )
+    if "manager" in user_profiles:
+        return "manager"
+    elif "user" in user_profiles:
+        return "user"
+    else:
+        return "unauthorized"
 
 
 def get_transformation_orders(
-    filters: T.List[T.Tuple[str, str, str]] = [], user_id: str = None,
+    filters: T.List[T.Tuple[str, str, str]] = [],
+    user_id: str = DEFAULT_USER,
+    filter_by_user_id: str = True,
 ) -> T.List[T.Dict["str", T.Any]]:
     """
     Return the all the transformation orders.
     They can be filtered by the SubmissionDate, CompletedDate, Status
     :param T.List[T.Tuple[str, str, str]] filters: list of tuple defining the filter to be applied
-    :param str user_id: user ID used to filter the transformation. If None, the transformation will not filtered by user ID
-    :param bool admin
+    :param str user_id: user ID
+    :param bool filter_by_user_id: if True the transformation orders are filtered by the user_id
     """
     # check filters
-    check_filter_validity(filters)
-    valid_transformation_orders_orders = []
-
-    if user_id:
-        orders = queue.user_to_orders.get(user_id, {})
-    else:
-        orders = queue.transformation_orders
-
-    for order_id in orders:
-        transformation_order = queue.transformation_orders[order_id].get_info()
-        add_order = True
-        for key, op, value in filters:
-            if key == "CompletedDate" and "CompletedDate" not in transformation_order:
-                add_order = False
-                continue
-            op = getattr(operator, op)
-            if key == "InputProductReference":
-                order_value = transformation_order["InputProductReference"]["Reference"]
-            else:
-                order_value = transformation_order[key]
-            if key in {"CompletedDate", "SubmissionDate"}:
-                order_value = datetime.fromisoformat(order_value)
-                try:
-                    value = datetime.fromisoformat(value)
-                except ValueError:
-                    raise ValueError(
-                        f"{key!r} is not a valid isoformat string: {value}"
-                    )
-            add_order = add_order and op(order_value, value)
-        if add_order:
-            valid_transformation_orders_orders.append(transformation_order)
-    return valid_transformation_orders_orders
+    check_filter_validity(filters, user_id=user_id)
+    transformation_orders = queue.get_transformation_orders(
+        filters=filters, user_id=user_id, filter_by_user_id=filter_by_user_id
+    )
+    return transformation_orders
 
 
 def extract_workflow_defaults(config_workflow_options):
@@ -255,7 +348,9 @@ def extract_workflow_defaults(config_workflow_options):
     return default_options
 
 
-def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=None):
+def fill_with_defaults(
+    workflow_options, config_workflow_options, workflow_id=None, user_id=DEFAULT_USER
+):
     """
     Fill the missing workflow options with the defaults values declared in the plugin
     """
@@ -264,125 +359,78 @@ def fill_with_defaults(workflow_options, config_workflow_options, workflow_id=No
 
     missing_options_values = set(config_workflow_options) - set(workflow_options)
     if len(missing_options_values):
-        raise ValueError(
+        raise RequestError(
+            user_id,
             f"the following missing options are mandatory for {workflow_id!r} Workflow:"
-            f"{list(missing_options_values)!r} "
+            f"{list(missing_options_values)!r} ",
         )
     return workflow_options
 
 
-def read_users_quota():
-    """Return the users' quota as read from the dedicated configuration file. The keys are the
-    possible roles and the values are the roles' cap.
-
-    :param str users_quota_file: full path to the users' quota configuration file
-    :return dict:
-    """
-    users_quota_file = os.getenv("USERS_QUOTA_FILE", "./users_quota.yaml")
-    if not os.path.isfile(users_quota_file):
-        raise ValueError(
-            f"{users_quota_file} not found, please define it using 'users_quota_file' "
-            "keyword argument or the environment variable USERS_QUOTA_FILE"
-        )
-    with open(users_quota_file) as file:
-        users_quota = yaml.load(file, Loader=yaml.FullLoader)
-    if DEFAULT_ESA_TF_ROLE not in users_quota:
-        raise RuntimeError(
-            f"default role 'default_tf_role' not found in {users_quota_file}. "
-            f"Please, add the default role into the configuration file {users_quota_file}"
-        )
-    return users_quota
-
-
-def get_user_quota_cap(user_roles, user_id=DEFAULT_USER):
-    """Return the cap of "in_progress" processes according to the role(s). If more than a role has
-    been specified, the cap is calculated as the largest cap among those corresponding to the roles
-    list.
-
-    :param list_or_tuple user_roles: list of the roles associated with the user
-    :param str user_id: user identifier
-    :return int:
-    """
-    users_quota = read_users_quota()
-    user_caps = []
-    # please, note that the user_roles list is never empty because if no role has been defined the
-    # GENERAL_TF_ROLE is set in submit_workflow function
-    for role in user_roles:
-        cap = users_quota.get(role, {}).get("submit_limit")
-        if cap is None:
-            logger.info(
-                f"user: {user_id} - role '{role}' not found in the configuration file",
-            )
-        else:
-            user_caps.append(cap)
-    # if all roles are not present on the configuration file, then the GENERAL_TF_ROLE is used
-    if not user_caps:
-        logger.warning(
-            f"user: {user_id} - no role among those defined for the user was found in the configuration file, "
-            f"a general TF role will be used",
-        )
-    user_cap = max(
-        user_caps, default=users_quota.get(DEFAULT_ESA_TF_ROLE).get("submit_limit")
-    )
-    return user_cap
-
-
-def check_user_quota(user_id, user_roles):
+def check_user_quota(user_id, user_roles=None, esa_tf_config=None):
     """Check the user's quota to determine if he is able to submit a transformation or not. If the
-    cap has been already reached, a RuntimeError is raised.
+    cap has been already reached, a ExceededQuota is raised.
 
+    :param dict esa_tf_config: esa_tf configuration dictionary containing the quotas and the key enable_quota_check
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
     :return:
     """
-    if user_roles is None or not any(user_roles):
-        logger.warning(
-            f"user: {user_id} - no user-role is defined, a default TF role will be used",
-        )
-        user_roles = [DEFAULT_ESA_TF_ROLE]
-
-    user_cap = get_user_quota_cap(user_roles, user_id)
-    if user_id not in queue.user_to_orders:
+    if esa_tf_config is None:
+        esa_tf_config = read_esa_tf_config()
+    if not esa_tf_config["enable_quota_check"]:
         return
+
+    user_quotas = extract_roles_key(
+        esa_tf_config, user_roles, key="quota", user_id=user_id
+    )
+    user_cap = max(user_quotas)
     running_processes = queue.get_count_uncompleted_orders(user_id)
     if running_processes >= user_cap:
-        raise RuntimeError(
-            f"the user {user_id} has reached his quota: {running_processes} processes are running"
+        raise ExceededQuota(
+            user_id,
+            f"the user {user_id!r} has reached his quota: {running_processes!r} processes are running",
         )
 
 
 def read_esa_tf_config():
     """
-    :param str esa_tf_config_file: full path to the `esa_tf.config` file
-    :return dict:
+    :return dict: returns esa_tf_config dictionary
     """
     esa_tf_config_file = os.getenv("ESA_TF_CONFIG_FILE", "./esa_tf.config")
     if not os.path.isfile(esa_tf_config_file):
-        raise ValueError(
-            f"{esa_tf_config_file} not found, please define it using 'esa_tf_config_file' "
-            "keyword argument or the environment variable ESA_TF_CONFIG_FILE"
+        raise FileNotFoundError(
+            f"{esa_tf_config_file!r} not found, please define the correct path "
+            f"using the environment variable ESA_TF_CONFIG_FILE"
         )
     with open(esa_tf_config_file) as file:
         esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
-    return esa_tf_config
+    try:
+        esa_tf_configuration_object = Configuration(**esa_tf_config)
+    except ValueError as exc:
+        raise ConfigurationError(
+            f"invalid configuration file esa_tf.config: {exc!r}"
+        ) from exc
+    return esa_tf_configuration_object.dict()
 
 
-async def evict_orders():
+async def evict_orders(esa_tf_config=None):
     """Evict orders from the queue according to a
     configurable keeping period parameter. The keeping period parameter is based on the CompletedDate
     (i.e. the datetime when the output product of a TransformationOrders is available in the
     staging area). The keeping period parameter is expressed in minutes and is defined in the
     esa_tf.config file.
 
-    :param str esa_tf_config_file: full path to the `esa_tf.config` file
+    :param dict esa_tf_config: esa_tf configuration dictionary containing key keeping_period
+
     :return:
     """
     # if the "esa_tf_config_file" configuration file has been changed in the amount of time
     # specified by the "FILE_MODIFICATION_INTERVAL" constant value, then the cache is cleared
-    esa_config = read_esa_tf_config()
-    keeping_period = esa_config.get("keeping-period")
+    if esa_tf_config is None:
+        esa_tf_config = read_esa_tf_config()
+    keeping_period = esa_tf_config["keeping_period"]
     queue.remove_old_orders(keeping_period)
-    return keeping_period
 
 
 def submit_workflow(
@@ -403,30 +451,34 @@ def submit_workflow(
     :param dict workflow_options: dictionary containing the workflow kwargs
     :param str user_id: user identifier
     :param str user_roles: list of the user roles
-    :param str working_dir: optional working directory within which will be created the processing directory.
     If it is None it is used the value of the environment variable "WORKING_DIR"
-    :param str output_dir: optional output directory. If it is None it is used the value of the environment
     variable "OUTPUT_DIR"
-    :param str hubs_credentials_file: optional file of credentials. If it is None is used the value
     of the environment variable "HUBS_CREDENTIALS_FILE"
-    :param order_id:
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
-    asyncio.create_task(evict_orders())
-    check_user_quota(user_id, user_roles)
-    workflow = get_workflow_by_id(workflow_id)
+    esa_tf_config = read_esa_tf_config()
+    asyncio.create_task(evict_orders(esa_tf_config=esa_tf_config))
+    check_user_quota(
+        user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config
+    )
+    workflow = get_workflow_by_id(workflow_id, esa_tf_config=esa_tf_config)
+
     check_products_consistency(
         workflow["InputProductType"],
         input_product_reference["Reference"],
         workflow_id=workflow_id,
+        user_id=user_id,
     )
     workflow_options = fill_with_defaults(
-        workflow_options, workflow["WorkflowOptions"], workflow_id=workflow_id,
+        workflow_options,
+        workflow["WorkflowOptions"],
+        workflow_id=workflow_id,
+        user_id=user_id,
     )
     order_id = dask.base.tokenize(
         workflow_id, input_product_reference, workflow_options,
     )
-    logger.info(f"user: {user_id} - submitting transformation order {order_id!r}")
+    logger.info(f"user: {user_id!r} - submitting transformation order {order_id!r}")
     if order_id in queue.transformation_orders:
         transformation_order = queue.transformation_orders[order_id]
         transformation_order.resubmit()
@@ -439,8 +491,9 @@ def submit_workflow(
             workflow_id=workflow_id,
             workflow_options=workflow_options,
             workflow_name=workflow["WorkflowName"],
+            uri_root=uri_root,
         )
-        transformation_order.uri_root = uri_root
-        queue.add_order(transformation_order, user_id=user_id)
+
+    queue.add_order(transformation_order, user_id=user_id)
 
     return transformation_order.get_info()
