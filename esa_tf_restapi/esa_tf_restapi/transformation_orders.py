@@ -71,7 +71,9 @@ class TransformationOrder(object):
 
     def add_completed_info(self, future):
         self._info["CompletedDate"] = datetime.now().isoformat()
-        self._info["Status"] = STATUS_DASK_TO_API.get(self.future.status, self.future.status)
+        self._info["Status"] = STATUS_DASK_TO_API.get(
+            self.future.status, self.future.status
+        )
         if self.future.status == "finished":
             basepath, reference = os.path.split(self.future.result())
             uri_root = self.uri_root or ""
@@ -100,7 +102,9 @@ class TransformationOrder(object):
 
     def update_status(self):
         # Note: the future must be extracted from the original order. The deepcopy breaks the future
-        self._info["Status"] = STATUS_DASK_TO_API.get(self.future.status, self.future.status)
+        self._info["Status"] = STATUS_DASK_TO_API.get(
+            self.future.status, self.future.status
+        )
 
     def get_status(self):
         self.update_status()
