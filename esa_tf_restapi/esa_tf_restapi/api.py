@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import logging
 import os
@@ -334,7 +333,7 @@ def get_transformation_orders(
     transformation_orders = queue.get_transformation_orders(
         filters=filters, user_id=user_id, filter_by_user_id=filter_by_user_id
     )
-    return transformation_orders
+    return [order.get_info() for order in transformation_orders.values()]
 
 
 def extract_workflow_defaults(config_workflow_options):
@@ -414,7 +413,7 @@ def read_esa_tf_config():
     return esa_tf_configuration_object.dict()
 
 
-async def evict_orders(esa_tf_config=None):
+def evict_orders(esa_tf_config=None):
     """Evict orders from the queue according to a
     configurable keeping period parameter. The keeping period parameter is based on the CompletedDate
     (i.e. the datetime when the output product of a TransformationOrders is available in the
@@ -457,7 +456,7 @@ def submit_workflow(
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
     esa_tf_config = read_esa_tf_config()
-    asyncio.create_task(evict_orders(esa_tf_config=esa_tf_config))
+    evict_orders(esa_tf_config=esa_tf_config)
     check_user_quota(
         user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config
     )
