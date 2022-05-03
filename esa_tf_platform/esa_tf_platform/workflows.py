@@ -414,43 +414,46 @@ def run_workflow(
         )
     processing_dir = os.path.join(working_dir, order_id)
     output_binder_dir = os.path.join(working_dir, order_id, "output_binder_dir")
-    for directory in [working_dir, output_dir, processing_dir, output_binder_dir]:
+    os.makedirs(output_dir, exist_ok=True)
+    for directory in [working_dir, processing_dir, output_binder_dir]:
+        logger.info(f"creating {directory!r}")
         os.makedirs(directory, exist_ok=True)
+    try:
+        # download
+        product = product_reference["Reference"]
+        hub_name = product_reference.get("DataSourceName")
+        logger.info(f"downloading input product: {product!r}")
+        product_zip_file = download_product(
+            product=product,
+            hubs_credentials_file=hubs_credentials_file,
+            processing_dir=processing_dir,
+            hub_name=hub_name,
+            order_id=order_id,
+        )
+        logger.info(f"unpack input product: {product_zip_file!r}")
+        product_path = unzip_product(product_zip_file, processing_dir)
 
-    # download
-    product = product_reference["Reference"]
-    hub_name = product_reference.get("DataSourceName")
-    logger.info(f"downloading input product: {product!r}")
-    product_zip_file = download_product(
-        product=product,
-        hubs_credentials_file=hubs_credentials_file,
-        processing_dir=processing_dir,
-        hub_name=hub_name,
-        order_id=order_id,
-    )
-    logger.info(f"unpack input product: {product_zip_file!r}")
-    product_path = unzip_product(product_zip_file, processing_dir)
+        # run workflow
+        workflow_runner = load_workflow_runner(workflow_id)
 
-    # run workflow
-    workflow_runner = load_workflow_runner(workflow_id)
+        logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
+        output = workflow_runner(
+            product_path,
+            processing_dir=processing_dir,
+            output_dir=output_binder_dir,
+            workflow_options=workflow_options,
+        )
 
-    logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
-    output = workflow_runner(
-        product_path,
-        processing_dir=processing_dir,
-        output_dir=output_binder_dir,
-        workflow_options=workflow_options,
-    )
+        # re-package the output
+        logger.info(f"package output product: {output!r}")
 
-    # re-package the output
-    logger.info(f"package output product: {output!r}")
-
-    output_order_dir = os.path.join(output_dir, order_id)
-    os.makedirs(output_order_dir, exist_ok=True)
-    output_zip_file = zip_product(output, output_order_dir)
-    shutil.chown(output_zip_file, user=output_owner, group=output_group_owner)
-    shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
-
-    # delete workflow processing dir
-    shutil.rmtree(processing_dir, ignore_errors=True)
+        output_order_dir = os.path.join(output_dir, order_id)
+        os.makedirs(output_order_dir, exist_ok=True)
+        output_zip_file = zip_product(output, output_order_dir)
+        shutil.chown(output_zip_file, user=output_owner, group=output_group_owner)
+        shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+    finally:
+        # delete workflow processing dir
+        logger.info(f"deleting {processing_dir!r}")
+        shutil.rmtree(processing_dir, ignore_errors=True)
     return os.path.join(order_id, os.path.basename(output_zip_file))
