@@ -19,7 +19,7 @@ from fastapi import FastAPI, Header
 from fastapi.responses import JSONResponse
 from odata_query.exceptions import ODataException
 
-__version__ = "0.9.2"
+__version__ = "0.9.2-osf"
 
 app = FastAPI(root_path=os.environ.get("ROOT_PATH", ""))
 
