@@ -20,7 +20,7 @@ password: my-traceability-password
 key_fingerprint: my-key-fingerprint
 passphrase: my-key-passphrase
 service_context: my-service
-service_type: my-service-type
+service_type: Production
 service_provider: my-service-provider
 event_type: CREATE
 endef
