@@ -13,6 +13,18 @@ apihub:
   password: my-apihub-password
 endef
 
+define TRACEABILITY_CONFIG
+service_url: https://demo.trace.gael-systems.com
+username: my-traceability-username
+password: my-traceability-password
+key_fingerprint: my-key-fingerprint
+passphrase: my-key-passphrase
+service_context: my-service
+service_type: my-service-type
+service_provider: my-service-provider
+event_type: CREATE
+endef
+
 define ESA_TF_CONFIG
 # Mandatory
 # it is the minimum number of minutes from the CompletedDate
@@ -69,6 +81,12 @@ config/hubs_credentials.yaml:
 	echo "$$HUBS_CREDENTIALS" > $@
 
 setup: config/hubs_credentials.yaml
+
+export TRACEABILITY_CONFIG
+config/traceability_config.yaml:
+	echo "$$TRACEABILITY_CONFIG" > $@
+
+setup: config/traceability_config.yaml
 
 export ESA_TF_CONFIG
 config/esa_tf.config:
