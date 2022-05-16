@@ -1,5 +1,6 @@
 import json
 import pydantic
+import requests
 import subprocess
 import os
 import yaml
@@ -17,6 +18,8 @@ class ConfigurationError(Exception):
 class Configuration(pydantic.BaseModel):
 
     service_url: pydantic.HttpUrl
+    url_access_token: pydantic.HttpUrl
+    url_push_trace: pydantic.HttpUrl
     username: pydantic.SecretStr
     password: pydantic.SecretStr
     key_fingerprint: pydantic.SecretStr
@@ -47,7 +50,7 @@ def read_traseability_config():
 
 
 def import_key(traceability_config, key_path, tracetool_path):
-    """Import a key if not already imported.
+    """Import a TS Data Producer key, if not already imported.
 
     :param Configuration traceability_config: the traceability configuration
     :param str key_path: path of the traceability service secret key
@@ -95,6 +98,40 @@ def initialise_trace(trace_path, traceability_config):
     return trace
 
 
+def get_access_token(url, username, password):
+    """Get an access token from the authentication service.
+
+    :param str url: URL of the authentication service
+    :param str username: username of the account as TS data Producer with certified key
+    :param str password: password of the account as TS data Producer with certified key
+    :return str:
+    """
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    data = f'grant_type=password&username={username}&password={password}'
+    auth = ('trace-api', '')
+    res = requests.post(url, headers=headers, data=data, auth=auth)
+    res.raise_for_status()
+    return res.json()["access_token"]
+
+
+def push_trace(url, access_token, trace_path):
+    """Push a trace on the Traceability Service.
+
+    :param str url: URL of the service to push a trace
+    :param str access_token: the access token obtained by the authentication service
+    :param str trace_path: the path of the .json trace file
+    :return:
+    """
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+    }
+    with open(trace_path) as f:
+        data = f.read().replace('\n', '')
+    res = requests.post(url, headers=headers, data=data)
+    res.raise_for_status()
+
+
 class Trace(object):
 
     def __init__(self, trace_path):
@@ -105,7 +142,7 @@ class Trace(object):
         self.trace_content = initialise_trace(trace_path, self.traceability_config)
         self.trace_path = trace_path
 
-    def hash_ad_sign(self, product_path):
+    def hash_and_sign(self, product_path):
         cmd = (
             f"java -jar {self.tracetool_path} --hash-sign {product_path} "
             f"{self.traceability_config.key_fingerprint.get_secret_value()} "
@@ -123,3 +160,13 @@ class Trace(object):
             raise subprocess.CalledProcessError(process.returncode, sanitised_cmd)
         else:
             self.trace_content = json.loads(process.stdout)
+            with open(self.trace_path, "w") as f:
+                f.write(json.dumps(self.trace_content, indent=4, sort_keys=True))
+
+    def push(self):
+        self.access_token = get_access_token(
+            self.traceability_config.url_access_token,
+            self.traceability_config.username.get_secret_value(),
+            self.traceability_config.password.get_secret_value()
+        )
+        push_trace(self.traceability_config.url_push_trace, self.access_token, self.trace_path)
