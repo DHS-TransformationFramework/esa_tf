@@ -15,6 +15,8 @@ endef
 
 define TRACEABILITY_CONFIG
 service_url: https://demo.trace.gael-systems.com
+url_access_token: https://demo.trace.gael-systems.com/auth/realms/ts/protocol/openid-connect/token
+url_push_trace: https://demo.trace.gael-systems.com/trace-api/Traces
 username: my-traceability-username
 password: my-traceability-password
 key_fingerprint: my-key-fingerprint
