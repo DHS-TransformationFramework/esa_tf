@@ -99,19 +99,19 @@ def initialise_trace(trace_path, traceability_config):
 
 
 def get_access_token(url, username, password):
-    """Get an access token from the authentication service.
+    """Return a dictionary representing the access token obtained from the authentication service.
 
     :param str url: URL of the authentication service
     :param str username: username of the account as TS data Producer with certified key
     :param str password: password of the account as TS data Producer with certified key
-    :return str:
+    :return dict:
     """
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     data = f'grant_type=password&username={username}&password={password}'
     auth = ('trace-api', '')
     res = requests.post(url, headers=headers, data=data, auth=auth)
     res.raise_for_status()
-    return res.json()["access_token"]
+    return res.json()
 
 
 def push_trace(url, access_token, trace_path):
@@ -169,4 +169,8 @@ class Trace(object):
             self.traceability_config.username.get_secret_value(),
             self.traceability_config.password.get_secret_value()
         )
-        push_trace(self.traceability_config.url_push_trace, self.access_token, self.trace_path)
+        push_trace(
+            self.traceability_config.url_push_trace,
+            self.access_token["access_token"],
+            self.trace_path
+        )
