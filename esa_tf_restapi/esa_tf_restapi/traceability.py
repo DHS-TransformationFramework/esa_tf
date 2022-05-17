@@ -30,7 +30,7 @@ class Configuration(pydantic.BaseModel):
     event_type: str = "CREATE"
 
 
-def read_traseability_config():
+def read_traceability_config():
     """Read and return the traceability credentials configuration file.
 
     :return Configuration:
@@ -135,7 +135,7 @@ def push_trace(url, access_token, trace_path):
 class Trace(object):
 
     def __init__(self, trace_path):
-        self.traceability_config = read_traseability_config()
+        self.traceability_config = read_traceability_config()
         self.tracetool_path = os.path.join(os.getenv("CONFIG_DIR"), TRACETOOL)
         self.key_path = os.path.join(os.getenv("CONFIG_DIR"), KEY_FILENAME)
         import_key(self.traceability_config, self.key_path, self.tracetool_path)
