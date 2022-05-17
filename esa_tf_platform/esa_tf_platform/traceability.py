@@ -130,6 +130,7 @@ def push_trace(url, access_token, trace_path):
         data = f.read().replace('\n', '')
     res = requests.post(url, headers=headers, data=data)
     res.raise_for_status()
+    return res
 
 
 class Trace(object):
@@ -142,9 +143,19 @@ class Trace(object):
         self.trace_content = initialise_trace(trace_path, self.traceability_config)
         self.trace_path = trace_path
 
-    def hash_and_sign(self, product_path):
+    def hash(self, product_path):
+        cmd = f"java -jar {self.tracetool_path} --hash {product_path} {self.trace_path}"
+        process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
+        else:
+            self.trace_content = json.loads(process.stdout)
+            with open(self.trace_path, "w") as f:
+                f.write(json.dumps(self.trace_content, indent=4, sort_keys=True))
+
+    def sign(self):
         cmd = (
-            f"java -jar {self.tracetool_path} --hash-sign {product_path} "
+            f"java -jar {self.tracetool_path} --sign "
             f"{self.traceability_config.key_fingerprint.get_secret_value()} "
             f"{self.traceability_config.passphrase.get_secret_value()} "
             f"{self.trace_path}"
@@ -152,7 +163,7 @@ class Trace(object):
         process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         if process.returncode != 0:
             sanitised_cmd = (
-                f"java -jar {self.tracetool_path} --hash-sign {product_path} "
+                f"java -jar {self.tracetool_path} --sign "
                 f"{self.traceability_config.key_fingerprint} "
                 f"{self.traceability_config.passphrase} "
                 f"{self.trace_path}"
@@ -169,8 +180,9 @@ class Trace(object):
             self.traceability_config.username.get_secret_value(),
             self.traceability_config.password.get_secret_value()
         )
-        push_trace(
+        res = push_trace(
             self.traceability_config.url_push_trace,
             self.access_token["access_token"],
             self.trace_path
         )
+        self.pushed_trace = res.json()
