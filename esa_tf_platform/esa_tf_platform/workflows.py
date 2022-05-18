@@ -10,6 +10,9 @@ import pkg_resources
 import sentinelsat
 import yaml
 
+from esa_tf_platform import traceability
+
+
 logger = logging.getLogger(__name__)
 
 TYPES = {
@@ -368,6 +371,7 @@ def run_workflow(
     order_id,
     working_dir=None,
     output_dir=None,
+    traces_dir=None,
     hubs_credentials_file=None,
     output_owner=-1,
     output_group_owner=-1,
@@ -377,10 +381,10 @@ def run_workflow(
     :param str workflow_id:  id that identifies the workflow to run,
     :param dict product_reference: dictionary containing the information to retrieve the product to be processed
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
-    {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub', 'scihub'}.
-    :param dict workflow_options: dictionary cotaining the workflow kwargs.
+    {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}.
+    :param dict workflow_options: dictionary containing the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
-    :param str working_dir: optional working directory where will be create the processing directory. If it is None,
+    :param str working_dir: optional working directory where will be created the processing directory. If it is None,
     the environment variable ``WORKING_DIR`` is used.
     :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
     :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
@@ -399,6 +403,8 @@ def run_workflow(
         working_dir = os.getenv("WORKING_DIR", "./working_dir")
     if output_dir is None:
         output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
+    if traces_dir is None:
+        output_dir = os.getenv("TRACES_DIR", "./traces")
     if output_owner == -1:
         output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
     if output_group_owner == -1:
@@ -456,4 +462,32 @@ def run_workflow(
         # delete workflow processing dir
         logger.info(f"deleting {processing_dir!r}")
         shutil.rmtree(processing_dir, ignore_errors=True)
-    return os.path.join(order_id, os.path.basename(output_zip_file))
+
+    output_product_path = os.path.join(order_id, os.path.basename(output_zip_file))
+    logger.info(f'TRACEABILITY_CONFIG_FILE: {os.getenv("TRACEABILITY_CONFIG_FILE")}')
+    traceability_config_path = os.getenv("TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml")
+    key_path = os.getenv("KEY_FILE", "./secret.txt")
+    logger.info(f'KEY_FILE: {os.getenv("KEY_FILE")}')
+    tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
+    logger.info(f'TRACETOOL_FILE: {os.getenv("TRACETOOL_FILE")}')
+    trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
+    try:
+        trace = traceability.Trace(traceability_config_path, key_path, tracetool_path, trace_path)
+        trace.hash(output_product_path)
+        workflow_info = get_all_workflows()[workflow_id]
+        attributes = {
+            "beginningDateTime": "",
+            "platformShortName": "",
+            "productType": workflow_info["OutputProductType"],
+            "processorName": workflow_info["WorkflowName"],
+            "processorVersion": workflow_info["WorkflowVersion"],
+        }
+        trace.update_attributes(attributes)
+        trace.sign()
+        trace.push()
+        os.remove(trace_path)
+    except Exception as err:
+        logger.exception(
+            f"the trace '{trace_path}' has not been pushed, an error occurred: {err}"
+        )
+    return output_product_path
