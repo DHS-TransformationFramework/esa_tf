@@ -29,7 +29,7 @@ class Configuration(pydantic.BaseModel):
 def read_traceability_config(traceability_config_path):
     """Read and return a Configuration instance of the traceability configuration input file.
 
-    :param str trtraceability_config_path: full path of the traceability configuration file
+    :param str traceability_config_path: full path of the traceability configuration file
     :return Configuration:
     """
     if not os.path.isfile(traceability_config_path):
@@ -232,3 +232,4 @@ class Trace(object):
         )
         self.trace_content = res.json()
         self.pushed = True
+        self.save()
