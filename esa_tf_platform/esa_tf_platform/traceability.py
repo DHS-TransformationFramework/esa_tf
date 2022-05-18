@@ -94,7 +94,7 @@ def initialise_trace(traceability_config):
 
 
 def get_access_token(url, username, password):
-    """Return a dictionary representing the access token obtained from the authentication service.
+    """Return a dictionary with the access token info obtained from the authentication service.
 
     :param str url: URL of the authentication service
     :param str username: username of the account as TS data Producer with certified key
@@ -110,12 +110,12 @@ def get_access_token(url, username, password):
 
 
 def push_trace(url, access_token, trace_path):
-    """Push a trace on the Traceability Service.
+    """Push a trace on the Traceability Service and return the response.
 
     :param str url: URL of the service to push a trace
     :param str access_token: the access token obtained by the authentication service
     :param str trace_path: the path of the .json trace file
-    :return:
+    :return requests.Response:
     """
     headers = {
         "Content-Type": "application/json",
