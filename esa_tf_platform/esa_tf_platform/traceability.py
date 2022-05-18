@@ -6,10 +6,6 @@ import pydantic
 import requests
 import yaml
 
-TRACEABILITY_CONFIG_FILENAME = "traceability_config.yaml"
-TRACETOOL = "tracetool-1.2.4.jar"
-KEY_FILENAME = "secret.txt"
-
 
 class ConfigurationError(Exception):
     pass
@@ -30,17 +26,15 @@ class Configuration(pydantic.BaseModel):
     event_type: str = "CREATE"
 
 
-def read_traceability_config():
-    """Read and return the traceability credentials configuration file.
+def read_traceability_config(traceability_config_path):
+    """Read and return a Configuration instance of the traceability configuration input file.
 
+    :param str trtraceability_config_path: full path of the traceability configuration file
     :return Configuration:
     """
-    traceability_config_file = os.path.join(
-        os.getenv("CONFIG_DIR"), TRACEABILITY_CONFIG_FILENAME
-    )
-    if not os.path.isfile(traceability_config_file):
-        raise FileNotFoundError(f"{traceability_config_file!r} not found")
-    with open(traceability_config_file) as file:
+    if not os.path.isfile(traceability_config_path):
+        raise FileNotFoundError(f"{traceability_config_path!r} not found")
+    with open(traceability_config_path) as file:
         traceability_config = yaml.load(file, Loader=yaml.FullLoader)
     try:
         trace_configuration_object = Configuration(**traceability_config)
@@ -145,13 +139,16 @@ class Trace(object):
     - pushing the trace to the Traceability service
     """
 
-    def __init__(self, trace_path):
+    def __init__(self, traceability_config_path, key_path, tracetool_path, trace_path):
         """
-        :param str trace_path:
+        :param str traceability_config_path: path of the traceability configuration file
+        :param str key_path: path of the TS Data Producer key file
+        :param str tracetool_path: path of the tracetool-x.x.x .jar file
+        :param str trace_path: path of the output .json trace file
         """
-        self.traceability_config = read_traceability_config()
-        self.tracetool_path = os.path.join(os.getenv("CONFIG_DIR"), TRACETOOL)
-        self.key_path = os.path.join(os.getenv("CONFIG_DIR"), KEY_FILENAME)
+        self.traceability_config = read_traceability_config(traceability_config_path)
+        self.tracetool_path = tracetool_path
+        self.key_path = key_path
         import_key(self.traceability_config, self.key_path, self.tracetool_path)
         self.trace_path = trace_path
         self.trace_content = initialise_trace(self.traceability_config)
