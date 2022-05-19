@@ -479,8 +479,8 @@ def run_workflow(
         trace.hash(output_product_path)
         workflow_info = get_all_workflows()[workflow_id]
         attributes = {
-            "beginningDateTime": 100,
-            "platformShortName": "SENTINEL-2",
+            "beginningDateTime": "",
+            "platformShortName": "",
             "productType": workflow_info["OutputProductType"],
             "processorName": workflow_info["WorkflowName"],
             "processorVersion": workflow_info["WorkflowVersion"],
