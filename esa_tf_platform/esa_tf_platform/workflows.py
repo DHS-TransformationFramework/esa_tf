@@ -480,7 +480,7 @@ def run_workflow(
         workflow_info = get_all_workflows()[workflow_id]
         attributes = {
             "beginningDateTime": "dummy",
-            "platformShortName": "dummy",
+            "platformShortName": "SENTINEL-2",
             "productType": workflow_info["OutputProductType"],
             "processorName": workflow_info["WorkflowName"],
             "processorVersion": workflow_info["WorkflowVersion"],
