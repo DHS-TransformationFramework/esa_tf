@@ -489,6 +489,7 @@ def run_workflow(
         trace.sign()
         trace.push()
         os.remove(trace_path)
+        logger.info(f"the trace '{os.path.basename(trace_path)}' has been pushed")
     except Exception as err:
         logger.exception(
             f"the trace '{trace_path}' has not been pushed, an error occurred: {err}"
