@@ -404,7 +404,7 @@ def run_workflow(
     if output_dir is None:
         output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
     if traces_dir is None:
-        output_dir = os.getenv("TRACES_DIR", "./traces")
+        traces_dir = os.getenv("TRACES_DIR", "./traces")
     if output_owner == -1:
         output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
     if output_group_owner == -1:
@@ -470,6 +470,9 @@ def run_workflow(
     logger.info(f'KEY_FILE: {os.getenv("KEY_FILE")}')
     tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
     logger.info(f'TRACETOOL_FILE: {os.getenv("TRACETOOL_FILE")}')
+    logger.info(f'TRACETOOL_FILE: {os.path.isfile(tracetool_path)}')
+    logger.info(f'TRACES_DIR: {os.getenv("TRACES_DIR")}')
+    logger.info(f'traces: {traces_dir}')
     trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
     try:
         trace = traceability.Trace(traceability_config_path, key_path, tracetool_path, trace_path)
