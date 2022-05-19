@@ -11,7 +11,7 @@ dependencies:
   - make
   - nomkl
   - pip
-  - pydantinc
+  - pydantic
   - pytest
   - pytest-cov
   - python = 3.9.7
