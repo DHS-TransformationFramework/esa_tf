@@ -46,6 +46,10 @@ enable_authorization_check: true
 # it enables quota configuration
 enable_quota_check: true
 
+# Optional, default true
+# it enables traceability pushing traces on the configured Traceability Service
+enable_traceability: true
+
 # role configuration
 # - quota is maximum number of transformation orders in progress or queued per user
 # - profile can ben "manager" or "user"

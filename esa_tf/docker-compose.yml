@@ -32,6 +32,7 @@ services:
             - "${PLUGINS_DIR:-./plugins}:/plugins"
             - "${TRACES_DIR:-./traces}:/traces"
         environment:
+            - ESA_TF_CONFIG_FILE=/config/esa_tf.config
             - HUBS_CREDENTIALS_FILE=/config/hubs_credentials.yaml
             - TRACEABILITY_CONFIG_FILE=/config/traceability_config.yaml
             - KEY_FILE=/config/secret.txt

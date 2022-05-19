@@ -363,6 +363,72 @@ def load_workflow_runner(workflow_id):
     return workflow_runner
 
 
+def push_trace(
+    output_dir,
+    traces_dir,
+    order_id,
+    output_zip_file,
+    workflow_id,
+    traceability_config_path=None,
+    key_path=None,
+    tracetool_path=None,
+):
+    """Create and push a trace relative to the output product. If the pushing ends successfully the
+    .json file trace is deleted, otherwise it is stored into the ``traces_dir`` folder.
+
+    :param str output_dir: path of the output directory
+    :param str traces_dir: path of the folder for traces
+    :param str order_id: unique identifier of the processing order, used to create a processing folder
+    :param str output_zip_file: filename of the output .zip file product
+    :param str workflow_id: id that identifies the workflow to run
+    :param str traceability_config_path: optional file containing the traceability configuration. If
+    it is None, the environment variable ``TRACEABILITY_CONFIG_FILE`` is used
+    :param str key_path: optional file containing the TS Data Producer key. If it is None,
+    the environment variable ``KEY_FILE`` is used
+    :param str tracetool_path: optional path for the tracetool-x.x.x.jar file. If it is None,
+    the environment variable ``TRACETOOL_FILE`` is used
+    """
+    output_product_path = os.path.join(
+        output_dir, order_id, os.path.basename(output_zip_file)
+    )
+    if traceability_config_path is None:
+        traceability_config_path = os.getenv(
+            "TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml"
+        )
+    if key_path is None:
+        key_path = os.getenv("KEY_FILE", "./secret.txt")
+    if tracetool_path is None:
+        tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
+    trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
+    try:
+        trace = traceability.Trace(
+            traceability_config_path, key_path, tracetool_path, trace_path
+        )
+        trace.hash(output_product_path)
+        workflow_info = get_all_workflows()[workflow_id]
+        attributes = {
+            "beginningDateTime": "",
+            "platformShortName": "",
+            "productType": workflow_info["OutputProductType"],
+            "processorName": workflow_info["WorkflowName"],
+            "processorVersion": workflow_info["WorkflowVersion"],
+        }
+        trace.update_attributes(attributes)
+        trace.sign()
+        trace.push()
+        os.remove(trace_path)
+        trace_id = trace.trace_content["id"]
+        logger.info(
+            f"the trace '{os.path.basename(trace_path)}' has been pushed, ID: {trace_id}"
+        )
+    except Exception as err:
+        trace_id = None
+        logger.exception(
+            f"the trace '{trace_path}' has not been pushed, an error occurred: {err}"
+        )
+    return trace_id
+
+
 def run_workflow(
     workflow_id,
     *,
@@ -378,7 +444,7 @@ def run_workflow(
 ):
     """
     Run the workflow defined by 'workflow_id':
-    :param str workflow_id:  id that identifies the workflow to run,
+    :param str workflow_id:  id that identifies the workflow to run
     :param dict product_reference: dictionary containing the information to retrieve the product to be processed
     ('Reference', i.e. product name and 'api_hub', i.e. name of the ub where to download the data), e.g.:
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}.
@@ -463,35 +529,7 @@ def run_workflow(
         logger.info(f"deleting {processing_dir!r}")
         shutil.rmtree(processing_dir, ignore_errors=True)
 
-    output_product_path = os.path.join(output_dir, order_id, os.path.basename(output_zip_file))
-    logger.info(f'TRACEABILITY_CONFIG_FILE: {os.getenv("TRACEABILITY_CONFIG_FILE")}')
-    traceability_config_path = os.getenv("TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml")
-    key_path = os.getenv("KEY_FILE", "./secret.txt")
-    logger.info(f'KEY_FILE: {os.getenv("KEY_FILE")}')
-    tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
-    logger.info(f'TRACETOOL_FILE: {os.getenv("TRACETOOL_FILE")}')
-    logger.info(f'TRACETOOL_FILE: {os.path.isfile(tracetool_path)}')
-    logger.info(f'TRACES_DIR: {os.getenv("TRACES_DIR")}')
-    logger.info(f'traces: {traces_dir}')
-    trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
-    try:
-        trace = traceability.Trace(traceability_config_path, key_path, tracetool_path, trace_path)
-        trace.hash(output_product_path)
-        workflow_info = get_all_workflows()[workflow_id]
-        attributes = {
-            "beginningDateTime": "dummy",
-            "platformShortName": "SENTINEL-2",
-            "productType": workflow_info["OutputProductType"],
-            "processorName": workflow_info["WorkflowName"],
-            "processorVersion": workflow_info["WorkflowVersion"],
-        }
-        trace.update_attributes(attributes)
-        trace.sign()
-        trace.push()
-        os.remove(trace_path)
-        logger.info(f"the trace '{os.path.basename(trace_path)}' has been pushed")
-    except Exception as err:
-        logger.exception(
-            f"the trace '{trace_path}' has not been pushed, an error occurred: {err}"
-        )
+    trace_id = push_trace(
+        output_dir, traces_dir, order_id, output_zip_file, workflow_id
+    )
     return os.path.join(order_id, os.path.basename(output_zip_file))
