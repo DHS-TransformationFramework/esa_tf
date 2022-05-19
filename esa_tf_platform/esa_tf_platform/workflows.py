@@ -463,7 +463,7 @@ def run_workflow(
         logger.info(f"deleting {processing_dir!r}")
         shutil.rmtree(processing_dir, ignore_errors=True)
 
-    output_product_path = os.path.join(order_id, os.path.basename(output_zip_file))
+    output_product_path = os.path.join(output_dir, order_id, os.path.basename(output_zip_file))
     logger.info(f'TRACEABILITY_CONFIG_FILE: {os.getenv("TRACEABILITY_CONFIG_FILE")}')
     traceability_config_path = os.getenv("TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml")
     key_path = os.getenv("KEY_FILE", "./secret.txt")
@@ -494,4 +494,4 @@ def run_workflow(
         logger.exception(
             f"the trace '{trace_path}' has not been pushed, an error occurred: {err}"
         )
-    return output_product_path
+    return os.path.join(order_id, os.path.basename(output_zip_file))
