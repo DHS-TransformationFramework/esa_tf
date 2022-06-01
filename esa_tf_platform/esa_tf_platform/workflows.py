@@ -382,10 +382,9 @@ def extract_product_platform(product_path):
 
 
 def push_trace(
-    output_dir,
+    output_product_path,
     traces_dir,
     order_id,
-    output_zip_file,
     workflow_id,
     traceability_config_path=None,
     key_path=None,
@@ -394,10 +393,9 @@ def push_trace(
     """Create and push a trace relative to the output product. If the pushing ends successfully the
     .json file trace is deleted, otherwise it is stored into the ``traces_dir`` folder.
 
-    :param str output_dir: path of the output directory
+    :param str output_product_path: filename of the output file product
     :param str traces_dir: path of the folder for traces
     :param str order_id: unique identifier of the processing order, used to create a processing folder
-    :param str output_zip_file: filename of the output .zip file product
     :param str workflow_id: id that identifies the workflow to run
     :param str traceability_config_path: optional file containing the traceability configuration. If
     it is None, the environment variable ``TRACEABILITY_CONFIG_FILE`` is used
@@ -406,9 +404,7 @@ def push_trace(
     :param str tracetool_path: optional path for the tracetool-x.x.x.jar file. If it is None,
     the environment variable ``TRACETOOL_FILE`` is used
     """
-    output_product_path = os.path.join(
-        output_dir, order_id, os.path.basename(output_zip_file)
-    )
+
     if traceability_config_path is None:
         traceability_config_path = os.getenv(
             "TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml"
@@ -546,8 +542,8 @@ def run_workflow(
 
         output_order_dir = os.path.join(output_dir, order_id)
         os.makedirs(output_order_dir, exist_ok=True)
-        output_zip_file = zip_product(output, output_order_dir)
-        shutil.chown(output_zip_file, user=output_owner, group=output_group_owner)
+        output_product_path = zip_product(output, output_order_dir)
+        shutil.chown(output_product_path, user=output_owner, group=output_group_owner)
         shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
     finally:
         # delete workflow processing dir
@@ -557,9 +553,9 @@ def run_workflow(
     if enable_traceability:
         logger.info("sending product trace")
         trace_id = push_trace(
-            output_dir, traces_dir, order_id, output_zip_file, workflow_id
+            output_product_path, traces_dir, order_id, workflow_id
         )
     else:
         logger.info("traceability is disabled")
 
-    return os.path.join(order_id, os.path.basename(output_zip_file))
+    return os.path.join(order_id, os.path.basename(output_product_path))
