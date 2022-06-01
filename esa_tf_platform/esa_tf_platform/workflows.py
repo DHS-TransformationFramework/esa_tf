@@ -456,7 +456,7 @@ def run_workflow(
     product_reference,
     workflow_options,
     order_id,
-    enable_trace_sender=True,
+    enable_traceability=True,
     working_dir=None,
     output_dir=None,
     traces_dir=None,
@@ -472,7 +472,7 @@ def run_workflow(
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}.
     :param dict workflow_options: dictionary containing the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
-    :param bool enable_trace_sender: enable sending the trace to the Traceability Service of the output product
+    :param bool enable_traceability: enable sending the trace to the Traceability Service of the output product
     :param str working_dir: optional working directory where will be created the processing directory. If it is None,
     the environment variable ``WORKING_DIR`` is used.
     :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
@@ -554,12 +554,12 @@ def run_workflow(
         logger.info(f"deleting {processing_dir!r}")
         shutil.rmtree(processing_dir, ignore_errors=True)
 
-    if enable_trace_sender:
+    if enable_traceability:
         logger.info("sending product trace")
         trace_id = push_trace(
             output_dir, traces_dir, order_id, output_zip_file, workflow_id
         )
     else:
-        logger.info("trace sander is disabled")
+        logger.info("traceability is disabled")
 
     return os.path.join(order_id, os.path.basename(output_zip_file))

@@ -22,7 +22,7 @@ class TransformationOrder(object):
         "uri_root",
         "_info",
         "client",
-        "enable_trace_sender",
+        "enable_traceability",
     )
 
     @classmethod
@@ -34,7 +34,7 @@ class TransformationOrder(object):
         workflow_id,
         workflow_options,
         workflow_name=None,
-        enable_trace_sender: str = True,
+        enable_traceability: str = True,
         uri_root=None,
     ):
         parameters = {
@@ -50,7 +50,7 @@ class TransformationOrder(object):
             import esa_tf_platform
 
             return esa_tf_platform.run_workflow(
-                **parameters, enable_trace_sender=enable_trace_sender
+                **parameters, enable_traceability=enable_traceability
             )
 
         future = client.submit(task, key=order_id)

@@ -96,7 +96,7 @@ class Configuration(pydantic.BaseModel):
 
     keeping_period: int = 14400
     excluded_workflows: T.List[str] = []
-    enable_trace_sender: bool = True
+    enable_traceability: bool = True
     enable_authorization_check: bool = True
     enable_quota_check: bool = True
     default_role: T.TypedDict("Role", quota=int, profile=str) = {
@@ -479,7 +479,7 @@ def submit_workflow(
         workflow_id,
         input_product_reference,
         workflow_options,
-        esa_tf_config["enable_trace_sender"],
+        esa_tf_config["enable_traceability"],
     )
     logger.info(f"user: {user_id!r} - submitting transformation order {order_id!r}")
     if order_id in queue.transformation_orders:
@@ -494,7 +494,7 @@ def submit_workflow(
             workflow_id=workflow_id,
             workflow_options=workflow_options,
             workflow_name=workflow["WorkflowName"],
-            enable_trace_sender=esa_tf_config["enable_trace_sender"],
+            enable_traceability=esa_tf_config["enable_traceability"],
             uri_root=uri_root,
         )
 
