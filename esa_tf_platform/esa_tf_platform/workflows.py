@@ -1,7 +1,9 @@
+import datetime as dt
 import importlib
 import itertools
 import logging
 import os
+import re
 import shutil
 import zipfile
 
@@ -363,6 +365,22 @@ def load_workflow_runner(workflow_id):
     return workflow_runner
 
 
+def extract_product_sensing_date(product_path):
+    match = re.search("[0-9]{8}T[0-9]{6}", product_path)
+    return dt.datetime.strptime(match.group(), "%Y%m%dT%H%M%S%f").isoformat()
+
+
+def extract_product_platform(product_path):
+    pl = os.path.basename(product_path)[:2]
+    if pl == "S1":
+        platform = "SENTINEL-1"
+    if pl == "S2":
+        platform = "SENTINEL-2"
+    if pl == "S3":
+        platform == "SENTINEL-3"
+    return platform
+
+
 def push_trace(
     output_dir,
     traces_dir,
@@ -406,9 +424,11 @@ def push_trace(
         )
         trace.hash(output_product_path)
         workflow_info = get_all_workflows()[workflow_id]
+        platform = extract_product_platform(output_product_path)
+        beginning_time = extract_product_sensing_date(output_product_path)
         attributes = {
-            "beginningDateTime": "",
-            "platformShortName": "",
+            "beginningDateTime": beginning_time,
+            "platformShortName": platform,
             "productType": workflow_info["OutputProductType"],
             "processorName": workflow_info["WorkflowName"],
             "processorVersion": workflow_info["WorkflowVersion"],
@@ -421,6 +441,7 @@ def push_trace(
         logger.info(
             f"the trace '{os.path.basename(trace_path)}' has been pushed, ID: {trace_id}"
         )
+        logger.info("the trace has been pushed")
     except Exception as err:
         trace_id = None
         logger.exception(
@@ -435,6 +456,7 @@ def run_workflow(
     product_reference,
     workflow_options,
     order_id,
+    enable_trace_sender=True,
     working_dir=None,
     output_dir=None,
     traces_dir=None,
@@ -450,9 +472,12 @@ def run_workflow(
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}.
     :param dict workflow_options: dictionary containing the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
+    :param bool enable_trace_sender: enable sending the trace to the Traceability Service of the output product
     :param str working_dir: optional working directory where will be created the processing directory. If it is None,
     the environment variable ``WORKING_DIR`` is used.
     :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
+    :param str traces_dir: optional directory where to store the trace for which the trace push has failed and
+    that must be pushed manually.
     :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
     :param int output_owner: id of output files owner.
@@ -529,7 +554,12 @@ def run_workflow(
         logger.info(f"deleting {processing_dir!r}")
         shutil.rmtree(processing_dir, ignore_errors=True)
 
-    trace_id = push_trace(
-        output_dir, traces_dir, order_id, output_zip_file, workflow_id
-    )
+    if enable_trace_sender:
+        logger.info("sending product trace")
+        trace_id = push_trace(
+            output_dir, traces_dir, order_id, output_zip_file, workflow_id
+        )
+    else:
+        logger.info("trace sander is disabled")
+
     return os.path.join(order_id, os.path.basename(output_zip_file))
