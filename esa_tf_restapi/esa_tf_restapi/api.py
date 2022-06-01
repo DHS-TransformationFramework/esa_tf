@@ -66,6 +66,26 @@ SENTINEL1 = [
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
+SENTINEL3 = [
+    "OL_1_EFR___",
+    "OL_1_ERR___",
+    "SL_1_RBT___",
+    "SR_1_SRA___",
+    "SR_1_SRA_A_",
+    "SR_1_SRA_BS",
+    "OL_2_LFR___",
+    "OL_2_LRR___",
+    "SL_2_LST___",
+    "SL_2_FRP___",
+    "SY_2_SYN___",
+    "SY_2_AOD___",
+    "SY_2_VGP___",
+    "SY_2_VGK___",
+    "SY_2_VG1___",
+    "SY_2_V10___",
+    "SR_2_LAN___",
+]
+
 
 class ConfigurationError(Exception):
     pass
@@ -96,6 +116,7 @@ class Configuration(pydantic.BaseModel):
 
     keeping_period: int = 14400
     excluded_workflows: T.List[str] = []
+    enable_trace_sender: str = (True,)
     enable_authorization_check: bool = True
     enable_quota_check: bool = True
     default_role: T.TypedDict("Role", quota=int, profile=str) = {
@@ -115,13 +136,11 @@ def check_products_consistency(
     """
 
     if product_type in SENTINEL1:
-        exp = f"^S1[AB]_{product_type}"
+        exp = f"^S1[AB_]_{product_type}"
     elif product_type in SENTINEL2:
-        exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
-    else:
-        raise ValueError(
-            f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"
-        )
+        exp = f"^S2[AB_]_{product_type[2:5]}L{product_type[5:7]}"
+    elif product_type in SENTINEL3:
+        exp = f"S3[AB_]_{product_type}"
 
     if not re.match(exp, str(input_product_reference_name)):
         raise RequestError(
@@ -475,7 +494,10 @@ def submit_workflow(
         user_id=user_id,
     )
     order_id = dask.base.tokenize(
-        workflow_id, input_product_reference, workflow_options,
+        workflow_id,
+        input_product_reference,
+        workflow_options,
+        esa_tf_config["enable_trace_sender"],
     )
     logger.info(f"user: {user_id!r} - submitting transformation order {order_id!r}")
     if order_id in queue.transformation_orders:
@@ -490,6 +512,7 @@ def submit_workflow(
             workflow_id=workflow_id,
             workflow_options=workflow_options,
             workflow_name=workflow["WorkflowName"],
+            enable_trace_sender=esa_tf_config["enable_trace_sender"],
             uri_root=uri_root,
         )
 

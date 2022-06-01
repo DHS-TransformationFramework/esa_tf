@@ -16,7 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 class TransformationOrder(object):
-    __slots__ = ("future", "parameters", "uri_root", "_info", "client")
+    __slots__ = (
+        "future",
+        "parameters",
+        "uri_root",
+        "_info",
+        "client",
+        "enable_trace_sender",
+    )
 
     @classmethod
     def submit(
@@ -27,6 +34,7 @@ class TransformationOrder(object):
         workflow_id,
         workflow_options,
         workflow_name=None,
+        enable_trace_sender: str = True,
         uri_root=None,
     ):
         parameters = {
@@ -41,7 +49,9 @@ class TransformationOrder(object):
         def task():
             import esa_tf_platform
 
-            return esa_tf_platform.run_workflow(**parameters)
+            return esa_tf_platform.run_workflow(
+                **parameters, enable_trace_sender=enable_trace_sender
+            )
 
         future = client.submit(task, key=order_id)
         transformation_order = TransformationOrder()
@@ -182,7 +192,10 @@ class Queue(object):
         return running_processes
 
     def get_transformation_orders(
-        self, filters=[], user_id=DEFAULT_USER, filter_by_user_id=True,
+        self,
+        filters=[],
+        user_id=DEFAULT_USER,
+        filter_by_user_id=True,
     ):
         if not filter_by_user_id:
             transformation_orders = self.transformation_orders.copy()

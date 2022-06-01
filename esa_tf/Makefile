@@ -39,6 +39,10 @@ keeping_period: 14400  # minutes
 excluded_workflows: []
 
 # Optional, default true
+# enable sending trace
+enable_send_trace: true
+
+# Optional, default true
 # it enables authorization check
 enable_authorization_check: true
 
