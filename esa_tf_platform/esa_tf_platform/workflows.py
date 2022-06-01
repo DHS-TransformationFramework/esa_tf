@@ -1,3 +1,4 @@
+import datetime
 import importlib
 import itertools
 import logging
@@ -86,6 +87,26 @@ SENTINEL1 = [
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
+
+SENTINEL3 = [
+    "OL_1_EFR___",
+    "OL_1_ERR___",
+    "SL_1_RBT___",
+    "SR_1_SRA___",
+    "SR_1_SRA_A_",
+    "SR_1_SRA_BS",
+    "OL_2_LFR___",
+    "OL_2_LRR___",
+    "SL_2_LST___",
+    "SL_2_FRP___",
+    "SY_2_SYN___",
+    "SY_2_AOD___",
+    "SY_2_VGP___",
+    "SY_2_VGK___",
+    "SY_2_VG1___",
+    "SY_2_V10___",
+    "SR_2_LAN___",
+]
 
 def check_valid_product_type(workflow, workflow_id=None):
     product_type = workflow["InputProductType"]
@@ -363,12 +384,28 @@ def load_workflow_runner(workflow_id):
     return workflow_runner
 
 
+def extract_product_sensing_date(product_path):
+    product_date = os.path.basename(product_path)[17:32]
+    return datetime.datetime.strptime(product_date, "%Y%m%dT%H%M%S%f").isoformat()
+
+
+def extract_product_platform(product_path):
+    pl = os.path.basename(product_path)[:2]
+    if pl == "S1":
+        platform = "Sentinel-1"
+    if pl == "S2":
+        platform = "Sentinel-2"
+    if pl == "S3":
+        platform == "Sentinel-3"
+    return platform
+
+
 def push_trace(
-    output_dir,
+    output_product_path,
     traces_dir,
     order_id,
-    output_zip_file,
     workflow_id,
+    product_path,
     traceability_config_path=None,
     key_path=None,
     tracetool_path=None,
@@ -388,9 +425,7 @@ def push_trace(
     :param str tracetool_path: optional path for the tracetool-x.x.x.jar file. If it is None,
     the environment variable ``TRACETOOL_FILE`` is used
     """
-    output_product_path = os.path.join(
-        output_dir, order_id, os.path.basename(output_zip_file)
-    )
+
     if traceability_config_path is None:
         traceability_config_path = os.getenv(
             "TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml"
@@ -400,15 +435,20 @@ def push_trace(
     if tracetool_path is None:
         tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
     trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
+    logger.info(
+        f"{traceability_config_path} - f{tracetool_path} -f{key_path}"
+    )
     try:
         trace = traceability.Trace(
             traceability_config_path, key_path, tracetool_path, trace_path
         )
         trace.hash(output_product_path)
         workflow_info = get_all_workflows()[workflow_id]
+        platform = extract_product_platform(product_path)
+        beginning_time = extract_product_sensing_date(product_path)
         attributes = {
-            "beginningDateTime": "",
-            "platformShortName": "",
+            "beginningDateTime": beginning_time,
+            "platformShortName": platform,
             "productType": workflow_info["OutputProductType"],
             "processorName": workflow_info["WorkflowName"],
             "processorVersion": workflow_info["WorkflowVersion"],
@@ -435,6 +475,7 @@ def run_workflow(
     product_reference,
     workflow_options,
     order_id,
+    enable_trace_sender=True,
     working_dir=None,
     output_dir=None,
     traces_dir=None,
@@ -529,7 +570,10 @@ def run_workflow(
         logger.info(f"deleting {processing_dir!r}")
         shutil.rmtree(processing_dir, ignore_errors=True)
 
-    trace_id = push_trace(
-        output_dir, traces_dir, order_id, output_zip_file, workflow_id
-    )
-    return os.path.join(order_id, os.path.basename(output_zip_file))
+    output_product_path = os.path.join(order_id, os.path.basename(output_zip_file))
+
+    if enable_trace_sender:
+        trace_id = push_trace(
+            output_product_path, traces_dir, order_id, workflow_id, product_path
+        )
+    return output_product_path
