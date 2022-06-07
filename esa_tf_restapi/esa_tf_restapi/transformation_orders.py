@@ -33,7 +33,6 @@ class TransformationOrder(object):
         product_reference,
         workflow_id,
         workflow_options,
-        workflow_name=None,
         enable_traceability: str = True,
         uri_root=None,
     ):
@@ -66,7 +65,6 @@ class TransformationOrder(object):
             "InputProductReference": product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
-            "WorkflowName": workflow_name,
         }
         transformation_order.parameters = parameters
         transformation_order.uri_root = uri_root

@@ -493,7 +493,6 @@ def submit_workflow(
             product_reference=input_product_reference,
             workflow_id=workflow_id,
             workflow_options=workflow_options,
-            workflow_name=workflow["WorkflowName"],
             enable_traceability=esa_tf_config["enable_traceability"],
             uri_root=uri_root,
         )
