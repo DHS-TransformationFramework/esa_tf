@@ -536,6 +536,10 @@ def run_workflow(
             output_dir=output_binder_dir,
             workflow_options=workflow_options,
         )
+        if not os.path.exists(output):
+            raise ValueError(
+                f"{workflow_id!r} output file {output!r} not found."
+            )
 
         # re-package the output
         logger.info(f"package output product: {output!r}")
@@ -545,17 +549,19 @@ def run_workflow(
         output_product_path = zip_product(output, output_order_dir)
         shutil.chown(output_product_path, user=output_owner, group=output_group_owner)
         shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+
+        if enable_traceability:
+            logger.info("sending product trace")
+            trace_id = push_trace(
+                output_product_path, traces_dir, order_id, workflow_id
+            )
+        else:
+            logger.info("traceability is disabled")
+
     finally:
         # delete workflow processing dir
         logger.info(f"deleting {processing_dir!r}")
         shutil.rmtree(processing_dir, ignore_errors=True)
 
-    if enable_traceability:
-        logger.info("sending product trace")
-        trace_id = push_trace(
-            output_product_path, traces_dir, order_id, workflow_id
-        )
-    else:
-        logger.info("traceability is disabled")
 
     return os.path.join(order_id, os.path.basename(output_product_path))
