@@ -357,4 +357,6 @@ sen2cor_l1c_l2a = {
             "Enum": [10, 20, 60],
         },
     },
+    "ProcessorName": "Sen2Cor_L1C_L2A",
+    "ProcessorVersion": "v2.10"
 }

@@ -73,23 +73,27 @@ def import_key(traceability_config, key_path, tracetool_path):
             raise RuntimeError(f"key has not be imported: {out_after.stderr}")
 
 
-def initialise_trace(traceability_config):
+def initialise_trace(traceability_config, **kwargs):
     """Return a dictionary with the trace content.
 
     :param Configuration traceability_config: the traceability configuration
     :return dict:
     """
     trace = {
-        "beginningDateTime": "",
         "eventType": traceability_config.event_type,
-        "platformShortName": "",
-        "processorName": "",
-        "processorVersion": "",
-        "productType": "",
+        "platformShortName": kwargs.get("platformShortName", ""),
+        "beginningDateTime": kwargs.get("beginningDateTime", ""),
+        "productType": kwargs.get("productType", ""),
         "serviceContext": traceability_config.service_context,
         "serviceProvider": traceability_config.service_provider,
-        "serviceType": traceability_config.service_type,
+        "serviceType": traceability_config.service_type
     }
+
+    if "processorName" in kwargs:
+        trace["processorName"] = kwargs["processorName"]
+    if "processorVersion" in kwargs:
+        trace["processorVersion"] = kwargs["processorVersion"]
+
     return trace
 
 
@@ -139,7 +143,14 @@ class Trace(object):
     - pushing the trace to the Traceability service
     """
 
-    def __init__(self, traceability_config_path, key_path, tracetool_path, trace_path):
+    def __init__(
+        self,
+        traceability_config_path,
+        key_path,
+        tracetool_path,
+        trace_path,
+        **trace_kwargs
+    ):
         """
         :param str traceability_config_path: path of the traceability configuration file
         :param str key_path: path of the TS Data Producer key file
@@ -151,7 +162,7 @@ class Trace(object):
         self.key_path = key_path
         import_key(self.traceability_config, self.key_path, self.tracetool_path)
         self.trace_path = trace_path
-        self.trace_content = initialise_trace(self.traceability_config)
+        self.trace_content = initialise_trace(self.traceability_config, **trace_kwargs)
         self.save()
         self.access_token = None
         self.signed = False

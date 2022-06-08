@@ -415,21 +415,19 @@ def push_trace(
         tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
     trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
     try:
+        workflow_info = get_all_workflows()[workflow_id]
+        trace_kwargs = {
+            "beginningDateTime": extract_product_sensing_date(output_product_path),
+            "platformShortName": extract_product_platform(output_product_path),
+            "productType": workflow_info["OutputProductType"],
+            "processorName": workflow_info.get("ProcessorName", None),
+            "processorVersion": workflow_info.get("ProcessorVersion", None)
+        }
         trace = traceability.Trace(
-            traceability_config_path, key_path, tracetool_path, trace_path
+            traceability_config_path, key_path, tracetool_path, trace_path, **trace_kwargs
         )
         trace.hash(output_product_path)
-        workflow_info = get_all_workflows()[workflow_id]
-        platform = extract_product_platform(output_product_path)
-        beginning_time = extract_product_sensing_date(output_product_path)
-        attributes = {
-            "beginningDateTime": beginning_time,
-            "platformShortName": platform,
-            "productType": workflow_info["OutputProductType"],
-            "processorName": workflow_info["WorkflowName"],
-            "processorVersion": workflow_info["WorkflowVersion"],
-        }
-        trace.update_attributes(attributes)
+
         trace.sign()
         trace.push()
         if not os.getenv("DEBUG", 0):
@@ -445,6 +443,27 @@ def push_trace(
             f"the trace '{trace_path}' has not been pushed, an error occurred: {err}"
         )
     return trace_id
+
+
+def move_in_output_folder(
+    output,
+    order_id,
+    output_dir,
+    workflow_id,
+    output_owner,
+    output_group_owner
+):
+    if not os.path.exists(output):
+        raise ValueError(
+            f"{workflow_id!r} output file {output!r} not found."
+        )
+    # re-package the output
+    output_order_dir = os.path.join(output_dir, order_id)
+    os.makedirs(output_order_dir, exist_ok=True)
+    output_product_path = zip_product(output, output_order_dir)
+    shutil.chown(output_product_path, user=output_owner, group=output_group_owner)
+    shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+    return output_product_path
 
 
 def run_workflow(
@@ -515,8 +534,9 @@ def run_workflow(
     try:
         # download
         product = product_reference["Reference"]
-        hub_name = product_reference.get("DataSourceName")
+
         logger.info(f"downloading input product: {product!r}")
+        hub_name = product_reference.get("DataSourceName")
         product_zip_file = download_product(
             product=product,
             hubs_credentials_file=hubs_credentials_file,
@@ -528,28 +548,24 @@ def run_workflow(
         product_path = unzip_product(product_zip_file, processing_dir)
 
         # run workflow
-        workflow_runner = load_workflow_runner(workflow_id)
-
         logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
+        workflow_runner = load_workflow_runner(workflow_id)
         output = workflow_runner(
             product_path,
             processing_dir=processing_dir,
             output_dir=output_binder_dir,
             workflow_options=workflow_options,
         )
-        if not os.path.exists(output):
-            raise ValueError(
-                f"{workflow_id!r} output file {output!r} not found."
-            )
 
-        # re-package the output
         logger.info(f"package output product: {output!r}")
-
-        output_order_dir = os.path.join(output_dir, order_id)
-        os.makedirs(output_order_dir, exist_ok=True)
-        output_product_path = zip_product(output, output_order_dir)
-        shutil.chown(output_product_path, user=output_owner, group=output_group_owner)
-        shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+        output_product_path = move_in_output_folder(
+            output,
+            order_id,
+            output_dir,
+            workflow_id,
+            output_owner,
+            output_group_owner
+        )
 
         if enable_traceability:
             logger.info("sending product trace")
