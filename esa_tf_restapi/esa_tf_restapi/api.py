@@ -164,9 +164,18 @@ def get_all_workflows(scheduler=None):
     client = instantiate_client(scheduler)
     future = client.submit(task, priority=10)
     workflows = client.gather(future)
+    workflow_cleaned = {}
     for name in workflows:
-        workflows[name].pop("Execute")
-    return workflows
+        workflow_cleaned[name] = {
+            "Id": workflows[name]["Id"],
+            "WorkflowName": workflows[name]["WorkflowName"],
+            "Description": workflows[name]["Description"],
+            "InputProductType": workflows[name]["InputProductType"],
+            "OutputProductType": workflows[name]["OutputProductType"],
+            "WorkflowVersion": workflows[name]["WorkflowVersion"],
+            "WorkflowOptions": workflows[name]["WorkflowOptions"],
+        }
+    return workflow_cleaned
 
 
 def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER):
