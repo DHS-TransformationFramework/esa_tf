@@ -432,7 +432,8 @@ def push_trace(
         trace.update_attributes(attributes)
         trace.sign()
         trace.push()
-        os.remove(trace_path)
+        if not os.getenv("DEBUG", 0):
+            os.remove(trace_path)
         trace_id = trace.trace_content["id"]
         logger.info(
             f"the trace '{os.path.basename(trace_path)}' has been pushed, ID: {trace_id}"
@@ -560,8 +561,8 @@ def run_workflow(
 
     finally:
         # delete workflow processing dir
-        logger.info(f"deleting {processing_dir!r}")
-        shutil.rmtree(processing_dir, ignore_errors=True)
-
+        if not os.getenv("DEBUG", 0):
+            logger.info(f"deleting {processing_dir!r}")
+            shutil.rmtree(processing_dir, ignore_errors=True)
 
     return os.path.join(order_id, os.path.basename(output_product_path))
