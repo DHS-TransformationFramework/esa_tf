@@ -108,12 +108,13 @@ SENTINEL3 = [
     "SR_2_LAN___",
 ]
 
+
 def check_valid_product_type(workflow, workflow_id=None):
     product_type = workflow["InputProductType"]
-    if (product_type not in SENTINEL1) and (product_type not in SENTINEL2):
+    if product_type not in set([*SENTINEL1, *SENTINEL2, *SENTINEL3]):
         raise ValueError(
             f"error in workflow plugin {workflow_id}: product type {product_type} not recognized; "
-            f"product type shall be one of the following {[*SENTINEL1, *SENTINEL2]}"
+            f"product type shall be one of the following {[*SENTINEL1, *SENTINEL2, *SENTINEL3]}"
         )
 
 
@@ -396,7 +397,7 @@ def extract_product_platform(product_path):
     if pl == "S2":
         platform = "SENTINEL-2"
     if pl == "S3":
-        platform == "SENTINEL-3"
+        platform = "SENTINEL-3"
     return platform
 
 
