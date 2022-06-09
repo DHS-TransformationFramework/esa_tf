@@ -41,6 +41,7 @@ services:
             - TRACES_DIR=/traces
             - OUTPUT_OWNER_ID=${OUTPUT_OWNER_ID:-0}
             - OUTPUT_GROUP_OWNER_ID=${OUTPUT_GROUP_OWNER_ID:-0}
+            - DEBUG={DEBUG:-0}
         command: >
           sh -c 'if \[ -n "$$(ls /plugins/* 2>/dev/null)" \]; then pip install /plugins/* ; fi &&
                  make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"'

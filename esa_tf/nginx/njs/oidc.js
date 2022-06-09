@@ -69,14 +69,14 @@ async function authorize(r) {
 
     const status = data.status;
     if (status >= 400 && status < 500) {
-      r.warn(`Cannot authenticate (status ${status})`);
+      r.warn(`Cannot authenticate on ${OIDC_ENDPOINT} (status ${status})`);
       r.return(status);
       return;
     }
 
     if (!json.active) {
-      r.warn(`Token expired: ${status}`);
-      r.return(401, "Token is expired");
+      r.warn(`Session not found: ${status}`);
+      r.return(401, "Session not found");
       return;
     }
 

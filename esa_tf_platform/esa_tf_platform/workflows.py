@@ -1,8 +1,9 @@
-import datetime
+import datetime as dt
 import importlib
 import itertools
 import logging
 import os
+import re
 import shutil
 import zipfile
 
@@ -12,7 +13,6 @@ import sentinelsat
 import yaml
 
 from esa_tf_platform import traceability
-
 
 logger = logging.getLogger(__name__)
 
@@ -385,18 +385,18 @@ def load_workflow_runner(workflow_id):
 
 
 def extract_product_sensing_date(product_path):
-    product_date = os.path.basename(product_path)[17:32]
-    return datetime.datetime.strptime(product_date, "%Y%m%dT%H%M%S%f").isoformat()
+    match = re.search("[0-9]{8}T[0-9]{6}", product_path)
+    return dt.datetime.strptime(match.group(), "%Y%m%dT%H%M%S%f").isoformat()
 
 
 def extract_product_platform(product_path):
     pl = os.path.basename(product_path)[:2]
     if pl == "S1":
-        platform = "Sentinel-1"
+        platform = "SENTINEL-1"
     if pl == "S2":
-        platform = "Sentinel-2"
+        platform = "SENTINEL-2"
     if pl == "S3":
-        platform == "Sentinel-3"
+        platform == "SENTINEL-3"
     return platform
 
 
@@ -405,7 +405,6 @@ def push_trace(
     traces_dir,
     order_id,
     workflow_id,
-    product_path,
     traceability_config_path=None,
     key_path=None,
     tracetool_path=None,
@@ -413,10 +412,9 @@ def push_trace(
     """Create and push a trace relative to the output product. If the pushing ends successfully the
     .json file trace is deleted, otherwise it is stored into the ``traces_dir`` folder.
 
-    :param str output_dir: path of the output directory
+    :param str output_product_path: filename of the output file product
     :param str traces_dir: path of the folder for traces
     :param str order_id: unique identifier of the processing order, used to create a processing folder
-    :param str output_zip_file: filename of the output .zip file product
     :param str workflow_id: id that identifies the workflow to run
     :param str traceability_config_path: optional file containing the traceability configuration. If
     it is None, the environment variable ``TRACEABILITY_CONFIG_FILE`` is used
@@ -435,32 +433,33 @@ def push_trace(
     if tracetool_path is None:
         tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
     trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
-    logger.info(
-        f"{traceability_config_path} - f{tracetool_path} -f{key_path}"
-    )
     try:
+        workflow_info = get_all_workflows()[workflow_id]
+        trace_kwargs = {
+            "beginningDateTime": extract_product_sensing_date(output_product_path),
+            "platformShortName": extract_product_platform(output_product_path),
+            "productType": workflow_info["OutputProductType"],
+            "processorName": workflow_info.get("ProcessorName", None),
+            "processorVersion": workflow_info.get("ProcessorVersion", None),
+        }
         trace = traceability.Trace(
-            traceability_config_path, key_path, tracetool_path, trace_path
+            traceability_config_path,
+            key_path,
+            tracetool_path,
+            trace_path,
+            **trace_kwargs,
         )
         trace.hash(output_product_path)
-        workflow_info = get_all_workflows()[workflow_id]
-        platform = extract_product_platform(product_path)
-        beginning_time = extract_product_sensing_date(product_path)
-        attributes = {
-            "beginningDateTime": beginning_time,
-            "platformShortName": platform,
-            "productType": workflow_info["OutputProductType"],
-            "processorName": workflow_info["WorkflowName"],
-            "processorVersion": workflow_info["WorkflowVersion"],
-        }
-        trace.update_attributes(attributes)
+
         trace.sign()
         trace.push()
         os.remove(trace_path)
+
         trace_id = trace.trace_content["id"]
         logger.info(
             f"the trace '{os.path.basename(trace_path)}' has been pushed, ID: {trace_id}"
         )
+        logger.info("the trace has been pushed")
     except Exception as err:
         trace_id = None
         logger.exception(
@@ -469,13 +468,27 @@ def push_trace(
     return trace_id
 
 
+def move_in_output_folder(
+    output, order_id, output_dir, workflow_id, output_owner, output_group_owner
+):
+    if not os.path.exists(output):
+        raise ValueError(f"{workflow_id!r} output file {output!r} not found.")
+    # re-package the output
+    output_order_dir = os.path.join(output_dir, order_id)
+    os.makedirs(output_order_dir, exist_ok=True)
+    output_product_path = zip_product(output, output_order_dir)
+    shutil.chown(output_product_path, user=output_owner, group=output_group_owner)
+    shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+    return output_product_path
+
+
 def run_workflow(
     workflow_id,
     *,
     product_reference,
     workflow_options,
     order_id,
-    enable_trace_sender=True,
+    enable_traceability=True,
     working_dir=None,
     output_dir=None,
     traces_dir=None,
@@ -491,9 +504,12 @@ def run_workflow(
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}.
     :param dict workflow_options: dictionary containing the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
+    :param bool enable_traceability: enable sending the trace to the Traceability Service of the output product
     :param str working_dir: optional working directory where will be created the processing directory. If it is None,
     the environment variable ``WORKING_DIR`` is used.
     :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
+    :param str traces_dir: optional directory where to store the trace for which the trace push has failed and
+    that must be pushed manually.
     :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
     the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
     :param int output_owner: id of output files owner.
@@ -534,8 +550,9 @@ def run_workflow(
     try:
         # download
         product = product_reference["Reference"]
-        hub_name = product_reference.get("DataSourceName")
+
         logger.info(f"downloading input product: {product!r}")
+        hub_name = product_reference.get("DataSourceName")
         product_zip_file = download_product(
             product=product,
             hubs_credentials_file=hubs_credentials_file,
@@ -547,9 +564,8 @@ def run_workflow(
         product_path = unzip_product(product_zip_file, processing_dir)
 
         # run workflow
-        workflow_runner = load_workflow_runner(workflow_id)
-
         logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
+        workflow_runner = load_workflow_runner(workflow_id)
         output = workflow_runner(
             product_path,
             processing_dir=processing_dir,
@@ -557,23 +573,23 @@ def run_workflow(
             workflow_options=workflow_options,
         )
 
-        # re-package the output
         logger.info(f"package output product: {output!r}")
+        output_product_path = move_in_output_folder(
+            output, order_id, output_dir, workflow_id, output_owner, output_group_owner
+        )
 
-        output_order_dir = os.path.join(output_dir, order_id)
-        os.makedirs(output_order_dir, exist_ok=True)
-        output_zip_file = zip_product(output, output_order_dir)
-        shutil.chown(output_zip_file, user=output_owner, group=output_group_owner)
-        shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+        if enable_traceability:
+            logger.info("sending product trace")
+            trace_id = push_trace(
+                output_product_path, traces_dir, order_id, workflow_id
+            )
+        else:
+            logger.info("traceability is disabled")
+
     finally:
         # delete workflow processing dir
-        logger.info(f"deleting {processing_dir!r}")
-        shutil.rmtree(processing_dir, ignore_errors=True)
+        if not os.getenv("DEBUG", 0):
+            logger.info(f"deleting {processing_dir!r}")
+            shutil.rmtree(processing_dir, ignore_errors=True)
 
-    output_product_path = os.path.join(order_id, os.path.basename(output_zip_file))
-
-    if enable_trace_sender:
-        trace_id = push_trace(
-            output_product_path, traces_dir, order_id, workflow_id, product_path
-        )
-    return output_product_path
+    return os.path.join(order_id, os.path.basename(output_product_path))

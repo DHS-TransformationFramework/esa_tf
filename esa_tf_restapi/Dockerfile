@@ -1,5 +1,7 @@
 FROM continuumio/miniconda3
 
+RUN conda install make && conda clean -afy
+
 COPY Makefile /opt/esa-tf-restapi/
 COPY environment.yml /opt/esa-tf-restapi/
 

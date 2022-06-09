@@ -172,19 +172,19 @@ curl "http://localhost:8080/TransformationOrders/\$count" | jq
 ### Request a new transformation
 
 ```bash
-curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"Aerosol_Type": "MARITIME", "Mid_Latitude": "AUTO", "Ozone_Content": 0, "Cirrus_Correction": true, "DEM_Terrain_Correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
+curl -v -d '{"WorkflowId": "sen2cor_l1c_l2a", "InputProductReference": {"Reference": "S2B_MSIL1C_20220430T100019_N0400_R122_T33TUG_20220430T120209.zip", "DataSourceName": "scihub"}, "WorkflowOptions": {"Aerosol_Type": "MARITIME", "Mid_Latitude": "AUTO", "Ozone_Content": 0, "Cirrus_Correction": true, "DEM_Terrain_Correction": true}}' -H "Content-Type: application/json" http://localhost:8080/TransformationOrders | jq
 ```
 
 ### Monitoring status of a transformation order
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('f6ca5782c3b1f7127cc4d78a26d02a5d')" | jq
+curl "http://localhost:8080/TransformationOrders('81a53031de1357ed6b31755260d6c686')" | jq
 ```
 
 You can also inspect the current output from the transformation itself.
 
 ```bash
-curl "http://localhost:8080/TransformationOrders('f6ca5782c3b1f7127cc4d78a26d02a5d')/Log/\$value"
+curl "http://localhost:8080/TransformationOrders('81a53031de1357ed6b31755260d6c686')/Log/\$value"
 ```
 
 ## License information

@@ -107,7 +107,10 @@ setup: config/esa_tf.config
 plugins:
 	mkdir $@
 
-setup: plugins
+traces:
+	mkdir $@
+
+setup: plugins traces
 
 build: setup
 	make -C ../esa_tf_restapi image

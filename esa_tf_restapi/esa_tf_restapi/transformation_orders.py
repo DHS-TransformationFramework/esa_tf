@@ -22,7 +22,7 @@ class TransformationOrder(object):
         "uri_root",
         "_info",
         "client",
-        "enable_trace_sender",
+        "enable_traceability",
     )
 
     @classmethod
@@ -33,8 +33,7 @@ class TransformationOrder(object):
         product_reference,
         workflow_id,
         workflow_options,
-        workflow_name=None,
-        enable_trace_sender: str = True,
+        enable_traceability: str = True,
         uri_root=None,
     ):
         parameters = {
@@ -50,7 +49,7 @@ class TransformationOrder(object):
             import esa_tf_platform
 
             return esa_tf_platform.run_workflow(
-                **parameters, enable_trace_sender=enable_trace_sender
+                **parameters, enable_traceability=enable_traceability
             )
 
         future = client.submit(task, key=order_id)
@@ -66,7 +65,6 @@ class TransformationOrder(object):
             "InputProductReference": product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
-            "WorkflowName": workflow_name,
         }
         transformation_order.parameters = parameters
         transformation_order.uri_root = uri_root
@@ -192,10 +190,7 @@ class Queue(object):
         return running_processes
 
     def get_transformation_orders(
-        self,
-        filters=[],
-        user_id=DEFAULT_USER,
-        filter_by_user_id=True,
+        self, filters=[], user_id=DEFAULT_USER, filter_by_user_id=True,
     ):
         if not filter_by_user_id:
             transformation_orders = self.transformation_orders.copy()
