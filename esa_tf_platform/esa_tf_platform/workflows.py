@@ -430,8 +430,8 @@ def push_trace(
 
         trace.sign()
         trace.push()
-        if not os.getenv("DEBUG", 0):
-            os.remove(trace_path)
+        os.remove(trace_path)
+
         trace_id = trace.trace_content["id"]
         logger.info(
             f"the trace '{os.path.basename(trace_path)}' has been pushed, ID: {trace_id}"
