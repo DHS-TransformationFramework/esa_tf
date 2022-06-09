@@ -80,13 +80,13 @@ def initialise_trace(traceability_config, **kwargs):
     :return dict:
     """
     trace = {
-        "eventType": traceability_config.event_type,
+        "eventType": "CREATE",
         "platformShortName": kwargs.get("platformShortName", ""),
         "beginningDateTime": kwargs.get("beginningDateTime", ""),
         "productType": kwargs.get("productType", ""),
         "serviceContext": traceability_config.service_context,
         "serviceProvider": traceability_config.service_provider,
-        "serviceType": traceability_config.service_type,
+        "serviceType": "Production",
     }
 
     if "processorName" in kwargs:
