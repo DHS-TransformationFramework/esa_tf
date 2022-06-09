@@ -421,10 +421,14 @@ def push_trace(
             "platformShortName": extract_product_platform(output_product_path),
             "productType": workflow_info["OutputProductType"],
             "processorName": workflow_info.get("ProcessorName", None),
-            "processorVersion": workflow_info.get("ProcessorVersion", None)
+            "processorVersion": workflow_info.get("ProcessorVersion", None),
         }
         trace = traceability.Trace(
-            traceability_config_path, key_path, tracetool_path, trace_path, **trace_kwargs
+            traceability_config_path,
+            key_path,
+            tracetool_path,
+            trace_path,
+            **trace_kwargs,
         )
         trace.hash(output_product_path)
 
@@ -446,17 +450,10 @@ def push_trace(
 
 
 def move_in_output_folder(
-    output,
-    order_id,
-    output_dir,
-    workflow_id,
-    output_owner,
-    output_group_owner
+    output, order_id, output_dir, workflow_id, output_owner, output_group_owner
 ):
     if not os.path.exists(output):
-        raise ValueError(
-            f"{workflow_id!r} output file {output!r} not found."
-        )
+        raise ValueError(f"{workflow_id!r} output file {output!r} not found.")
     # re-package the output
     output_order_dir = os.path.join(output_dir, order_id)
     os.makedirs(output_order_dir, exist_ok=True)
@@ -559,12 +556,7 @@ def run_workflow(
 
         logger.info(f"package output product: {output!r}")
         output_product_path = move_in_output_folder(
-            output,
-            order_id,
-            output_dir,
-            workflow_id,
-            output_owner,
-            output_group_owner
+            output, order_id, output_dir, workflow_id, output_owner, output_group_owner
         )
 
         if enable_traceability:

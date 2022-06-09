@@ -86,7 +86,7 @@ def initialise_trace(traceability_config, **kwargs):
         "productType": kwargs.get("productType", ""),
         "serviceContext": traceability_config.service_context,
         "serviceProvider": traceability_config.service_provider,
-        "serviceType": traceability_config.service_type
+        "serviceType": traceability_config.service_type,
     }
 
     if "processorName" in kwargs:
@@ -149,7 +149,7 @@ class Trace(object):
         key_path,
         tracetool_path,
         trace_path,
-        **trace_kwargs
+        **trace_kwargs,
     ):
         """
         :param str traceability_config_path: path of the traceability configuration file
