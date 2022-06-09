@@ -14,7 +14,6 @@ import yaml
 
 from esa_tf_platform import traceability
 
-
 logger = logging.getLogger(__name__)
 
 TYPES = {
