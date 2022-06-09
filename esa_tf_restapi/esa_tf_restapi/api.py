@@ -96,6 +96,7 @@ class Configuration(pydantic.BaseModel):
 
     keeping_period: int = 14400
     excluded_workflows: T.List[str] = []
+    enable_traceability: bool = True
     enable_authorization_check: bool = True
     enable_quota_check: bool = True
     default_role: T.TypedDict("Role", quota=int, profile=str) = {
@@ -163,9 +164,18 @@ def get_all_workflows(scheduler=None):
     client = instantiate_client(scheduler)
     future = client.submit(task, priority=10)
     workflows = client.gather(future)
+    workflow_cleaned = {}
     for name in workflows:
-        workflows[name].pop("Execute")
-    return workflows
+        workflow_cleaned[name] = {
+            "Id": workflows[name]["Id"],
+            "WorkflowName": workflows[name]["WorkflowName"],
+            "Description": workflows[name]["Description"],
+            "InputProductType": workflows[name]["InputProductType"],
+            "OutputProductType": workflows[name]["OutputProductType"],
+            "WorkflowVersion": workflows[name]["WorkflowVersion"],
+            "WorkflowOptions": workflows[name]["WorkflowOptions"],
+        }
+    return workflow_cleaned
 
 
 def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER):
@@ -475,7 +485,10 @@ def submit_workflow(
         user_id=user_id,
     )
     order_id = dask.base.tokenize(
-        workflow_id, input_product_reference, workflow_options,
+        workflow_id,
+        input_product_reference,
+        workflow_options,
+        esa_tf_config["enable_traceability"],
     )
     logger.info(f"user: {user_id!r} - submitting transformation order {order_id!r}")
     if order_id in queue.transformation_orders:
@@ -489,7 +502,7 @@ def submit_workflow(
             product_reference=input_product_reference,
             workflow_id=workflow_id,
             workflow_options=workflow_options,
-            workflow_name=workflow["WorkflowName"],
+            enable_traceability=esa_tf_config["enable_traceability"],
             uri_root=uri_root,
         )
 
