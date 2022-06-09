@@ -16,7 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 class TransformationOrder(object):
-    __slots__ = ("future", "parameters", "uri_root", "_info", "client")
+    __slots__ = (
+        "future",
+        "parameters",
+        "uri_root",
+        "_info",
+        "client",
+        "enable_traceability",
+    )
 
     @classmethod
     def submit(
@@ -26,7 +33,7 @@ class TransformationOrder(object):
         product_reference,
         workflow_id,
         workflow_options,
-        workflow_name=None,
+        enable_traceability: str = True,
         uri_root=None,
     ):
         parameters = {
@@ -41,7 +48,9 @@ class TransformationOrder(object):
         def task():
             import esa_tf_platform
 
-            return esa_tf_platform.run_workflow(**parameters)
+            return esa_tf_platform.run_workflow(
+                **parameters, enable_traceability=enable_traceability
+            )
 
         future = client.submit(task, key=order_id)
         transformation_order = TransformationOrder()
@@ -56,7 +65,6 @@ class TransformationOrder(object):
             "InputProductReference": product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
-            "WorkflowName": workflow_name,
         }
         transformation_order.parameters = parameters
         transformation_order.uri_root = uri_root

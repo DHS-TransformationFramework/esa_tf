@@ -13,6 +13,20 @@ apihub:
   password: my-apihub-password
 endef
 
+define TRACEABILITY_CONFIG
+service_url: https://demo.trace.gael-systems.com
+url_access_token: https://demo.trace.gael-systems.com/auth/realms/ts/protocol/openid-connect/token
+url_push_trace: https://demo.trace.gael-systems.com/trace-api/Traces
+username: my-traceability-username
+password: my-traceability-password
+key_fingerprint: my-key-fingerprint
+passphrase: my-key-passphrase
+service_context: my-service
+service_type: Production
+service_provider: my-service-provider
+event_type: CREATE
+endef
+
 define ESA_TF_CONFIG
 # Mandatory
 # it is the minimum number of minutes from the CompletedDate
@@ -31,6 +45,10 @@ enable_authorization_check: true
 # Optional, default true
 # it enables quota configuration
 enable_quota_check: true
+
+# Optional, default true
+# it enables traceability pushing traces on the configured Traceability Service
+enable_traceability: true
 
 # role configuration
 # - quota is maximum number of transformation orders in progress or queued per user
@@ -69,6 +87,12 @@ config/hubs_credentials.yaml:
 	echo "$$HUBS_CREDENTIALS" > $@
 
 setup: config/hubs_credentials.yaml
+
+export TRACEABILITY_CONFIG
+config/traceability_config.yaml:
+	echo "$$TRACEABILITY_CONFIG" > $@
+
+setup: config/traceability_config.yaml
 
 export ESA_TF_CONFIG
 config/esa_tf.config:

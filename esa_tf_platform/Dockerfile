@@ -1,10 +1,21 @@
 FROM continuumio/miniconda3
 ARG SEN2COR_RUN=Sen2Cor-02.10.01-Linux64.run
+ARG TRACETOOL_ZIP=tracetool-1.2.4-distribution.zip
 
-# `file` is required to install Sen2Cor
+# `curl` and `unzip` are required to install tracetool
 RUN apt update && apt install -y \
     file \
-    make
+    make \
+    unzip \
+    gnupg \
+    curl
+
+# TODO check JAVA_HOME variable, if necessary set it
+RUN curl -LO https://repository.gael-systems.com/repository/public/fr/gael/datac/tracetool/1.2.4/$TRACETOOL_ZIP
+RUN unzip $TRACETOOL_ZIP -d /opt
+ENV PATH="${PATH}:/opt/"
+
+RUN conda install make && conda install -c anaconda openjdk=8 && conda clean -afy
 
 COPY $SEN2COR_RUN /opt
 

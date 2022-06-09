@@ -30,11 +30,18 @@ services:
             - "${OUTPUT_DIR:-./output}:/output"
             - "${CONFIG_DIR:-./config}:/config"
             - "${PLUGINS_DIR:-./plugins}:/plugins"
+            - "${TRACES_DIR:-./traces}:/traces"
         environment:
+            - ESA_TF_CONFIG_FILE=/config/esa_tf.config
             - HUBS_CREDENTIALS_FILE=/config/hubs_credentials.yaml
+            - TRACEABILITY_CONFIG_FILE=/config/traceability_config.yaml
+            - KEY_FILE=/config/secret.txt
+            - TRACETOOL_FILE=/opt/tracetool-1.2.4.jar
             - OUTPUT_DIR=/output
+            - TRACES_DIR=/traces
             - OUTPUT_OWNER_ID=${OUTPUT_OWNER_ID:-0}
             - OUTPUT_GROUP_OWNER_ID=${OUTPUT_GROUP_OWNER_ID:-0}
+            - DEBUG={DEBUG:-0}
         command: >
           sh -c 'if \[ -n "$$(ls /plugins/* 2>/dev/null)" \]; then pip install /plugins/* ; fi &&
                  make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"'
