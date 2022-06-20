@@ -124,6 +124,7 @@ class Configuration(pydantic.BaseModel):
         "profile": "user",
     }
     roles: T.Dict[str, T.TypedDict("Role", quota=int, profile=str)] = {}
+    untraced_workflows: T.List[str] = []
 
 
 def check_products_consistency(
@@ -172,7 +173,7 @@ def instantiate_client(scheduler_addr=None):
 
 
 @functools.lru_cache()
-def get_all_workflows(scheduler=None):
+def get_all_workflows(scheduler=None, verbose=False):
     """
     Return the workflows configurations installed in the workers.
     """
@@ -186,27 +187,28 @@ def get_all_workflows(scheduler=None):
     client = instantiate_client(scheduler)
     future = client.submit(task, priority=10)
     workflows = client.gather(future)
-    workflow_cleaned = {}
-    for name in workflows:
-        workflow_cleaned[name] = {
-            "Id": workflows[name]["Id"],
-            "WorkflowName": workflows[name]["WorkflowName"],
-            "Description": workflows[name]["Description"],
-            "InputProductType": workflows[name]["InputProductType"],
-            "OutputProductType": workflows[name]["OutputProductType"],
-            "WorkflowVersion": workflows[name]["WorkflowVersion"],
-            "WorkflowOptions": workflows[name]["WorkflowOptions"],
-        }
-    return workflow_cleaned
+
+    for workflow_id in workflows:
+        if not verbose:
+            workflows[workflow_id] = {
+                "Id": workflows[workflow_id]["Id"],
+                "WorkflowName": workflows[workflow_id]["WorkflowName"],
+                "Description": workflows[workflow_id]["Description"],
+                "InputProductType": workflows[workflow_id]["InputProductType"],
+                "OutputProductType": workflows[workflow_id]["OutputProductType"],
+                "WorkflowVersion": workflows[workflow_id]["WorkflowVersion"],
+                "WorkflowOptions": workflows[workflow_id]["WorkflowOptions"],
+            }
+    return workflows
 
 
-def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER):
+def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER, verbose=False):
     """
     Return the workflow configuration corresponding to the workflow_id.
     """
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
-    workflows = get_workflows(esa_tf_config=esa_tf_config)
+    workflows = get_workflows(esa_tf_config=esa_tf_config, verbose=verbose)
     try:
         workflow = workflows[workflow_id]
     except KeyError:
@@ -217,7 +219,7 @@ def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER):
     return workflow
 
 
-def get_workflows(product_type=None, esa_tf_config=None):
+def get_workflows(product_type=None, esa_tf_config=None, verbose=False):
     """
     Return the workflows configurations installed in the workers.
     They may be filtered using the product type
@@ -226,7 +228,7 @@ def get_workflows(product_type=None, esa_tf_config=None):
         esa_tf_config = read_esa_tf_config()
     excluded_workflows = esa_tf_config["excluded_workflows"]
     workflows = {}
-    for workflow_id, workflow in get_all_workflows().items():
+    for workflow_id, workflow in get_all_workflows(verbose=verbose).items():
         if workflow_id not in excluded_workflows:
             workflows[workflow_id] = workflow
 
@@ -492,7 +494,7 @@ def submit_workflow(
     check_user_quota(
         user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config
     )
-    workflow = get_workflow_by_id(workflow_id, esa_tf_config=esa_tf_config)
+    workflow = get_workflow_by_id(workflow_id, esa_tf_config=esa_tf_config, verbose=True)
 
     check_products_consistency(
         workflow["InputProductType"],
@@ -513,6 +515,17 @@ def submit_workflow(
         esa_tf_config["enable_traceability"],
     )
     logger.info(f"user: {user_id!r} - submitting transformation order {order_id!r}")
+    enable_traceability = True
+    if not esa_tf_config["enable_traceability"]:
+        logger.info("traceability is disabled")
+        enable_traceability = False
+    if workflow["Id"] in esa_tf_config["untraced_workflows"]:
+        logger.info(f"workflow {workflow_id!r} traceability is disabled")
+        enable_traceability = False
+    if not workflow.get("SupportTraceabilty", True):
+        logger.info(f"workflow {workflow_id!r} does not support traceability")
+        enable_traceability = False
+
     if order_id in queue.transformation_orders:
         transformation_order = queue.transformation_orders[order_id]
         transformation_order.resubmit()
@@ -524,7 +537,7 @@ def submit_workflow(
             product_reference=input_product_reference,
             workflow_id=workflow_id,
             workflow_options=workflow_options,
-            enable_traceability=esa_tf_config["enable_traceability"],
+            enable_traceability=enable_traceability,
             uri_root=uri_root,
         )
 

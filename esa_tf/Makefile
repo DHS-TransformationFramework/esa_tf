@@ -48,6 +48,10 @@ enable_quota_check: true
 # it enables traceability pushing traces on the configured Traceability Service
 enable_traceability: true
 
+# list of workflows for which the trace should not be sent
+# default empty list
+untraced_workflows: []
+
 # role configuration
 # - quota is maximum number of transformation orders in progress or queued per user
 # - profile can ben "manager" or "user"
