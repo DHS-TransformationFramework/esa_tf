@@ -141,6 +141,10 @@ def check_products_consistency(
         exp = f"^S2[AB_]_{product_type[2:5]}L{product_type[5:7]}"
     elif product_type in SENTINEL3:
         exp = f"S3[AB_]_{product_type}"
+    else:
+        raise ValueError(
+            f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"
+        )
 
     if not re.match(exp, str(input_product_reference_name)):
         raise RequestError(
