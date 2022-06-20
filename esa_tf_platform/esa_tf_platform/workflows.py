@@ -589,7 +589,7 @@ def run_workflow(
 
     finally:
         # delete workflow processing dir
-        if not os.getenv("DEBUG", 0):
+        if not int(os.getenv("TF_DEBUG", 0)):
             logger.info(f"deleting {processing_dir!r}")
             shutil.rmtree(processing_dir, ignore_errors=True)
 
