@@ -16,10 +16,12 @@ services:
         command: make serve PORT=8000 SCHEDULER="tcp://esa_tf_scheduler:8786"
         volumes:
             - "${CONFIG_DIR:-./config}:/config"
+            - "${OUTPUT_DIR:-./output}:/output"
         environment:
             - ESA_TF_CONFIG_FILE=/config/esa_tf.config
             - FORWARDED_ALLOW_IPS=*
             - ROOT_PATH=${ROOT_PATH}
+            - OUTPUT_DIR=/output
 
     esa_tf_worker:
         image: ${ESA_REGISTRY_PATH:-collaborativedhs}/esa_tf_worker:${ESA_TF_RELEASE:-latest}
@@ -41,7 +43,7 @@ services:
             - TRACES_DIR=/traces
             - OUTPUT_OWNER_ID=${OUTPUT_OWNER_ID:-0}
             - OUTPUT_GROUP_OWNER_ID=${OUTPUT_GROUP_OWNER_ID:-0}
-            - DEBUG={DEBUG:-0}
+            - TF_DEBUG=${TF_DEBUG:-0}
         command: >
           sh -c 'if \[ -n "$$(ls /plugins/* 2>/dev/null)" \]; then pip install /plugins/* ; fi &&
                  make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"'
