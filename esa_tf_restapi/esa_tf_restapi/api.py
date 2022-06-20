@@ -66,6 +66,26 @@ SENTINEL1 = [
 
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
+SENTINEL3 = [
+    "OL_1_EFR___",
+    "OL_1_ERR___",
+    "SL_1_RBT___",
+    "SR_1_SRA___",
+    "SR_1_SRA_A_",
+    "SR_1_SRA_BS",
+    "OL_2_LFR___",
+    "OL_2_LRR___",
+    "SL_2_LST___",
+    "SL_2_FRP___",
+    "SY_2_SYN___",
+    "SY_2_AOD___",
+    "SY_2_VGP___",
+    "SY_2_VGK___",
+    "SY_2_VG1___",
+    "SY_2_V10___",
+    "SR_2_LAN___",
+]
+
 
 class ConfigurationError(Exception):
     pass
@@ -116,9 +136,11 @@ def check_products_consistency(
     """
 
     if product_type in SENTINEL1:
-        exp = f"^S1[AB]_{product_type}"
+        exp = f"^S1[AB_]_{product_type}"
     elif product_type in SENTINEL2:
-        exp = f"^S2[AB]_{product_type[2:5]}L{product_type[5:7]}"
+        exp = f"^S2[AB_]_{product_type[2:5]}L{product_type[5:7]}"
+    elif product_type in SENTINEL3:
+        exp = f"S3[AB_]_{product_type}"
     else:
         raise ValueError(
             f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"

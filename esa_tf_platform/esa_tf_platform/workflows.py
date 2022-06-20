@@ -88,12 +88,33 @@ SENTINEL1 = [
 SENTINEL2 = ["S2MSI1C", "S2MSI2A"]
 
 
+SENTINEL3 = [
+    "OL_1_EFR___",
+    "OL_1_ERR___",
+    "SL_1_RBT___",
+    "SR_1_SRA___",
+    "SR_1_SRA_A_",
+    "SR_1_SRA_BS",
+    "OL_2_LFR___",
+    "OL_2_LRR___",
+    "SL_2_LST___",
+    "SL_2_FRP___",
+    "SY_2_SYN___",
+    "SY_2_AOD___",
+    "SY_2_VGP___",
+    "SY_2_VGK___",
+    "SY_2_VG1___",
+    "SY_2_V10___",
+    "SR_2_LAN___",
+]
+
+
 def check_valid_product_type(workflow, workflow_id=None):
     product_type = workflow["InputProductType"]
-    if (product_type not in SENTINEL1) and (product_type not in SENTINEL2):
+    if product_type not in set([*SENTINEL1, *SENTINEL2, *SENTINEL3]):
         raise ValueError(
             f"error in workflow plugin {workflow_id}: product type {product_type} not recognized; "
-            f"product type shall be one of the following {[*SENTINEL1, *SENTINEL2]}"
+            f"product type shall be one of the following {[*SENTINEL1, *SENTINEL2, *SENTINEL3]}"
         )
 
 
