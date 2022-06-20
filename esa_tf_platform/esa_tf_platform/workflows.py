@@ -397,7 +397,7 @@ def extract_product_platform(product_path):
     if pl == "S2":
         platform = "SENTINEL-2"
     if pl == "S3":
-        platform = "SENTINEL-3"
+        platform == "SENTINEL-3"
     return platform
 
 
