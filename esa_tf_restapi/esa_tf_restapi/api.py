@@ -202,7 +202,9 @@ def get_all_workflows(scheduler=None, verbose=False):
     return workflows
 
 
-def get_workflow_by_id(workflow_id, esa_tf_config=None, user_id=DEFAULT_USER, verbose=False):
+def get_workflow_by_id(
+    workflow_id, esa_tf_config=None, user_id=DEFAULT_USER, verbose=False
+):
     """
     Return the workflow configuration corresponding to the workflow_id.
     """
@@ -494,7 +496,9 @@ def submit_workflow(
     check_user_quota(
         user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config
     )
-    workflow = get_workflow_by_id(workflow_id, esa_tf_config=esa_tf_config, verbose=True)
+    workflow = get_workflow_by_id(
+        workflow_id, esa_tf_config=esa_tf_config, verbose=True
+    )
 
     check_products_consistency(
         workflow["InputProductType"],
