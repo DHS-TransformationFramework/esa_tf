@@ -64,7 +64,6 @@ class TransformationOrder(object):
 
         def task(**kwargs):
             import esa_tf_platform
-
             return esa_tf_platform.run_workflow(**kwargs)
 
         self._future = self._client.submit(
@@ -74,7 +73,13 @@ class TransformationOrder(object):
         self._info["SubmissionDate"] = datetime.now().isoformat()
 
     def resubmit(self):
-        if self.get_status() == "failed":
+        if self.get_status() == 'completed':
+            output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
+            full_output_path = os.path.join(output_dir, self._output_product_path)
+        if (
+                self.get_status() == "failed" or
+                (self.get_status() == "completed" and not os.path.exists(full_output_path))
+        ):
             self.clean_completed_info()
             self._info["SubmissionDate"] = datetime.now().isoformat()
             self._future.retry()
@@ -117,21 +122,32 @@ class TransformationOrder(object):
 
     def update_status(self):
         # Note: the future must be extracted from the original order. The deepcopy breaks the future
-        self._info["Status"] = STATUS_DASK_TO_API.get(
-            self._future.status, self._future.status
-        )
+
+        status_dask_to_api = {
+            "pending": "in_progress",
+            "finished": "completed",
+            "error": "failed",
+            "lost": "failed",
+        }
+        future_status = self._future.status
+        if future_status == "lost":
+            internal_status = self.get_dask_orders_status()
+            if internal_status == "processing":
+                self._info["Status"] = "in_progress"
+            else:
+                self._info["Status"] = "failed"
+        else:
+            self._info["Status"] = status_dask_to_api.get(future_status, future_status)
 
     def get_status(self):
         self.update_status()
         return self._info["Status"]
 
-    # @staticmethod
-    # def get_dask_orders_status():
-    #     def orders_status_on_scheduler(dask_scheduler):
-    #         return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
-    #
-    #     client = instantiate_client()
-    #     return client.run_on_scheduler(orders_status_on_scheduler)
+    def get_dask_orders_status(self):
+        def orders_status_on_scheduler(dask_scheduler):
+            return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
+
+        return self.client.run_on_scheduler(orders_status_on_scheduler)
 
 
 class Queue(object):
