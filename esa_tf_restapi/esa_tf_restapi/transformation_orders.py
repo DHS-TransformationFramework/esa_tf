@@ -47,7 +47,7 @@ class TransformationOrder(object):
             "product_reference": product_reference,
             "workflow_id": workflow_id,
             "workflow_options": workflow_options,
-            "enable_traceability": enable_traceability
+            "enable_traceability": enable_traceability,
         }
 
         self._info = {
@@ -64,12 +64,13 @@ class TransformationOrder(object):
 
         def task(**kwargs):
             import esa_tf_platform
+
             return esa_tf_platform.run_workflow(**kwargs)
 
-        self._future = self._client.submit(task, **self._task_parameters, key=self._task_parameters["order_id"])
-        self._future.add_done_callback(
-            self.add_completed_info
+        self._future = self._client.submit(
+            task, **self._task_parameters, key=self._task_parameters["order_id"]
         )
+        self._future.add_done_callback(self.add_completed_info)
         self._info["SubmissionDate"] = datetime.now().isoformat()
 
     def resubmit(self):

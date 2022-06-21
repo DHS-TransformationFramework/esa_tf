@@ -545,7 +545,9 @@ def run_workflow(
     processing_dir = os.path.join(working_dir, order_id)
     output_binder_dir = os.path.join(working_dir, order_id, "output_binder_dir")
     os.makedirs(output_dir, exist_ok=True)
-    logger.info(f"creating directories: {working_dir!r} {processing_dir!r} {output_binder_dir!r}")
+    logger.info(
+        f"creating directories: {working_dir!r} {processing_dir!r} {output_binder_dir!r}"
+    )
     for directory in [working_dir, processing_dir, output_binder_dir]:
         os.makedirs(directory, exist_ok=True)
     try:
