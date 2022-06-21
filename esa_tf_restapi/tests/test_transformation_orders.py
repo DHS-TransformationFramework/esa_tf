@@ -3,19 +3,28 @@ from unittest import mock
 
 import esa_tf_restapi
 
+TO_KWARGS = {
+    "client": None,
+    "order_id": None,
+    "product_reference": None,
+    "workflow_id": None,
+    "workflow_options": None,
+}
+
+
 TRANSFORMATION_ORDERS_USER1 = {
-    "Id1": esa_tf_restapi.transformation_orders.TransformationOrder(),
-    "Id2": esa_tf_restapi.transformation_orders.TransformationOrder(),
+    "Id1": esa_tf_restapi.transformation_orders.TransformationOrder(**TO_KWARGS),
+    "Id2": esa_tf_restapi.transformation_orders.TransformationOrder(**TO_KWARGS),
 }
 
 TRANSFORMATION_ORDERS_USER2 = {
-    "Id3": esa_tf_restapi.transformation_orders.TransformationOrder(),
-    "Id4": esa_tf_restapi.transformation_orders.TransformationOrder(),
+    "Id3": esa_tf_restapi.transformation_orders.TransformationOrder(**TO_KWARGS),
+    "Id4": esa_tf_restapi.transformation_orders.TransformationOrder(**TO_KWARGS),
 }
 
 TRANSFORMATION_ORDERS_USER3 = {
-    "Id3": esa_tf_restapi.transformation_orders.TransformationOrder(),
-    "Id5": esa_tf_restapi.transformation_orders.TransformationOrder(),
+    "Id3": esa_tf_restapi.transformation_orders.TransformationOrder(**TO_KWARGS),
+    "Id5": esa_tf_restapi.transformation_orders.TransformationOrder(**TO_KWARGS),
 }
 
 TRANSFORMATION_ORDERS_USER1["Id1"]._info = {
