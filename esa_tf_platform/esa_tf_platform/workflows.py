@@ -545,8 +545,8 @@ def run_workflow(
     processing_dir = os.path.join(working_dir, order_id)
     output_binder_dir = os.path.join(working_dir, order_id, "output_binder_dir")
     os.makedirs(output_dir, exist_ok=True)
+    logger.info(f"creating directories: {working_dir!r} {processing_dir!r} {output_binder_dir!r}")
     for directory in [working_dir, processing_dir, output_binder_dir]:
-        logger.info(f"creating {directory!r}")
         os.makedirs(directory, exist_ok=True)
     try:
         # download
@@ -584,9 +584,6 @@ def run_workflow(
             trace_id = push_trace(
                 output_product_path, traces_dir, order_id, workflow_id
             )
-        else:
-            logger.info("traceability is disabled")
-
     finally:
         # delete workflow processing dir
         if not int(os.getenv("TF_DEBUG", 0)):
