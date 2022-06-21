@@ -64,6 +64,7 @@ class TransformationOrder(object):
 
         def task(**kwargs):
             import esa_tf_platform
+
             return esa_tf_platform.run_workflow(**kwargs)
 
         self._future = self._client.submit(
@@ -73,12 +74,11 @@ class TransformationOrder(object):
         self._info["SubmissionDate"] = datetime.now().isoformat()
 
     def resubmit(self):
-        if self.get_status() == 'completed':
+        if self.get_status() == "completed":
             output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
             full_output_path = os.path.join(output_dir, self._output_product_path)
-        if (
-                self.get_status() == "failed" or
-                (self.get_status() == "completed" and not os.path.exists(full_output_path))
+        if self.get_status() == "failed" or (
+            self.get_status() == "completed" and not os.path.exists(full_output_path)
         ):
             self.clean_completed_info()
             self._info["SubmissionDate"] = datetime.now().isoformat()
@@ -145,7 +145,9 @@ class TransformationOrder(object):
 
     def get_dask_orders_status(self):
         def orders_status_on_scheduler(dask_scheduler):
-            return {task_id: task.state for task_id, task in dask_scheduler.tasks.items()}
+            return {
+                task_id: task.state for task_id, task in dask_scheduler.tasks.items()
+            }
 
         return self.client.run_on_scheduler(orders_status_on_scheduler)
 
