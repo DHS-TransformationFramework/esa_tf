@@ -535,7 +535,7 @@ def submit_workflow(
         transformation_order.resubmit()
     else:
         client = instantiate_client()
-        transformation_order = TransformationOrder.submit(
+        transformation_order = TransformationOrder(
             client=client,
             order_id=order_id,
             product_reference=input_product_reference,
@@ -544,6 +544,7 @@ def submit_workflow(
             enable_traceability=enable_traceability,
             uri_root=uri_root,
         )
+        transformation_order.submit()
 
     queue.add_order(transformation_order, user_id=user_id)
 

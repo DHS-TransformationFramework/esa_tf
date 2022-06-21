@@ -359,4 +359,5 @@ sen2cor_l1c_l2a = {
     },
     "ProcessorName": "Sen2Cor_L1C_L2A",
     "ProcessorVersion": "v2.10",
+    "SupportTraceabilty": True,
 }
