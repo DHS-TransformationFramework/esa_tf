@@ -17,80 +17,84 @@ logger = logging.getLogger(__name__)
 
 class TransformationOrder(object):
     __slots__ = (
-        "future",
-        "parameters",
-        "uri_root",
+        "_client",
+        "_future",
+        "_order_id",
         "_info",
-        "client",
-        "enable_traceability",
+        "_task_parameters",
+        "_uri_root",
+        "_output_product_path",
     )
 
-    @classmethod
-    def submit(
-        cls,
+    def __init__(
+        self,
         client,
         order_id,
         product_reference,
         workflow_id,
         workflow_options,
         enable_traceability: str = True,
-        uri_root=None,
+        uri_root: str = "",
     ):
-        parameters = {
+        self._client = client
+        self._order_id = order_id
+        self._uri_root = uri_root
+        self._output_product_path = ""
+        self._future = None
+
+        self._task_parameters = {
             "order_id": order_id,
             "product_reference": product_reference,
             "workflow_id": workflow_id,
             "workflow_options": workflow_options,
+            "enable_traceability": enable_traceability
         }
-        # definition of the task must be internal
-        # to avoid dask to import esa_tf_restapi in the workers
 
-        def task():
-            import esa_tf_platform
-
-            return esa_tf_platform.run_workflow(
-                **parameters, enable_traceability=enable_traceability
-            )
-
-        future = client.submit(task, key=order_id)
-        transformation_order = TransformationOrder()
-        transformation_order.client = client
-        transformation_order.future = future
-        transformation_order.future.add_done_callback(
-            transformation_order.add_completed_info
-        )
-        transformation_order._info = {
+        self._info = {
             "Id": order_id,
-            "SubmissionDate": datetime.now().isoformat(),
             "InputProductReference": product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
         }
-        transformation_order.parameters = parameters
-        transformation_order.uri_root = uri_root
-        return transformation_order
+
+    def submit(self):
+
+        # definition of the task must be internal
+        # to avoid dask to import esa_tf_restapi in the workers
+
+        def task(**kwargs):
+            import esa_tf_platform
+            return esa_tf_platform.run_workflow(**kwargs)
+
+        self._future = self._client.submit(task, **self._task_parameters, key=self._task_parameters["order_id"])
+        self._future.add_done_callback(
+            self.add_completed_info
+        )
+        self._info["SubmissionDate"] = datetime.now().isoformat()
 
     def resubmit(self):
         if self.get_status() == "failed":
             self.clean_completed_info()
             self._info["SubmissionDate"] = datetime.now().isoformat()
-            self.future.retry()
-            self.future.add_done_callback(self.add_completed_info)
+            self._future.retry()
+            self._future.add_done_callback(self.add_completed_info)
 
-    def add_completed_info(self, future):
+    def update_output_product_reference(self):
+        basepath, reference = os.path.split(self._output_product_path)
+        uri_root = self._uri_root or ""
+        self._info["OutputProductReference"] = [
+            {
+                "Reference": reference,
+                "DownloadURI": f"{uri_root}download/{basepath}/{reference}",
+            }
+        ]
+
+    def add_completed_info(self, future=None):
+        self.update_status()
         self._info["CompletedDate"] = datetime.now().isoformat()
-        self._info["Status"] = STATUS_DASK_TO_API.get(
-            self.future.status, self.future.status
-        )
-        if self.future.status == "finished":
-            basepath, reference = os.path.split(self.future.result())
-            uri_root = self.uri_root or ""
-            self._info["OutputProductReference"] = [
-                {
-                    "Reference": reference,
-                    "DownloadURI": f"{uri_root}download/{basepath}/{reference}",
-                }
-            ]
+        if self.get_status() == "completed":
+            self._output_product_path = self._future.result()
+            self.update_output_product_reference()
 
     def clean_completed_info(self):
         self._info.pop("Status", None)
@@ -99,10 +103,12 @@ class TransformationOrder(object):
 
     def get_info(self):
         self.update_status()
+        if self.get_status() == "completed":
+            self.update_output_product_reference()
         return self._info
 
     def get_log(self):
-        seconds_logs = self.client.get_events(self.future.key)
+        seconds_logs = self._client.get_events(self._future.key)
         logs = []
         for seconds, log in seconds_logs:
             logs.append(log)
@@ -111,7 +117,7 @@ class TransformationOrder(object):
     def update_status(self):
         # Note: the future must be extracted from the original order. The deepcopy breaks the future
         self._info["Status"] = STATUS_DASK_TO_API.get(
-            self.future.status, self.future.status
+            self._future.status, self._future.status
         )
 
     def get_status(self):
