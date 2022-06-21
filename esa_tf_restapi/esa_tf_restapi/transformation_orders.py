@@ -132,7 +132,11 @@ class TransformationOrder(object):
         # while get_dask_orders_status() returns the correct status.
         if future_status == "lost":
             internal_status = self.get_dask_orders_status()
-            if internal_status == "processing":
+            order_id = self._task_parameters["order_id"]
+            if (
+                order_id in internal_status
+                and internal_status[order_id] == "processing"
+            ):
                 self._info["Status"] = "in_progress"
             else:
                 self._info["Status"] = "failed"
@@ -149,7 +153,7 @@ class TransformationOrder(object):
                 task_id: task.state for task_id, task in dask_scheduler.tasks.items()
             }
 
-        return self.client.run_on_scheduler(orders_status_on_scheduler)
+        return self._client.run_on_scheduler(orders_status_on_scheduler)
 
 
 class Queue(object):
