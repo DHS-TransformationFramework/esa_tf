@@ -121,8 +121,6 @@ class TransformationOrder(object):
         return logs
 
     def update_status(self):
-        # Note: the future must be extracted from the original order. The deepcopy breaks the future
-
         status_dask_to_api = {
             "pending": "in_progress",
             "finished": "completed",
@@ -130,6 +128,8 @@ class TransformationOrder(object):
             "lost": "failed",
         }
         future_status = self._future.status
+        # needed because resubmitting completed processing the future.status is lost
+        # while get_dask_orders_status() returns the correct status.
         if future_status == "lost":
             internal_status = self.get_dask_orders_status()
             if internal_status == "processing":
