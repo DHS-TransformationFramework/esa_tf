@@ -133,9 +133,12 @@ class TransformationOrder(object):
         if future_status == "lost":
             internal_status = self.get_dask_orders_status()
             order_id = self._task_parameters["order_id"]
-            if (
-                order_id in internal_status
-                and internal_status[order_id] == "processing"
+            if order_id in internal_status and internal_status[order_id] in (
+                "processing",
+                "no-worker",
+                "released",
+                "waiting",
+                "memory",
             ):
                 self._info["Status"] = "in_progress"
             else:
