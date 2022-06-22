@@ -491,6 +491,7 @@ def submit_workflow(
     of the environment variable "HUBS_CREDENTIALS_FILE"
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
+
     esa_tf_config = read_esa_tf_config()
     evict_orders(esa_tf_config=esa_tf_config)
     check_user_quota(
@@ -518,7 +519,7 @@ def submit_workflow(
         workflow_options,
         esa_tf_config["enable_traceability"],
     )
-    logger.info(f"user: {user_id!r} - submitting transformation order {order_id!r}")
+    logger.info(f"user: {user_id!r} - required transformation order {order_id!r}")
     enable_traceability = True
     if not esa_tf_config["enable_traceability"]:
         logger.info("traceability is disabled")
@@ -531,8 +532,9 @@ def submit_workflow(
         enable_traceability = False
 
     if order_id in queue.transformation_orders:
+        logger.info(f"oder {order_id!r} is already in list of submitted orders")
         transformation_order = queue.transformation_orders[order_id]
-        transformation_order.resubmit()
+        transformation_order.maybe_resubmit()
     else:
         client = instantiate_client()
         transformation_order = TransformationOrder(

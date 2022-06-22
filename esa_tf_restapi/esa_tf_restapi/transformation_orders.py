@@ -74,16 +74,29 @@ class TransformationOrder(object):
         self._info["SubmissionDate"] = datetime.now().isoformat()
 
     def resubmit(self):
-        if self.get_status() == "completed":
+        self.clean_completed_info()
+        self._info["SubmissionDate"] = datetime.now().isoformat()
+        self._future.retry()
+        self._future.add_done_callback(self.add_completed_info)
+
+    def maybe_resubmit(self):
+        status = self.get_status()
+        order_id = self._task_parameters["order_id"]
+        logger.info(f"oder {order_id!r} status is {status!r}")
+
+        if status == "completed":
             output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
             full_output_path = os.path.join(output_dir, self._output_product_path)
-        if self.get_status() == "failed" or (
-            self.get_status() == "completed" and not os.path.exists(full_output_path)
-        ):
-            self.clean_completed_info()
-            self._info["SubmissionDate"] = datetime.now().isoformat()
-            self._future.retry()
-            self._future.add_done_callback(self.add_completed_info)
+            output_path_exist = os.path.exists(full_output_path)
+            if not output_path_exist:
+                logger.info(
+                    f"oder {order_id!r} output product {full_output_path!r} not found: "
+                    f"re-submitting order {order_id!r}"
+                )
+                self.resubmit()
+        elif status == "failed":
+            logger.info(f"re-submitting order {order_id!r}")
+            self.resubmit()
 
     def update_output_product_reference(self):
         basepath, reference = os.path.split(self._output_product_path)
