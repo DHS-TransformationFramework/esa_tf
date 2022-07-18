@@ -113,8 +113,10 @@ class TransformationOrder(object):
 
     def add_completed_info(self, future=None):
         self.update_status()
-        self._info["CompletedDate"] = datetime.now().isoformat()
-        if self.get_status() == "completed":
+        status = self.get_status()
+        if status in ("completed", "failed"):
+            self._info["CompletedDate"] = datetime.now().isoformat()
+        if status == "completed":
             self._output_product_path = self._future.result()
             self.update_output_product_reference()
 
@@ -137,14 +139,8 @@ class TransformationOrder(object):
         return logs
 
     def update_status(self):
-        status_dask_to_api = {
-            "pending": "in_progress",
-            "finished": "completed",
-            "error": "failed",
-            "lost": "failed",
-        }
         future_status = self._future.status
-        self._info["Status"] = status_dask_to_api.get(future_status, future_status)
+        self._info["Status"] = STATUS_DASK_TO_API.get(future_status, future_status)
 
     def get_status(self):
         self.update_status()
