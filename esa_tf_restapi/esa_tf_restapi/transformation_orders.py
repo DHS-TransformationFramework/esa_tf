@@ -10,6 +10,7 @@ STATUS_DASK_TO_API = {
     "finished": "completed",
     "error": "failed",
     "lost": "failed",
+    "cancelled": "in_progress",  # the cancelled status can occur when the order is re-submitted
 }
 
 logger = logging.getLogger(__name__)
