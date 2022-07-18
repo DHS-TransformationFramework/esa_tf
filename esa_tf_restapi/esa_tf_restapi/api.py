@@ -542,6 +542,7 @@ def submit_workflow(
             order_id=order_id,
             product_reference=input_product_reference,
             workflow_id=workflow_id,
+            workflow_name=workflow["WorkflowName"],
             workflow_options=workflow_options,
             enable_traceability=enable_traceability,
             uri_root=uri_root,
