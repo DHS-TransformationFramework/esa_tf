@@ -33,8 +33,9 @@ class TransformationOrder(object):
         product_reference,
         workflow_id,
         workflow_options,
-        enable_traceability: str = True,
-        uri_root: str = "",
+        workflow_name="",
+        enable_traceability=True,
+        uri_root="",
     ):
         self._client = client
         self._order_id = order_id
@@ -55,6 +56,7 @@ class TransformationOrder(object):
             "InputProductReference": product_reference,
             "WorkflowOptions": workflow_options,
             "WorkflowId": workflow_id,
+            "WorkflowName": workflow_name,
         }
 
     def submit(self):
@@ -75,9 +77,9 @@ class TransformationOrder(object):
 
     def resubmit(self):
         self.clean_completed_info()
-        self._info["SubmissionDate"] = datetime.now().isoformat()
-        self._future.retry()
-        self._future.add_done_callback(self.add_completed_info)
+        self._future.cancel(asynchronous=False)
+        self._future = None
+        self.submit()
 
     def maybe_resubmit(self):
         status = self.get_status()
@@ -141,23 +143,7 @@ class TransformationOrder(object):
             "lost": "failed",
         }
         future_status = self._future.status
-        # needed because resubmitting completed processing the future.status is lost
-        # while get_dask_orders_status() returns the correct status.
-        if future_status == "lost":
-            internal_status = self.get_dask_orders_status()
-            order_id = self._task_parameters["order_id"]
-            if order_id in internal_status and internal_status[order_id] in (
-                "processing",
-                "no-worker",
-                "released",
-                "waiting",
-                "memory",
-            ):
-                self._info["Status"] = "in_progress"
-            else:
-                self._info["Status"] = "failed"
-        else:
-            self._info["Status"] = status_dask_to_api.get(future_status, future_status)
+        self._info["Status"] = status_dask_to_api.get(future_status, future_status)
 
     def get_status(self):
         self.update_status()
