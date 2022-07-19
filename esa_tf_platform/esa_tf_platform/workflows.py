@@ -302,7 +302,14 @@ def download_product_from_hub(
     Download the product from the selected hub
     """
     api = sentinelsat.SentinelAPI(**hub_credentials)
-    uuid_products = api.query(identifier=product.strip(".zip"))
+    identifier = product.strip(".zip")
+    data_path = os.path.join(processing_dir, identifier + ".zip")
+    if os.path.exists(data_path):
+        corrupt = api.check_files(paths=[data_path], delete=True)
+        if not corrupt:
+            return data_path
+
+    uuid_products = api.query(identifier=identifier)
     if len(uuid_products) == 0:
         raise ValueError(f"{product} not found in hub: {hub_credentials['api_url']}")
     uuid_product = list(uuid_products)[0]

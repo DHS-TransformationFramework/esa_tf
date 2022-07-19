@@ -21,7 +21,7 @@ class DaskLogHandler(logging.Handler, object):
         Send  teg redcord to dask log_event
         """
         msg = self.format(record)
-        order_id = dask.distributed.worker.thread_state.key
+        order_id = dask.distributed.worker.thread_state.key.split("-")[0]
         self.dask_worker.log_event(order_id, msg)
 
 
@@ -33,7 +33,7 @@ class ContextFilter(logging.Filter):
     def filter(self, record):
         order_id = None
         try:
-            order_id = dask.distributed.worker.thread_state.key
+            order_id = dask.distributed.worker.thread_state.key.split("-")[0]
         except AttributeError:
             pass
         record.order_id = order_id
