@@ -1,6 +1,7 @@
 import logging
 import operator
 import os
+import uuid
 from datetime import datetime
 
 from .auth import DEFAULT_USER
@@ -25,6 +26,7 @@ class TransformationOrder(object):
         "_task_parameters",
         "_uri_root",
         "_output_product_path",
+        "_task_id",
     )
 
     def __init__(
@@ -43,6 +45,7 @@ class TransformationOrder(object):
         self._uri_root = uri_root
         self._output_product_path = ""
         self._future = None
+        self._task_id = order_id
 
         self._task_parameters = {
             "order_id": order_id,
@@ -60,7 +63,7 @@ class TransformationOrder(object):
             "WorkflowName": workflow_name,
         }
 
-    def submit(self):
+    def submit(self, id_suffix=None):
 
         # definition of the task must be internal
         # to avoid dask to import esa_tf_restapi in the workers
@@ -70,17 +73,22 @@ class TransformationOrder(object):
 
             return esa_tf_platform.run_workflow(**kwargs)
 
+        if id_suffix is not None:
+            self._task_id = self._task_parameters["order_id"] + "-" + id_suffix
         self._future = self._client.submit(
-            task, **self._task_parameters, key=self._task_parameters["order_id"]
+            task, **self._task_parameters, key=self._task_id
         )
-        self._future.add_done_callback(self.add_completed_info)
         self._info["SubmissionDate"] = datetime.now().isoformat()
+        self.update_status()
+        self._future.add_done_callback(self.add_completed_info)
 
     def resubmit(self):
-        self.clean_completed_info()
-        self._future.cancel(asynchronous=False)
-        self._future = None
-        self.submit()
+        if self.get_status == "failed":
+            self.client.retry(self.future)
+        else:
+            self._future = None
+            self.clean_completed_info()
+            self.submit(id_suffix=uuid.uuid4().hex)
 
     def maybe_resubmit(self):
         status = self.get_status()
@@ -112,18 +120,23 @@ class TransformationOrder(object):
         ]
 
     def add_completed_info(self, future=None):
-        self.update_status()
-        status = self.get_status()
-        if status in ("completed", "failed"):
-            self._info["CompletedDate"] = datetime.now().isoformat()
-        if status == "completed":
-            self._output_product_path = self._future.result()
-            self.update_output_product_reference()
+        if self._future.status == "cancelled":
+            self.clean_completed_info()
+        else:
+            self.update_status()
+            status = self.get_status()
+
+            if status in ("completed", "failed"):
+                self._info["CompletedDate"] = datetime.now().isoformat()
+            if status == "completed":
+                self._output_product_path = self._future.result()
+                self.update_output_product_reference()
 
     def clean_completed_info(self):
         self._info.pop("Status", None)
         self._info.pop("CompletedDate", None)
         self._info.pop("OutputProductReference", None)
+        self._output_product_path = ""
 
     def get_info(self):
         self.update_status()
