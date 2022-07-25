@@ -10,24 +10,22 @@ applied on-demand to Copernicus Sentinel products, prior to delivery to the user
 In its current development status *Alpha*, it features:
 
 - The ability to define and configure workflows
-  (i.e. processing elements), via a plugin architecture. (DHS-EVO-31, DHS-EVO-36)
+  (i.e. processing elements), via a plugin architecture. 
 - The ability to perform parallel processing on the local host
-  or over a distributed architecture. (DHS-EVO-33)
+  or over a distributed architecture. 
 - The functionalities which allow setting workflow parameters and options
-  [via a REST API](#How-to-test-API-endpoints). (DHS-EVO-32)
+  [via a REST API](#How-to-test-API-endpoints). 
+- The ability to compute the traceability record and upload it to the traceability service.
 - A [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
   which uses Sen2Cor v2.10 tool to convert Sentinel-2 L1C products into L2A output products,
-  also using the *SRTM DEM* for terrain correction, classification and atmospheric correction. (DHS-EVO-35)
-- A deployment [via docker-compose](#Docker-compose-startup). (DHS-MNT-16)
+  also using the *SRTM DEM* for terrain correction, classification and atmospheric correction.
+- A deployment [via docker-compose](#Docker-compose-startup). 
 - Continuous Integration and Continuous Delivery (CI/CD) via GitHub Actions.
 
 Other features in the roadmap:
 
 - Product reformatting plugin (GeoTIFF, etc) (DHS-EVO-34)
 - Add support for multiple users.
-- Compute traceability record and upload it to the traceability service.
-- Integrate logging and monitoring in the DHS.
-- Installation and administration manual.
 
 ### Notes
 
