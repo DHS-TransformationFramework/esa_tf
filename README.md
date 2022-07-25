@@ -16,16 +16,12 @@ In its current development status *Alpha*, it features:
 - The functionalities which allow setting workflow parameters and options
   [via a REST API](#How-to-test-API-endpoints). 
 - The ability to compute the traceability record and upload it to the traceability service.
+- Support for multiple users.
 - A [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
   which uses Sen2Cor v2.10 tool to convert Sentinel-2 L1C products into L2A output products,
   also using the *SRTM DEM* for terrain correction, classification and atmospheric correction.
 - A deployment [via docker-compose](#Docker-compose-startup). 
 - Continuous Integration and Continuous Delivery (CI/CD) via GitHub Actions.
-
-Other features in the roadmap:
-
-- Product reformatting plugin (GeoTIFF, etc) (DHS-EVO-34)
-- Add support for multiple users.
 
 ### Notes
 
