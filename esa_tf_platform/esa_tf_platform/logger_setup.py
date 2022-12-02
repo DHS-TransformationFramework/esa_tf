@@ -3,6 +3,7 @@ import sys
 import time
 
 import dask.distributed
+import os
 
 from . import __version__
 
@@ -18,11 +19,16 @@ class DaskLogHandler(logging.Handler, object):
 
     def emit(self, record):
         """
-        Send  teg redcord to dask log_event
+        Send tag record to dask log_event
         """
         msg = self.format(record)
-        order_id = dask.distributed.worker.thread_state.key.split("-")[0]
-        self.dask_worker.log_event(order_id, msg)
+        if not hasattr(record, "order_id"):
+            try:
+                order_id = dask.distributed.worker.thread_state.key.split("-")[0]
+                record.order_id = order_id
+            except AttributeError:
+                record.order_id = None
+        self.dask_worker.log_event(record.order_id, msg)
 
 
 class ContextFilter(logging.Filter):
@@ -31,12 +37,13 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-        order_id = None
-        try:
-            order_id = dask.distributed.worker.thread_state.key.split("-")[0]
-        except AttributeError:
-            pass
-        record.order_id = order_id
+        if not hasattr(record, "order_id"):
+            try:
+                order_id = dask.distributed.worker.thread_state.key.split("-")[0]
+                record.order_id = order_id
+            except AttributeError:
+                record.order_id = None
+
         record.tf_version = __version__
         return True
 

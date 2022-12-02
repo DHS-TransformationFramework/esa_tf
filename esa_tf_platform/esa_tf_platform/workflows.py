@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+import threading
 import zipfile
 
 import dask.distributed
@@ -12,7 +13,7 @@ import pkg_resources
 import sentinelsat
 import yaml
 
-from esa_tf_platform import traceability
+from . import resources_monitor, traceability
 
 logger = logging.getLogger(__name__)
 
@@ -497,12 +498,6 @@ def run_workflow(
     workflow_options,
     order_id,
     enable_traceability=True,
-    working_dir=None,
-    output_dir=None,
-    traces_dir=None,
-    hubs_credentials_file=None,
-    output_owner=-1,
-    output_group_owner=-1,
 ):
     """
     Run the workflow defined by 'workflow_id':
@@ -513,15 +508,6 @@ def run_workflow(
     :param dict workflow_options: dictionary containing the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
     :param bool enable_traceability: enable sending the trace to the Traceability Service of the output product
-    :param str working_dir: optional working directory where will be created the processing directory. If it is None,
-    the environment variable ``WORKING_DIR`` is used.
-    :param str output_dir: optional output directory. If it is None, the environment variable ``OUTPUT_DIR`` is used.
-    :param str traces_dir: optional directory where to store the trace for which the trace push has failed and
-    that must be pushed manually.
-    :param str hubs_credentials_file:  optional file containing the credential of the hub. If it is None,
-    the environment variable ``HUBS_CREDENTIALS_FILE`` is used.
-    :param int output_owner: id of output files owner.
-    :param int output_group_owner: id of output files group owner.
     """
     # define create directories
     try:
@@ -530,25 +516,20 @@ def run_workflow(
     except ValueError:
         pass
 
-    if working_dir is None:
-        working_dir = os.getenv("WORKING_DIR", "./working_dir")
-    if output_dir is None:
-        output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
-    if traces_dir is None:
-        traces_dir = os.getenv("TRACES_DIR", "./traces")
-    if output_owner == -1:
-        output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
-    if output_group_owner == -1:
-        output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
-    if hubs_credentials_file is None:
-        hubs_credentials_file = os.getenv(
-            "HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml"
-        )
+    polling_time = os.getenv("MONITOR_POLLING_TIME_S", 10)
+    working_dir = os.getenv("WORKING_DIR", "./working_dir")
+    output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
+    traces_dir = os.getenv("TRACES_DIR", "./traces")
+    output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
+    output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
+    hubs_credentials_file = os.getenv("HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml")
+
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
             f"{hubs_credentials_file} not found, please define it using 'hubs_credentials_file' "
             "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
         )
+
     processing_dir = os.path.join(working_dir, order_id)
     output_binder_dir = os.path.join(working_dir, order_id, "output_binder_dir")
     os.makedirs(output_dir, exist_ok=True)
@@ -557,7 +538,15 @@ def run_workflow(
     )
     for directory in [working_dir, processing_dir, output_binder_dir]:
         os.makedirs(directory, exist_ok=True)
+
     try:
+        stop_event = threading.Event()
+        monitor_thread = threading.Thread(
+            target=resources_monitor.resources_monitor,
+            args=(stop_event, order_id, processing_dir, polling_time)
+            )
+        monitor_thread.start()
+
         # download
         product = product_reference["Reference"]
 
@@ -582,11 +571,13 @@ def run_workflow(
             output_dir=output_binder_dir,
             workflow_options=workflow_options,
         )
-
+        output = product_path
         logger.info(f"package output product: {output!r}")
         output_product_path = move_in_output_folder(
             output, order_id, output_dir, workflow_id, output_owner, output_group_owner
         )
+
+        stop_event.set()
 
         if enable_traceability:
             logger.info("sending product trace")
