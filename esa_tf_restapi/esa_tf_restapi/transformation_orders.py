@@ -38,6 +38,8 @@ class TransformationOrder(object):
         workflow_options,
         workflow_name="",
         enable_traceability=True,
+        enable_monitoring=True,
+        monitoring_polling_time_s=10,
         uri_root="",
     ):
         self._client = client
@@ -53,6 +55,9 @@ class TransformationOrder(object):
             "workflow_id": workflow_id,
             "workflow_options": workflow_options,
             "enable_traceability": enable_traceability,
+            "enable_monitoring": enable_monitoring,
+            "monitoring_polling_time_s": monitoring_polling_time_s,
+
         }
 
         self._info = {

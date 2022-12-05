@@ -432,7 +432,7 @@ def push_trace(
     :param str tracetool_path: optional path for the tracetool-x.x.x.jar file. If it is None,
     the environment variable ``TRACETOOL_FILE`` is used
     """
-
+    logger.info("sending product trace")
     if traceability_config_path is None:
         traceability_config_path = os.getenv(
             "TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml"
@@ -498,6 +498,8 @@ def run_workflow(
     workflow_options,
     order_id,
     enable_traceability=True,
+    enable_monitoring=True,
+    monitoring_polling_time_s=10,
 ):
     """
     Run the workflow defined by 'workflow_id':
@@ -516,7 +518,6 @@ def run_workflow(
     except ValueError:
         pass
 
-    polling_time = os.getenv("MONITOR_POLLING_TIME_S", 10)
     working_dir = os.getenv("WORKING_DIR", "./working_dir")
     output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
     traces_dir = os.getenv("TRACES_DIR", "./traces")
@@ -540,12 +541,13 @@ def run_workflow(
         os.makedirs(directory, exist_ok=True)
 
     try:
-        stop_event = threading.Event()
-        monitor_thread = threading.Thread(
-            target=resources_monitor.resources_monitor,
-            args=(stop_event, order_id, processing_dir, polling_time)
-            )
-        monitor_thread.start()
+        if enable_monitoring:
+            stop_event = threading.Event()
+            monitor_thread = threading.Thread(
+                target=resources_monitor.resources_monitor,
+                args=(stop_event, order_id, os.getpid(), processing_dir, monitoring_polling_time_s)
+                )
+            monitor_thread.start()
 
         # download
         product = product_reference["Reference"]
@@ -571,20 +573,21 @@ def run_workflow(
             output_dir=output_binder_dir,
             workflow_options=workflow_options,
         )
-        output = product_path
         logger.info(f"package output product: {output!r}")
         output_product_path = move_in_output_folder(
             output, order_id, output_dir, workflow_id, output_owner, output_group_owner
         )
 
-        stop_event.set()
+        if enable_monitoring:
+            stop_event.set()
 
         if enable_traceability:
-            logger.info("sending product trace")
             trace_id = push_trace(
                 output_product_path, traces_dir, order_id, workflow_id
             )
     finally:
+        if enable_monitoring:
+            stop_event.set()
         # delete workflow processing dir
         if not int(os.getenv("TF_DEBUG", 0)):
             logger.info(f"deleting {processing_dir!r}")
