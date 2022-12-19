@@ -287,7 +287,9 @@ def get_all_workflows():
     return valid_workflows
 
 
-def read_hub_credentials(hubs_credential_file,):
+def read_hub_credentials(
+    hubs_credential_file,
+):
     """
     Read credentials from the hubs_credential_file.
     """
@@ -297,7 +299,10 @@ def read_hub_credentials(hubs_credential_file,):
 
 
 def download_product_from_hub(
-    product, *, processing_dir, hub_credentials,
+    product,
+    *,
+    processing_dir,
+    hub_credentials,
 ):
     """
     Download the product from the selected hub
@@ -376,7 +381,10 @@ def zip_product(output, output_dir):
     zip_basename = basename.rsplit(".SAFE")[0]
     output_zip_path = os.path.join(output_dir, zip_basename)
     output_file = shutil.make_archive(
-        base_name=output_zip_path, format="zip", root_dir=dirname, base_dir=basename,
+        base_name=output_zip_path,
+        format="zip",
+        root_dir=dirname,
+        base_dir=basename,
     )
     return output_file
 
@@ -523,7 +531,9 @@ def run_workflow(
     traces_dir = os.getenv("TRACES_DIR", "./traces")
     output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
     output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
-    hubs_credentials_file = os.getenv("HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml")
+    hubs_credentials_file = os.getenv(
+        "HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml"
+    )
 
     if not os.path.isfile(hubs_credentials_file):
         raise ValueError(
@@ -545,8 +555,14 @@ def run_workflow(
             stop_event = threading.Event()
             monitor_thread = threading.Thread(
                 target=resources_monitor.resources_monitor,
-                args=(stop_event, order_id, os.getpid(), processing_dir, monitoring_polling_time_s)
-                )
+                args=(
+                    stop_event,
+                    order_id,
+                    os.getpid(),
+                    processing_dir,
+                    monitoring_polling_time_s,
+                ),
+            )
             monitor_thread.start()
 
         # download

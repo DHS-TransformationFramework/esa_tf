@@ -1,9 +1,10 @@
 import datetime
 import logging
 import os
-import psutil
 import threading
 import time
+
+import psutil
 
 logger = logging.getLogger(__name__)
 B_TO_GB = 9.313225746154785 * 1e-10
@@ -85,7 +86,9 @@ def resources_monitor(
     cpu_time = compute_cpu_time(cpu_times)
 
     logger.info(f"wall time: {processing_time} s", extra={"order_id": order_id})
-    logger.info(f"peak disk usage: {peak_disk_usage:.2f} Gb", extra={"order_id": order_id})
+    logger.info(
+        f"peak disk usage: {peak_disk_usage:.2f} Gb", extra={"order_id": order_id}
+    )
     # logger.info(f"peak RAM usage: {peak_ram_usage:.2f} Gb", extra={"order_id": order_id})
     # logger.info(f"total CPU Time: {cpu_time} s", extra={"order_id": order_id})
 

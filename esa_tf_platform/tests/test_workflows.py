@@ -45,7 +45,10 @@ WORKFLOWS2 = {
         "WorkflowVersion": "1.0",
         "WorkflowOptions": {},
     },
-    "wokflow2": {"WorkflowName": "Name", "Description": "Description",},
+    "wokflow2": {
+        "WorkflowName": "Name",
+        "Description": "Description",
+    },
 }
 
 
@@ -253,7 +256,13 @@ def test_error_check_mandatory_workflow_keys():
 
 
 def test_error_check_mandatory_option_keys():
-    option = {"Name": {"Default": "Default", "Type": "string", "Enum": ["A", "B"],}}
+    option = {
+        "Name": {
+            "Default": "Default",
+            "Type": "string",
+            "Enum": ["A", "B"],
+        }
+    }
     with pytest.raises(ValueError, match=f"missing key"):
         workflows.check_mandatory_option_keys(option)
 

@@ -1,9 +1,9 @@
 import logging
+import os
 import sys
 import time
 
 import dask.distributed
-import os
 
 from . import __version__
 
@@ -15,7 +15,7 @@ else:
 
 class DaskLogHandler(logging.Handler, object):
     """
-     custom log handler
+    custom log handler
     """
 
     def __init__(self):
