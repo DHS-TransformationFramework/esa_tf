@@ -26,9 +26,9 @@ def update_cpu_time(cpu_times: dict[int, list[float]], process):
     for child in children + [process]:
         ct = child.cpu_times()
         if child.pid not in cpu_times:
-            cpu_times[child.pid] = [ct.user + ct.system, None]
+            cpu_times[child.pid] = [ct.user + ct.system]
         else:
-            cpu_times[child.pid][-1] = ct.user + ct.system
+            cpu_times[child.pid].append(ct.user + ct.system)
 
 
 def update_ram_usage(ram_usage: dict[int, list[float]], process):
@@ -68,10 +68,14 @@ def resources_monitor(
         update_disk_usage(disk_usage, processing_dir)
         update_ram_usage(ram_usage, process)
 
-        logger.info(f"disk usage: {disk_usage[-1]} Gb", extra={"order_id": order_id})
-        logger.info(f"ram usage: {ram_usage} Gb", extra={"order_id": order_id})
-        logger.info(f"cpu times: {cpu_times}", extra={"order_id": order_id})
+        logger.debug(f"disk usage: {disk_usage[-1]} Gb", extra={"order_id": order_id})
+        logger.debug(f"ram usage: {ram_usage} Gb", extra={"order_id": order_id})
+        logger.debug(f"cpu times: {cpu_times}", extra={"order_id": order_id})
         time.sleep(monitoring_polling_time_s)
+
+    update_cpu_time(cpu_times, process)
+    update_disk_usage(disk_usage, processing_dir)
+    update_ram_usage(ram_usage, process)
 
     stop_processing_time = datetime.datetime.now()
 
@@ -82,7 +86,7 @@ def resources_monitor(
 
     logger.info(f"wall time: {processing_time} s", extra={"order_id": order_id})
     logger.info(f"peak disk usage: {peak_disk_usage:.2f} Gb", extra={"order_id": order_id})
-    logger.info(f"peak RAM usage: {peak_ram_usage:.2f} Gb", extra={"order_id": order_id})
-    logger.info(f"total CPU Time: {cpu_time} s", extra={"order_id": order_id})
+    # logger.info(f"peak RAM usage: {peak_ram_usage:.2f} Gb", extra={"order_id": order_id})
+    # logger.info(f"total CPU Time: {cpu_time} s", extra={"order_id": order_id})
 
     return processing_time

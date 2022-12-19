@@ -7,6 +7,11 @@ import os
 
 from . import __version__
 
+if int(os.getenv("TF_DEBUG", 0)):
+    LOGGING_LEVEL = logging.DEBUG
+else:
+    LOGGING_LEVEL = logging.INFO
+
 
 class DaskLogHandler(logging.Handler, object):
     """
@@ -75,6 +80,6 @@ def add_stderr_handlers(logger):
 
 def logger_setup():
     rootlogger = logging.getLogger()
-    rootlogger.setLevel(logging.INFO)
+    rootlogger.setLevel(LOGGING_LEVEL)
     rootlogger.propagate = True
     add_stderr_handlers(rootlogger)
