@@ -169,7 +169,8 @@ def test_error_fill_with_defaults():
 
 
 @mock.patch(
-    "esa_tf_restapi.api.TransformationOrder.update_status", side_effect=None,
+    "esa_tf_restapi.api.TransformationOrder.update_status",
+    side_effect=None,
 )
 def test_get_transformation_orders(function):
     esa_tf_restapi.api.queue.update_orders(TRANSFORMATION_ORDERS.values())
@@ -221,12 +222,16 @@ def test_get_transformation_orders(function):
 
     with pytest.raises(esa_tf_restapi.api.RequestError, match=r"allowed key"):
         esa_tf_restapi.api.get_transformation_orders(
-            {("WrongKey", "op", "value"),}
+            {
+                ("WrongKey", "op", "value"),
+            }
         )
 
     with pytest.raises(esa_tf_restapi.api.RequestError, match=r"allowed operator"):
         esa_tf_restapi.api.get_transformation_orders(
-            {("Status", "le", "value"),}
+            {
+                ("Status", "le", "value"),
+            }
         )
 
 

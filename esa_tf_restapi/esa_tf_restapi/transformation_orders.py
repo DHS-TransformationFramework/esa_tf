@@ -235,7 +235,10 @@ class Queue(object):
         return running_processes
 
     def get_transformation_orders(
-        self, filters=[], user_id=DEFAULT_USER, filter_by_user_id=True,
+        self,
+        filters=[],
+        user_id=DEFAULT_USER,
+        filter_by_user_id=True,
     ):
         if not filter_by_user_id:
             transformation_orders = self.transformation_orders.copy()

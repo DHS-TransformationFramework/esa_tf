@@ -16,13 +16,19 @@ def register_workflows():
                         "Default": "foo",
                         "Enum": ["foo", "bar"],
                     },
-                    "Case 2": {"Type": "boolean", "Default": False,},
+                    "Case 2": {
+                        "Type": "boolean",
+                        "Default": False,
+                    },
                     "Case 3": {
                         "Type": "integer",
                         "Default": 331,
                         "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
                     },
-                    "Case 4": {"Type": "integer", "Default": 331,},
+                    "Case 4": {
+                        "Type": "integer",
+                        "Default": 331,
+                    },
                 },
                 "Id": "workflow_1",
             }
@@ -53,7 +59,8 @@ def test_transformation_order_missing_params(register_workflows):
     # Checking for registered workflow
     with pytest.raises(ValidationError, match=r"unknown workflow"):
         models.TranformationOrder(
-            WorkflowId="workflow_xxxx", InputProductReference={"Reference": "Ref a"},
+            WorkflowId="workflow_xxxx",
+            InputProductReference={"Reference": "Ref a"},
         )
 
     # Testing workflow options can be provided as empty dict

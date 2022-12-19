@@ -68,7 +68,8 @@ TRANSFORMATION_ORDERS_USER3["Id3"]._info = TRANSFORMATION_ORDERS_USER2["Id3"]._i
 
 
 @mock.patch(
-    "esa_tf_restapi.api.TransformationOrder.update_status", side_effect=None,
+    "esa_tf_restapi.api.TransformationOrder.update_status",
+    side_effect=None,
 )
 def test_queue_update_orders(function):
     queue = esa_tf_restapi.transformation_orders.Queue()
@@ -105,7 +106,8 @@ def test_queue_update_orders(function):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.TransformationOrder.update_status", side_effect=None,
+    "esa_tf_restapi.api.TransformationOrder.update_status",
+    side_effect=None,
 )
 def test_queue_remove_order(function):
     queue = esa_tf_restapi.transformation_orders.Queue()
@@ -133,7 +135,8 @@ def test_queue_remove_order(function):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.TransformationOrder.update_status", side_effect=None,
+    "esa_tf_restapi.api.TransformationOrder.update_status",
+    side_effect=None,
 )
 def test_queue_remove_old_orders(function):
     queue = esa_tf_restapi.transformation_orders.Queue()
