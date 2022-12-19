@@ -57,7 +57,6 @@ class TransformationOrder(object):
             "enable_traceability": enable_traceability,
             "enable_monitoring": enable_monitoring,
             "monitoring_polling_time_s": monitoring_polling_time_s,
-
         }
 
         self._info = {

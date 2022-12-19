@@ -505,7 +505,9 @@ def submit_workflow(
             workflow_options=workflow_options,
             enable_traceability=enable_traceability,
             enable_monitoring=esa_tf_config.get("enable_monitoring", True),
-            monitoring_polling_time_s=esa_tf_config.get("monitoring_polling_time_s", True),
+            monitoring_polling_time_s=esa_tf_config.get(
+                "monitoring_polling_time_s", True
+            ),
             uri_root=uri_root,
         )
         transformation_order.submit()

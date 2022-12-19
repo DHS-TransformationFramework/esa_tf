@@ -1,8 +1,8 @@
 import os
 import typing as T
-import yaml
 
 import pydantic
+import yaml
 
 
 class ConfigurationError(Exception):
