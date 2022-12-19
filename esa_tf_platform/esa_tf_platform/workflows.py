@@ -478,7 +478,7 @@ def push_trace(
 
 
 def move_in_output_folder(
-    output, order_id, output_dir, workflow_id, output_owner, output_group_owner
+    output, order_id, output_dir, workflow_id, output_owner_id, output_group_owner_id
 ):
     if not os.path.exists(output):
         raise ValueError(f"{workflow_id!r} output file {output!r} not found.")
@@ -486,8 +486,8 @@ def move_in_output_folder(
     output_order_dir = os.path.join(output_dir, order_id)
     os.makedirs(output_order_dir, exist_ok=True)
     output_product_path = zip_product(output, output_order_dir)
-    shutil.chown(output_product_path, user=output_owner, group=output_group_owner)
-    shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+    shutil.chown(output_product_path, user=output_owner_id, group=output_group_owner_id)
+    shutil.chown(output_order_dir, user=output_owner_id, group=output_group_owner_id)
     return output_product_path
 
 
@@ -521,15 +521,11 @@ def run_workflow(
     working_dir = os.getenv("WORKING_DIR", "./working_dir")
     output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
     traces_dir = os.getenv("TRACES_DIR", "./traces")
-    output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
-    output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
-    hubs_credentials_file = os.getenv("HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml")
+    output_owner_id = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
+    output_group_owner_id = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
 
-    if not os.path.isfile(hubs_credentials_file):
-        raise ValueError(
-            f"{hubs_credentials_file} not found, please define it using 'hubs_credentials_file' "
-            "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
-        )
+    logger.info(f"--------------------------{hubs_credentials_file}-----------------------------")
+    logger.info(f"{os.listdir('/config')}")
 
     processing_dir = os.path.join(working_dir, order_id)
     output_binder_dir = os.path.join(working_dir, order_id, "output_binder_dir")
@@ -575,14 +571,14 @@ def run_workflow(
         )
         logger.info(f"package output product: {output!r}")
         output_product_path = move_in_output_folder(
-            output, order_id, output_dir, workflow_id, output_owner, output_group_owner
+            output, order_id, output_dir, workflow_id, output_owner_id, output_group_owner_id
         )
 
         if enable_monitoring:
             stop_event.set()
 
         if enable_traceability:
-            trace_id = push_trace(
+            push_trace(
                 output_product_path, traces_dir, order_id, workflow_id
             )
     finally:
