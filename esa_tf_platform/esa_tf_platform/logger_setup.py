@@ -42,10 +42,12 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-        if not hasattr(record, "order_id"):
+
+        if hasattr(record, "order_id"):
+            record.order_id = record.order_id.split("-")[0]
+        else:
             try:
-                order_id = dask.distributed.worker.thread_state.key.split("-")[0]
-                record.order_id = order_id
+                record.order_id = dask.distributed.worker.thread_state.key.split("-")[0]
             except AttributeError:
                 record.order_id = None
 
