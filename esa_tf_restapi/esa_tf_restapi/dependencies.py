@@ -25,5 +25,6 @@ async def role_has_manager_profile(
     profile = api.get_profile(user_roles=user.roles, user_id=user.username)
     if profile != "manager":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Resource is forbidden",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Resource is forbidden",
         )

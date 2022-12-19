@@ -26,14 +26,24 @@ WORKFLOWS = {
     "workflow_1": {
         "Name": "Workflow 1",
         "WorkflowOptions": {
-            "Case 1": {"Type": "string", "Default": "foo", "Enum": ["foo", "bar"],},
-            "Case 2": {"Type": "boolean", "Default": False,},
+            "Case 1": {
+                "Type": "string",
+                "Default": "foo",
+                "Enum": ["foo", "bar"],
+            },
+            "Case 2": {
+                "Type": "boolean",
+                "Default": False,
+            },
             "Case 3": {
                 "Type": "integer",
                 "Default": 331,
                 "Enum": [0, 250, 290, 330, 331, 370, 377, 410, 420, 450, 460],
             },
-            "Case 4": {"Type": "integer", "Default": 331,},
+            "Case 4": {
+                "Type": "integer",
+                "Default": 331,
+            },
         },
         "Id": "workflow_1",
     }
@@ -67,7 +77,8 @@ def get_transformation_orders(
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", return_value="user",
+    "esa_tf_restapi.api.get_profile",
+    return_value="user",
 )
 @mock.patch("esa_tf_restapi.api.get_workflows", return_value={"sen2cor_l1c_l2a": {}})
 def test_list_workflows(workflows, profile):
@@ -79,7 +90,8 @@ def test_list_workflows(workflows, profile):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", return_value="user",
+    "esa_tf_restapi.api.get_profile",
+    return_value="user",
 )
 @mock.patch("esa_tf_restapi.api.get_workflow_by_id", side_effect=get_workflow_by_id)
 def test_get_workflow(workflow, profile):
@@ -92,7 +104,8 @@ def test_get_workflow(workflow, profile):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", return_value="user",
+    "esa_tf_restapi.api.get_profile",
+    return_value="user",
 )
 @mock.patch(
     "esa_tf_restapi.api.get_transformation_orders",
@@ -109,7 +122,8 @@ def test_list_tranformation_orders(tr_orders, profile):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", side_effect=["user", "manager"],
+    "esa_tf_restapi.api.get_profile",
+    side_effect=["user", "manager"],
 )
 @mock.patch(
     "esa_tf_restapi.api.get_transformation_orders",
@@ -123,7 +137,8 @@ def test_list_admin_tranformation_orders(tr_orders, profile):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", return_value="user",
+    "esa_tf_restapi.api.get_profile",
+    return_value="user",
 )
 @mock.patch(
     "esa_tf_restapi.api.get_transformation_orders",
@@ -137,7 +152,8 @@ def test_list_tranformation_orders_count(tr_orders, profile):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", return_value="user",
+    "esa_tf_restapi.api.get_profile",
+    return_value="user",
 )
 @mock.patch(
     "esa_tf_restapi.api.get_transformation_order", side_effect=get_transformation_order
@@ -152,13 +168,16 @@ def test_get_tranformation_order(tr_order, profile):
 
 
 @mock.patch(
-    "esa_tf_restapi.api.get_profile", return_value="user",
+    "esa_tf_restapi.api.get_profile",
+    return_value="user",
 )
 @mock.patch(
-    "esa_tf_restapi.api.submit_workflow", return_value=TRANSFORMATION_ORDER,
+    "esa_tf_restapi.api.submit_workflow",
+    return_value=TRANSFORMATION_ORDER,
 )
 @mock.patch(
-    "esa_tf_restapi.api.get_workflows", return_value=WORKFLOWS,
+    "esa_tf_restapi.api.get_workflows",
+    return_value=WORKFLOWS,
 )
 def test_run_tranformation_order(to_payload, register_workflows, profile):
     response = client.post(
