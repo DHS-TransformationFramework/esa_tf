@@ -22,3 +22,4 @@ dependencies:
     - mdformat-gfm
     - odata-query
     - sentinelsat
+    - httpx

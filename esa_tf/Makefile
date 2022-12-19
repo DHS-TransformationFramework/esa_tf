@@ -41,6 +41,14 @@ excluded_workflows: []
 enable_authorization_check: true
 
 # Optional, default true
+# it enables the resource monitoring
+enable_monitoring: true
+
+# Optional, default 10
+# define the polling time for monitoring statistics computation
+monitoring_polling_time_s: 10
+
+# Optional, default true
 # it enables quota configuration
 enable_quota_check: true
 

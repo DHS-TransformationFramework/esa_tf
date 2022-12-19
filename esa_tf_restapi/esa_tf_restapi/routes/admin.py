@@ -33,7 +33,9 @@ router = APIRouter(
 @router.get("/TransformationOrders")
 async def admin_transformation_orders(
     rawfilter: Optional[str] = Query(
-        None, alias="$filter", title="OData $filter query",
+        None,
+        alias="$filter",
+        title="OData $filter query",
     ),
     count: Optional[str] = Query(
         False,

@@ -32,7 +32,8 @@ async def index():
 
 @app.get("/Workflows")
 async def workflows(
-    x_username: Optional[str] = Header(None), x_roles: Optional[str] = Header(None),
+    x_username: Optional[str] = Header(None),
+    x_roles: Optional[str] = Header(None),
 ):
     user = get_user(x_username, x_roles)
     user_id = user.username if user else DEFAULT_USER
@@ -67,7 +68,9 @@ async def workflow(
 @app.get("/TransformationOrders")
 async def transformation_orders(
     rawfilter: Optional[str] = Query(
-        None, alias="$filter", title="OData $filter query",
+        None,
+        alias="$filter",
+        title="OData $filter query",
     ),
     count: Optional[str] = Query(
         False,

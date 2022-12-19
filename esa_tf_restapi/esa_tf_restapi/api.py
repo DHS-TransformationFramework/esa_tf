@@ -6,9 +6,8 @@ import typing as T
 from datetime import datetime
 
 import dask.distributed
-import pydantic
-import yaml
 
+from . import config
 from .auth import DEFAULT_USER
 from .transformation_orders import Queue, TransformationOrder
 
@@ -87,10 +86,6 @@ SENTINEL3 = [
 ]
 
 
-class ConfigurationError(Exception):
-    pass
-
-
 class RequestError(Exception):
     def __init__(self, user_id, message):
         self.user_id = user_id
@@ -110,21 +105,6 @@ class ItemNotFound(Exception):
         self.user_id = user_id
         self.message = message
         super().__init__(self.message)
-
-
-class Configuration(pydantic.BaseModel):
-
-    keeping_period: int = 14400
-    excluded_workflows: T.List[str] = []
-    enable_traceability: bool = True
-    enable_authorization_check: bool = True
-    enable_quota_check: bool = True
-    default_role: T.TypedDict("Role", quota=int, profile=str) = {
-        "quota": 1,
-        "profile": "user",
-    }
-    roles: T.Dict[str, T.TypedDict("Role", quota=int, profile=str)] = {}
-    untraced_workflows: T.List[str] = []
 
 
 def check_products_consistency(
@@ -227,7 +207,7 @@ def get_workflows(product_type=None, esa_tf_config=None, verbose=False):
     They may be filtered using the product type
     """
     if esa_tf_config is None:
-        esa_tf_config = read_esa_tf_config()
+        esa_tf_config = config.read_esa_tf_config()
     excluded_workflows = esa_tf_config["excluded_workflows"]
     workflows = {}
     for workflow_id, workflow in get_all_workflows(verbose=verbose).items():
@@ -337,7 +317,7 @@ def extract_roles_key(
 
 
 def get_profile(user_roles: list = [], user_id=DEFAULT_USER):
-    esa_tf_config = read_esa_tf_config()
+    esa_tf_config = config.read_esa_tf_config()
     if not esa_tf_config["enable_authorization_check"]:
         return "manager"
 
@@ -412,7 +392,7 @@ def check_user_quota(user_id, user_roles=None, esa_tf_config=None):
     :return:
     """
     if esa_tf_config is None:
-        esa_tf_config = read_esa_tf_config()
+        esa_tf_config = config.read_esa_tf_config()
     if not esa_tf_config["enable_quota_check"]:
         return
 
@@ -426,27 +406,6 @@ def check_user_quota(user_id, user_roles=None, esa_tf_config=None):
             user_id,
             f"the user {user_id!r} has reached his quota: {running_processes!r} processes are running",
         )
-
-
-def read_esa_tf_config():
-    """
-    :return dict: returns esa_tf_config dictionary
-    """
-    esa_tf_config_file = os.getenv("ESA_TF_CONFIG_FILE", "./esa_tf.config")
-    if not os.path.isfile(esa_tf_config_file):
-        raise FileNotFoundError(
-            f"{esa_tf_config_file!r} not found, please define the correct path "
-            f"using the environment variable ESA_TF_CONFIG_FILE"
-        )
-    with open(esa_tf_config_file) as file:
-        esa_tf_config = yaml.load(file, Loader=yaml.FullLoader)
-    try:
-        esa_tf_configuration_object = Configuration(**esa_tf_config)
-    except ValueError as exc:
-        raise ConfigurationError(
-            f"invalid configuration file esa_tf.config: {exc!r}"
-        ) from exc
-    return esa_tf_configuration_object.dict()
 
 
 def evict_orders(esa_tf_config=None):
@@ -463,7 +422,7 @@ def evict_orders(esa_tf_config=None):
     # if the "esa_tf_config_file" configuration file has been changed in the amount of time
     # specified by the "FILE_MODIFICATION_INTERVAL" constant value, then the cache is cleared
     if esa_tf_config is None:
-        esa_tf_config = read_esa_tf_config()
+        esa_tf_config = config.read_esa_tf_config()
     keeping_period = esa_tf_config["keeping_period"]
     queue.remove_old_orders(keeping_period)
 
@@ -492,7 +451,7 @@ def submit_workflow(
     """
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
 
-    esa_tf_config = read_esa_tf_config()
+    esa_tf_config = config.read_esa_tf_config()
     evict_orders(esa_tf_config=esa_tf_config)
     check_user_quota(
         user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config
@@ -545,6 +504,10 @@ def submit_workflow(
             workflow_name=workflow["WorkflowName"],
             workflow_options=workflow_options,
             enable_traceability=enable_traceability,
+            enable_monitoring=esa_tf_config.get("enable_monitoring", True),
+            monitoring_polling_time_s=esa_tf_config.get(
+                "monitoring_polling_time_s", True
+            ),
             uri_root=uri_root,
         )
         transformation_order.submit()
