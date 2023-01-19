@@ -89,7 +89,7 @@ def resources_monitor(
     logger.info(
         f"peak disk usage: {peak_disk_usage:.2f} Gb", extra={"order_id": order_id}
     )
-    # logger.info(f"peak RAM usage: {peak_ram_usage:.2f} Gb", extra={"order_id": order_id})
-    # logger.info(f"total CPU Time: {cpu_time} s", extra={"order_id": order_id})
+    logger.info(f"peak RAM usage: {peak_ram_usage:.2f} Gb", extra={"order_id": order_id})
+    logger.info(f"total CPU Time: {cpu_time} s", extra={"order_id": order_id})
 
     return processing_time
