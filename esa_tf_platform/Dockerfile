@@ -8,7 +8,8 @@ RUN apt update && apt install -y \
     make \
     unzip \
     gnupg \
-    curl
+    curl \
+    zip
 
 # TODO check JAVA_HOME variable, if necessary set it
 RUN curl -LO https://repository.gael-systems.com/repository/public/fr/gael/datac/tracetool/1.2.4/$TRACETOOL_ZIP
