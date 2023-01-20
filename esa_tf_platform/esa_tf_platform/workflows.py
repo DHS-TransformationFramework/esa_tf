@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import threading
+import subprocess
 import zipfile
 
 import dask.distributed
@@ -378,15 +379,13 @@ def zip_product(output, output_dir):
     basename = os.path.basename(output.rstrip("/"))
     dirname = os.path.dirname(output.rstrip("/"))
     # remove the ".SAFE" string (if present) from the workflow output folder
-    zip_basename = basename.rsplit(".SAFE")[0]
+    zip_basename = basename.rsplit(".SAFE")[0] + ".zip"
     output_zip_path = os.path.join(output_dir, zip_basename)
-    output_file = shutil.make_archive(
-        base_name=output_zip_path,
-        format="zip",
-        root_dir=dirname,
-        base_dir=basename,
-    )
-    return output_file
+
+    zip_code = f"cd {dirname} && zip -r {output_zip_path} {basename}"
+    logger.info(f"creating output product: {zip_code}")
+    f = subprocess.run(zip_code, shell=True, check=True)
+    return output_zip_path
 
 
 def load_workflow_runner(workflow_id):
@@ -485,17 +484,29 @@ def push_trace(
     return trace_id
 
 
+def chown(path, user, group):
+    try:
+        shutil.chown(path, user=user, group=group)
+    except Exception as ex:
+        logger.warning(f"failed to change file {path} permission: {str(ex)}")
+        raise ex
+
+
 def move_in_output_folder(
     output, order_id, output_dir, workflow_id, output_owner, output_group_owner
 ):
+
     if not os.path.exists(output):
         raise ValueError(f"{workflow_id!r} output file {output!r} not found.")
     # re-package the output
     output_order_dir = os.path.join(output_dir, order_id)
     os.makedirs(output_order_dir, exist_ok=True)
+
     output_product_path = zip_product(output, output_order_dir)
-    shutil.chown(output_product_path, user=output_owner, group=output_group_owner)
-    shutil.chown(output_order_dir, user=output_owner, group=output_group_owner)
+
+    chown(output_product_path, user=output_owner, group=output_group_owner)
+    chown(output_order_dir, user=output_owner, group=output_group_owner)
+
     return output_product_path
 
 
@@ -525,7 +536,7 @@ def run_workflow(
         logger.info(f"start processing on worker: {dask_worker.name!r}")
     except ValueError:
         pass
-
+    logger.info(f"current worker folder: {os.getcwd()}")
     working_dir = os.getenv("WORKING_DIR", "./working_dir")
     output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
     traces_dir = os.getenv("TRACES_DIR", "./traces")
