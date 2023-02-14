@@ -11,10 +11,8 @@ import zipfile
 
 import dask.distributed
 import pkg_resources
-import sentinelsat
-import yaml
 
-from . import resources_monitor, traceability
+from . import resources_monitor, traceability, product_download
 
 logger = logging.getLogger(__name__)
 
@@ -288,74 +286,6 @@ def get_all_workflows():
     return valid_workflows
 
 
-def read_hub_credentials(
-    hubs_credential_file,
-):
-    """
-    Read credentials from the hubs_credential_file.
-    """
-    with open(hubs_credential_file) as file:
-        hubs_credentials = yaml.load(file, Loader=yaml.FullLoader)
-    return hubs_credentials
-
-
-def download_product_from_hub(
-    product,
-    *,
-    processing_dir,
-    hub_credentials,
-):
-    """
-    Download the product from the selected hub
-    """
-    api = sentinelsat.SentinelAPI(**hub_credentials)
-    identifier = product.strip(".zip")
-    data_path = os.path.join(processing_dir, identifier + ".zip")
-    if os.path.exists(data_path):
-        corrupt = api.check_files(paths=[data_path], delete=True)
-        if not corrupt:
-            return data_path
-
-    uuid_products = api.query(identifier=identifier)
-    if len(uuid_products) == 0:
-        raise ValueError(f"{product} not found in hub: {hub_credentials['api_url']}")
-    uuid_product = list(uuid_products)[0]
-    product_info = api.download(
-        uuid_product, directory_path=processing_dir, checksum=True, nodefilter=None
-    )
-    return product_info["path"]
-
-
-def download_product(
-    product, *, processing_dir, hubs_credentials_file, hub_name=None, order_id=None
-):
-    """
-    Download the product from the first hub in the hubs_credentials_file that publishes the product
-    """
-    hubs_credentials = read_hub_credentials(hubs_credentials_file)
-    if hub_name:
-        hubs_credentials = {hub_name: hubs_credentials[hub_name]}
-    product_path = None
-    for hub_name in hubs_credentials:
-        try:
-            product_path = download_product_from_hub(
-                product,
-                processing_dir=processing_dir,
-                hub_credentials=hubs_credentials[hub_name],
-            )
-        except Exception:
-            logger.exception(
-                f"not able to download from {hub_name}, an error occurred:"
-            )
-        if product_path:
-            break
-    if product_path is None:
-        raise ValueError(
-            f"order_id {order_id}: could not download product from {list(hubs_credentials)}"
-        )
-    return product_path
-
-
 def unzip_product(product_zip_file, processing_dir):
     """
     Unzip the product in the processing dir
@@ -581,7 +511,7 @@ def run_workflow(
 
         logger.info(f"downloading input product: {product!r}")
         hub_name = product_reference.get("DataSourceName")
-        product_zip_file = download_product(
+        product_zip_file = product_download.download(
             product=product,
             hubs_credentials_file=hubs_credentials_file,
             processing_dir=processing_dir,

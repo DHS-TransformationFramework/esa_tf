@@ -4,13 +4,19 @@ ESACCI_TAR := CCI4SEN2COR/ESACCI-LC-L4-ALL-FOR-SEN2COR.tar
 define HUBS_CREDENTIALS
 # example for: config/hubs_credentials.yaml
 scihub:
-  api_url: https://scihub.copernicus.eu/dhus
-  user: my-scihub-username
-  password: my-scihub-password
-apihub:
-  api_url: https://apihub.copernicus.eu/apihub
-  user: my-apihub-username
-  password: my-apihub-password
+  api_type: dhus-api
+  credentials:
+    api_url: https://scihub.copernicus.eu/dhus
+    user: my-scihub-username
+    password: my-scihub-password
+creodias:
+  api_type: csc-api
+  credentials:
+    api_url: https://datahub.creodias.eu
+    user: my-creodias-username
+    password: my-creodias-password
+    token_endpoint: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token
+    client_id: cdse-public
 endef
 
 define TRACEABILITY_CONFIG

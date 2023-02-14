@@ -19,3 +19,4 @@ dependencies:
     - blosc == 1.10.2
     - mdformat-gfm
     - sentinelsat
+    - cachetools
