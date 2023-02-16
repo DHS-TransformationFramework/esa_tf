@@ -19,6 +19,7 @@ dependencies:
   - python = 3.9.7
   - uvicorn
   - pip:
+    - Authlib
     - mdformat-gfm
     - odata-query
     - sentinelsat

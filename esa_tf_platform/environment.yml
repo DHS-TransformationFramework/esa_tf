@@ -16,6 +16,7 @@ dependencies:
   - pytest-cov
   - python = 3.9.7
   - pip:
+    - Authlib
     - blosc == 1.10.2
     - mdformat-gfm
     - sentinelsat

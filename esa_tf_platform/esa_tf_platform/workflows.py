@@ -5,14 +5,14 @@ import logging
 import os
 import re
 import shutil
-import threading
 import subprocess
+import threading
 import zipfile
 
 import dask.distributed
 import pkg_resources
 
-from . import resources_monitor, traceability, product_download
+from . import product_download, resources_monitor, traceability
 
 logger = logging.getLogger(__name__)
 
@@ -472,13 +472,11 @@ def run_workflow(
     traces_dir = os.getenv("TRACES_DIR", "./traces")
     output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
     output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
-    hubs_credentials_file = os.getenv(
-        "HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml"
-    )
+    hubs_config_file = os.getenv("HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml")
 
-    if not os.path.isfile(hubs_credentials_file):
+    if not os.path.isfile(hubs_config_file):
         raise ValueError(
-            f"{hubs_credentials_file} not found, please define it using 'hubs_credentials_file' "
+            f"{hubs_config_file} not found, please define it using 'hubs_credentials_file' "
             "keyword argument or the environment variable HUBS_CREDENTIALS_FILE"
         )
 
@@ -513,7 +511,7 @@ def run_workflow(
         hub_name = product_reference.get("DataSourceName")
         product_zip_file = product_download.download(
             product=product,
-            hubs_credentials_file=hubs_credentials_file,
+            hubs_config_file=hubs_config_file,
             processing_dir=processing_dir,
             hub_name=hub_name,
             order_id=order_id,
