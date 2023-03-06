@@ -19,24 +19,35 @@ class CscApi:
     def __init__(self, **hub_credentials):
         self.password = hub_credentials["password"]
         self.user = hub_credentials["user"]
-        self.client_id = hub_credentials["client_id"]
-        self.token_endpoint = hub_credentials["token_endpoint"]
+
         version = hub_credentials.get("version", "v1")
         self.api_url = urllib.parse.urljoin(
             hub_credentials["api_url"], f"odata/{version}/"
         )
 
-        self.session = OAuth2Session(
-            client_id=self.client_id, token_endpoint=self.token_endpoint
-        )
+        self.client_id = hub_credentials.get("client_id", None)
+        self.token_endpoint = hub_credentials.get("token_endpoint", None)
+        if self.client_id and self.token_endpoint:
+            logger.info(f"using oauth2 authentication for {hub_credentials['api_url']}")
+            self.authentication = "oauth2"
+            self.session = OAuth2Session(
+                client_id=self.client_id, token_endpoint=self.token_endpoint
+            )
 
-        self.token = self.session.fetch_token(
-            self.token_endpoint,
-            username=self.user,
-            password=self.password,
-        )
+            self.token = self.session.fetch_token(
+                self.token_endpoint,
+                username=self.user,
+                password=self.password,
+            )
+        else:
+            logger.info(f"using basic authentication for {hub_credentials['api_url']}")
+            self.authentication = "basic"
+            self.session = requests.session()
+            self.session.auth = (self.user, self.password)
 
     def _ensure_token(self):
+        if self.authentication is not "oauth2":
+            return
         if (self.token["expires_at"] - time.time() - 60) < 0:
             self.token = self.session.fetch_token(
                 token_url="https://your-token-endpoint.com/oauth/token",
@@ -44,16 +55,32 @@ class CscApi:
                 password=self.password,
             )
 
-    def _get_product_info(self, product):
+    @staticmethod
+    def _ensure_product_name(product_name):
+        if product_name.endswith(".zip"):
+            product_name = product_name[:-4]
+        if not product_name.endswith(".SAFE"):
+            product_name = product_name + ".SAFE"
+        return product_name
 
+    def _get_product_info(self, product):
+        product = self._ensure_product_name(product)
+        logger.info(f"PRODUCT {product}")
         query_url = urllib.parse.urljoin(
-            self.api_url, f"Products?$filter=Name%20eq%20'{product}'"
+           self.api_url, f"Products?$filter=Name%20eq%20'{product}'"
         )
+        print(query_url)
+        # product = os.path.splitext(product)[0]
+        # logger.info(f"PRODUCT {product}")
+        # query_url = urllib.parse.urljoin(
+        #    self.api_url, f"Products?$filter=startswith(Name,'{product}')"
+        # )
         response = requests.get(query_url)
         response.raise_for_status()
         product_info = response.json()["value"]
         if len(product_info) == 0:
             raise ValueError(f"{product} not found in: {self.api_url}")
+        logger.info(f"PRODUCT INFO {product_info}")
         return product_info[0]
 
     def download(self, product, directory_path, chunk_size=8192, checksum=True):
@@ -149,7 +176,7 @@ def update_api_list(hubs_config_file):
 
     global SESSION_LIST
     for hub in SESSION_LIST.keys() - hubs_config.keys():
-        SESSION_LIST.pop(hub)
+        SESSION_LIST.pop(hub, None)
 
     apis = {"dhus-api": DhusApi, "csc-api": CscApi}
 
