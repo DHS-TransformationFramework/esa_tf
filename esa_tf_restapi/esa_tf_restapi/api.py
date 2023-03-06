@@ -431,7 +431,7 @@ def submit_workflow(
     workflow_id,
     *,
     input_product_reference,
-    workflow_options,
+    workflow_options={},
     user_id=DEFAULT_USER,
     user_roles=None,
     uri_root=None,
