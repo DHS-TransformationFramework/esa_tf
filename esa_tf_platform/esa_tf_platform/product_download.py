@@ -16,20 +16,22 @@ SESSION_LIST = {}
 
 
 class CscApi:
-    def __init__(self, **hub_credentials):
+    def __init__(self, **hub_config):
+        hub_credentials = hub_config["credentials"]
         self.password = hub_credentials["password"]
         self.user = hub_credentials["user"]
+        self.auth = hub_config["auth"].lower()
+        self.query_auth = hub_config["query_auth"]
 
         version = hub_credentials.get("version", "v1")
         self.api_url = urllib.parse.urljoin(
-            hub_credentials["api_url"], f"odata/{version}/"
+            hub_credentials["api_url"] + "/", f"odata/{version}/"
         )
 
         self.client_id = hub_credentials.get("client_id", None)
         self.token_endpoint = hub_credentials.get("token_endpoint", None)
-        if self.client_id and self.token_endpoint:
+        if self.auth == "oauth2":
             logger.info(f"using oauth2 authentication for {hub_credentials['api_url']}")
-            self.authentication = "oauth2"
             self.session = OAuth2Session(
                 client_id=self.client_id, token_endpoint=self.token_endpoint
             )
@@ -40,14 +42,15 @@ class CscApi:
                 password=self.password,
             )
             logger.info(f"updated token")
-        else:
+        elif self.auth == "basic":
             logger.info(f"using basic authentication for {hub_credentials['api_url']}")
-            self.authentication = "basic"
             self.session = requests.session()
             self.session.auth = (self.user, self.password)
+        else:
+            raise RuntimeError(f"{self.auth} is not a valid authentication. 'auth' shell be basic or oauth2")
 
     def _ensure_token(self):
-        if self.authentication is not "oauth2":
+        if self.auth is not "oauth2":
             return
         if (self.token["expires_at"] - time.time() - 60) < 0:
             self.token = self.session.fetch_token(
@@ -57,6 +60,10 @@ class CscApi:
             )
 
     def _get_product_info(self, product):
+        self._ensure_token()
+        # sessions = {True: self.session, False: requests}
+        session = requests  # sessions[self.query_auth]
+
         product = os.path.splitext(product)[0]
         query_url = urllib.parse.urljoin(
            self.api_url, f"Products?$filter=startswith(Name,'{product}')"
@@ -64,7 +71,7 @@ class CscApi:
         logger.info(f"QUERY {query_url}")
         logger.info(f"PRODUCT {product}")
 
-        response = requests.get(query_url)
+        response = session.get(query_url)
         response.raise_for_status()
         product_info = response.json()["value"]
         if len(product_info) == 0:
@@ -110,7 +117,8 @@ class CscApi:
 
 
 class DhusApi:
-    def __init__(self, **hub_credentials):
+    def __init__(self, **hub_config):
+        hub_credentials = hub_config["credentials"]
         self.password = hub_credentials["password"]
         self.user = hub_credentials["user"]
         self.api_url = hub_credentials["api_url"]
@@ -185,8 +193,12 @@ def update_api_list(hubs_config_file):
                 f"{api_type} api_type not found, it can take only the following values: {list(apis)}"
             )
         else:
-            SESSION_LIST[hub_name] = api(**hub_config["credentials"])
-
+            try:
+                SESSION_LIST[hub_name] = api(**hub_config)
+            except Exception:
+                logger.warning(
+                    f"error instantiating {api_type} downloader for {hub_name}"
+                )
     return SESSION_LIST
 
 
