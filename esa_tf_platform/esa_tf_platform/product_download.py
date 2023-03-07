@@ -39,6 +39,7 @@ class CscApi:
                 username=self.user,
                 password=self.password,
             )
+            logger.info(f"updated token")
         else:
             logger.info(f"using basic authentication for {hub_credentials['api_url']}")
             self.authentication = "basic"
@@ -55,26 +56,14 @@ class CscApi:
                 password=self.password,
             )
 
-    @staticmethod
-    def _ensure_product_name(product_name):
-        if product_name.endswith(".zip"):
-            product_name = product_name[:-4]
-        if not product_name.endswith(".SAFE"):
-            product_name = product_name + ".SAFE"
-        return product_name
-
     def _get_product_info(self, product):
-        product = self._ensure_product_name(product)
-        logger.info(f"PRODUCT {product}")
+        product = os.path.splitext(product)[0]
         query_url = urllib.parse.urljoin(
-           self.api_url, f"Products?$filter=Name%20eq%20'{product}'"
+           self.api_url, f"Products?$filter=startswith(Name,'{product}')"
         )
-        print(query_url)
-        # product = os.path.splitext(product)[0]
-        # logger.info(f"PRODUCT {product}")
-        # query_url = urllib.parse.urljoin(
-        #    self.api_url, f"Products?$filter=startswith(Name,'{product}')"
-        # )
+        logger.info(f"QUERY {query_url}")
+        logger.info(f"PRODUCT {product}")
+
         response = requests.get(query_url)
         response.raise_for_status()
         product_info = response.json()["value"]
