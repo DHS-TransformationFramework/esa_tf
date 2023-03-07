@@ -61,8 +61,8 @@ class CscApi:
 
     def _get_product_info(self, product):
         self._ensure_token()
-        # sessions = {True: self.session, False: requests}
-        session = requests  # sessions[self.query_auth]
+        sessions = {True: self.session, False: requests}
+        session = sessions[self.query_auth]
 
         product = os.path.splitext(product)[0]
         query_url = urllib.parse.urljoin(
@@ -73,6 +73,7 @@ class CscApi:
 
         response = session.get(query_url)
         response.raise_for_status()
+
         product_info = response.json()["value"]
         if len(product_info) == 0:
             raise ValueError(f"{product} not found in: {self.api_url}")
