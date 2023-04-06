@@ -69,9 +69,9 @@ def resources_monitor(
         update_disk_usage(disk_usage, processing_dir)
         update_ram_usage(ram_usage, process)
 
-        logger.debug(f"disk usage: {disk_usage[-1]} Gb", extra={"order_id": order_id})
-        logger.debug(f"ram usage: {ram_usage} Gb", extra={"order_id": order_id})
-        logger.debug(f"cpu times: {cpu_times}", extra={"order_id": order_id})
+        # logger.debug(f"disk usage: {disk_usage[-1]} Gb", extra={"order_id": order_id})
+        # logger.debug(f"ram usage: {ram_usage} Gb", extra={"order_id": order_id})
+        # logger.debug(f"cpu times: {cpu_times}", extra={"order_id": order_id})
         time.sleep(monitoring_polling_time_s)
 
     update_cpu_time(cpu_times, process)

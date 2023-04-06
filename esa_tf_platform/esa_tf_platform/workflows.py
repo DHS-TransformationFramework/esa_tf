@@ -506,9 +506,8 @@ def run_workflow(
 
         # download
         product = product_reference["Reference"]
-
-        logger.info(f"downloading input product: {product!r}")
         hub_name = product_reference.get("DataSourceName")
+        logger.info(f"downloading input product {product!r} from {hub_name}")
         product_zip_file = product_download.download(
             product=product,
             hubs_config_file=hubs_config_file,

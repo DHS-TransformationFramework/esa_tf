@@ -22,6 +22,7 @@ class CscApi:
         self.user = hub_credentials["user"]
         self.auth = hub_config["auth"].lower()
         self.query_auth = hub_config["query_auth"]
+        self.download_auth = hub_config["download_auth"]
 
         version = hub_credentials.get("version", "v1")
         self.api_url = urllib.parse.urljoin(
@@ -30,57 +31,72 @@ class CscApi:
 
         self.client_id = hub_credentials.get("client_id", None)
         self.token_endpoint = hub_credentials.get("token_endpoint", None)
+
+        if hub_config["query_auth"] or hub_config["download_auth"]:
+            self.auth_session, self.token = self._instantiate_auth_session(hub_credentials)
+        else:
+            self.auth_session = None
+            self.token = None
+
+    def _instantiate_auth_session(self, hub_credentials):
         if self.auth == "oauth2":
             logger.info(f"using oauth2 authentication for {hub_credentials['api_url']}")
-            self.session = OAuth2Session(
+            session = OAuth2Session(
                 client_id=self.client_id, token_endpoint=self.token_endpoint
             )
-
-            self.token = self.session.fetch_token(
+            token = session.fetch_token(
                 self.token_endpoint,
                 username=self.user,
                 password=self.password,
             )
-            logger.info(f"updated token")
+            logger.debug(f"token updated")
         elif self.auth == "basic":
             logger.info(f"using basic authentication for {hub_credentials['api_url']}")
-            self.session = requests.session()
-            self.session.auth = (self.user, self.password)
+            session = requests.session()
+            session.auth = (self.user, self.password)
+            token = None
         else:
             raise RuntimeError(f"{self.auth} is not a valid authentication. 'auth' shell be basic or oauth2")
+        return session, token
 
     def _ensure_token(self):
         if self.auth is not "oauth2":
             return
         if (self.token["expires_at"] - time.time() - 60) < 0:
-            self.token = self.session.fetch_token(
+            self.token = self.auth_session.fetch_token(
                 token_url="https://your-token-endpoint.com/oauth/token",
                 username=self.user,
                 password=self.password,
             )
 
     def _get_product_info(self, product):
-        self._ensure_token()
-        sessions = {True: self.session, False: requests}
-        session = sessions[self.query_auth]
+        if self.query_auth:
+            self._ensure_token()
+            session = self.auth_session
+        else:
+            session = requests.Session()
 
         product = os.path.splitext(product)[0]
         query_url = urllib.parse.urljoin(
            self.api_url, f"Products?$filter=startswith(Name,'{product}')"
         )
-        logger.info(f"QUERY {query_url}")
-        logger.info(f"PRODUCT {product}")
-
+        logger.debug(f"QUERY: {query_url}")
         response = session.get(query_url)
         response.raise_for_status()
 
         product_info = response.json()["value"]
         if len(product_info) == 0:
             raise ValueError(f"{product} not found in: {self.api_url}")
-        logger.info(f"PRODUCT INFO {product_info}")
+
+        logger.info(f"{product} found in: {self.api_url}")
+        logger.debug(f"PRODUCT INFO {product_info}")
         return product_info[0]
 
     def download(self, product, directory_path, chunk_size=8192, checksum=True):
+        if self.download_auth:
+            session = self.auth_session
+        else:
+            session = requests.Session()
         product_info = self._get_product_info(product)
         product_id = product_info["Id"]
         download_url = urllib.parse.urljoin(
@@ -99,21 +115,24 @@ class CscApi:
 
         if checksum:
             hash_md5 = hashlib.md5()
-
+        logger.info(f"trying to download product {product}")
         self._ensure_token()
-        with self.session.get(download_url, stream=True) as response:
+        with session.get(download_url, stream=True) as response:
             response.raise_for_status()
             with open(product_path, "wb") as f:
+                k = 1
                 for chunk in response.iter_content(chunk_size=chunk_size):
                     if checksum:
                         hash_md5.update(chunk)
                     f.write(chunk)
+                    logger.debug(f"downloaded {8192 * k} bytes")
+                    k += 1
         if checksum:
             if not (hash_md5.hexdigest() == product_checksum):
                 raise RuntimeError(
                     f"checksum does not match, failed to download product: {product}"
                 )
-
+        logger.info(f"product {product} downloaded")
         return product_path
 
 
@@ -135,6 +154,7 @@ class DhusApi:
         uuid_products = self.api.query(identifier=identifier)
         if len(uuid_products) == 0:
             raise ValueError(f"{product} not found in: {self.api_url}")
+        logger.info(f"{product} found in: {self.api_url}")
         return list(uuid_products)[0]
 
     def download(self, product, directory_path, checksum=True):
@@ -196,9 +216,9 @@ def update_api_list(hubs_config_file):
         else:
             try:
                 SESSION_LIST[hub_name] = api(**hub_config)
-            except Exception:
+            except Exception as ex:
                 logger.warning(
-                    f"error instantiating {api_type} downloader for {hub_name}"
+                    f"error instantiating {api_type} downloader for {hub_name}: {str(ex)}"
                 )
     return SESSION_LIST
 
