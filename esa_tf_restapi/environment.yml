@@ -7,7 +7,7 @@ dependencies:
   - cloudpickle = 1.6.0
   - dask-core = 2021.8.1
   - distributed
-  - fastapi
+  - fastapi = 0.89.1
   - flake8
   - gunicorn
   - isort
@@ -19,7 +19,6 @@ dependencies:
   - python = 3.9.7
   - uvicorn
   - pip:
-    - Authlib
     - mdformat-gfm
     - odata-query
     - sentinelsat
