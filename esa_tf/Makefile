@@ -9,14 +9,26 @@ scihub:
     api_url: https://scihub.copernicus.eu/dhus
     user: my-scihub-username
     password: my-scihub-password
-creodias:
+cdse:
   api_type: csc-api
+  auth: oauth2
+  query_auth: False
+  download_auth: True
   credentials:
-    api_url: https://datahub.creodias.eu
-    user: my-creodias-username
-    password: my-creodias-password
+    api_url: https://catalogue.dataspace.copernicus.eu
+    user: my-cdse-username
+    password: my-cdse-password
     token_endpoint: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token
     client_id: cdse-public
+gss:
+  api_type: csc-api
+  auth: basic
+  query_auth: True
+  download_auth: True
+  credentials:
+    api_url: https://dhs-test.onda-dias.eu/gss-cat-01
+    user: my-gss-username
+    password: my-gss-password
 endef
 
 define TRACEABILITY_CONFIG
