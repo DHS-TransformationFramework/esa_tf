@@ -1,5 +1,6 @@
 FROM continuumio/miniconda3
 
+RUN conda install conda-libmamba-solver && conda config --set solver libmamba
 RUN conda install make && conda clean -afy
 
 COPY Makefile /opt/esa-tf-restapi/
