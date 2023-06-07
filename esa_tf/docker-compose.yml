@@ -3,7 +3,7 @@ version: '3.8'
 
 services:
     esa_tf_scheduler:
-        image: daskdev/dask:2021.8.1-py3.9
+        image: daskdev/dask:2023.3.2-py3.10
         ports:
             - "8786:8786"
             - "8787:8787"
