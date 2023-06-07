@@ -4,8 +4,8 @@ channels:
   - conda-forge
 dependencies:
   - black
-  - cloudpickle = 1.6.0
-  - dask-core = 2021.8.1
+  - cloudpickle
+  - dask-core = 2023.3.2
   - distributed
   - fastapi = 0.89.1
   - flake8
@@ -16,10 +16,11 @@ dependencies:
   - pip
   - pytest
   - pytest-cov
-  - python = 3.9.7
+  - python = 3.10.9
   - uvicorn
   - pip:
-    - mdformat-gfm
-    - odata-query
-    - sentinelsat
-    - httpx
+      - Authlib
+      - mdformat-gfm
+      - odata-query
+      - sentinelsat
+      - httpx
