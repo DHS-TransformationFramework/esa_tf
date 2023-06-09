@@ -69,15 +69,6 @@ def add_stderr_handlers(logger):
     stream_handler.addFilter(filter)
     logger.addHandler(stream_handler)
 
-    try:
-        dask.distributed.worker.get_worker()
-    except ValueError:
-        pass
-    else:
-        dask_handler = DaskLogHandler()
-        dask_handler.setFormatter(logging_formatter)
-        dask_handler.addFilter(filter)
-        logger.addHandler(dask_handler)
 
 
 def logger_setup():

@@ -1,4 +1,3 @@
-
 version: '3.8'
 
 services:
@@ -45,8 +44,9 @@ services:
             - OUTPUT_GROUP_OWNER_ID=${OUTPUT_GROUP_OWNER_ID:-0}
             - TF_DEBUG=${TF_DEBUG:-0}
         command: >
-          sh -c 'if \[ -n "$$(ls /plugins/* 2>/dev/null)" \]; then pip install /plugins/* ; fi &&
-                 make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"'
+            sh -c 'if \[ -n "$$(ls /plugins/* 2>/dev/null)" \]; then pip install /plugins/* ; fi &&
+                   cd /opt/esa-tf-platform && 
+                   make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786"'
 
     esa_tf_proxy:
         image: nginx:1.21.6
@@ -70,5 +70,3 @@ services:
             - CLIENT_SECRET=${CLIENT_SECRET}
             - KEYCLOAK_HOST_HEADER=${KEYCLOAK_HOST_HEADER}
             - GUARD_ROLE=${GUARD_ROLE}
-
-
