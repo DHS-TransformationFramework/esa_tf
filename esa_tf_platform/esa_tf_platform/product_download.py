@@ -13,6 +13,8 @@ from authlib.integrations.requests_client import OAuth2Session
 logger = logging.getLogger(__name__)
 
 SESSION_LIST = {}
+CDSE_REDIRECTION_STATUS_CODES = (301, 302, 303, 307)
+PERMANENT_REDIRECT_STATUS_CODE = 308
 
 
 class CscApi:
@@ -117,16 +119,26 @@ class CscApi:
             hash_md5 = hashlib.md5()
         logger.info(f"trying to download product {product}")
         self._ensure_token()
-        with session.get(download_url, stream=True) as response:
-            response.raise_for_status()
-            with open(product_path, "wb") as f:
-                k = 1
-                for chunk in response.iter_content(chunk_size=chunk_size):
-                    if checksum:
-                        hash_md5.update(chunk)
-                    f.write(chunk)
-                    logger.debug(f"downloaded {8192 * k} bytes")
-                    k += 1
+        # the CDSE implemented a redirection to the URL "zipper.dataspace.copernicus.eu" during
+        # the download phase. Each client of the CDSE should support the redirection and the
+        # trusting of the source. This is possible using, as example, the option "--location" and
+        # "--location-trusted" on cURL command. The Python implementation of redirection is shown
+        # at https://documentation.dataspace.copernicus.eu/APIs/OData.html#:~:text=O%20example_odata.zip-,Python,-import%20requests%0Asession
+        response = session.get(download_url, stream=True, allow_redirects=False)
+        while response.status_code in CDSE_REDIRECTION_STATUS_CODES:
+            download_url = response.headers["Location"]
+            response = session.get(download_url, allow_redirects=False)
+        if response.status_code == PERMANENT_REDIRECT_STATUS_CODE:
+            response = session.get(download_url, stream=True, verify=False)
+        response.raise_for_status()
+        with open(product_path, "wb") as f:
+            k = 1
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                if checksum:
+                    hash_md5.update(chunk)
+                f.write(chunk)
+                logger.debug(f"downloaded {8192 * k} bytes")
+                k += 1
         if checksum:
             if not (hash_md5.hexdigest() == product_checksum):
                 raise RuntimeError(
