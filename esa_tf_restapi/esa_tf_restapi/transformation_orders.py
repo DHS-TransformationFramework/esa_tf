@@ -68,7 +68,6 @@ class TransformationOrder(object):
         }
 
     def submit(self, id_suffix=None):
-
         # definition of the task must be internal
         # to avoid dask to import esa_tf_restapi in the workers
 
