@@ -35,7 +35,9 @@ class CscApi:
         self.token_endpoint = hub_credentials.get("token_endpoint", None)
 
         if hub_config["query_auth"] or hub_config["download_auth"]:
-            self.auth_session, self.token = self._instantiate_auth_session(hub_credentials)
+            self.auth_session, self.token = self._instantiate_auth_session(
+                hub_credentials
+            )
         else:
             self.auth_session = None
             self.token = None
@@ -58,11 +60,13 @@ class CscApi:
             session.auth = (self.user, self.password)
             token = None
         else:
-            raise RuntimeError(f"{self.auth} is not a valid authentication. 'auth' shell be basic or oauth2")
+            raise RuntimeError(
+                f"{self.auth} is not a valid authentication. 'auth' shell be basic or oauth2"
+            )
         return session, token
 
     def _ensure_token(self):
-        if self.auth is not "oauth2":
+        if self.auth != "oauth2":
             return
         if (self.token["expires_at"] - time.time() - 60) < 0:
             self.token = self.auth_session.fetch_token(
@@ -80,7 +84,7 @@ class CscApi:
 
         product = os.path.splitext(product)[0]
         query_url = urllib.parse.urljoin(
-           self.api_url, f"Products?$filter=startswith(Name,'{product}')"
+            self.api_url, f"Products?$filter=startswith(Name,'{product}')"
         )
         logger.debug(f"QUERY: {query_url}")
         response = session.get(query_url)
@@ -99,6 +103,7 @@ class CscApi:
             session = self.auth_session
         else:
             session = requests.Session()
+
         product_info = self._get_product_info(product)
         product_id = product_info["Id"]
         download_url = urllib.parse.urljoin(

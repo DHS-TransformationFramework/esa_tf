@@ -87,7 +87,6 @@ def test_remove_duplicates(dummy_duplicated_entrypoints, caplog):
 
 
 def test_remove_duplicates_warnings(dummy_duplicated_entrypoints, caplog):
-
     with caplog.at_level(logging.INFO):
         _ = workflows.remove_duplicates(dummy_duplicated_entrypoints)
 
