@@ -89,7 +89,6 @@ TRANSFORMATION_ORDERS["Id5"]._info = {
     ],
 )
 def test_check_products_consistency(product_type, input_product_reference_name):
-
     esa_tf_restapi.api.check_products_consistency(
         product_type, input_product_reference_name, workflow_id="sen2cor_l1c_l2a"
     )
@@ -109,7 +108,6 @@ def test_check_products_consistency(product_type, input_product_reference_name):
 def test_check_products_consistency_wrong_product(
     product_type, input_product_reference_name
 ):
-
     with pytest.raises(esa_tf_restapi.api.RequestError, match=r"input product name"):
         esa_tf_restapi.api.check_products_consistency(
             product_type, input_product_reference_name, workflow_id="sen2cor_l1c_l2a"
@@ -129,7 +127,6 @@ def test_check_products_consistency_wrong_product_type():
 
 
 def test_extract_worflow_options_defaults():
-
     res = esa_tf_restapi.api.extract_workflow_defaults(WORKFLOW_OPTIONS)
 
     assert "Name1" in res
@@ -143,7 +140,6 @@ def test_extract_worflow_options_defaults():
 
 
 def test_fill_with_defaults():
-
     workflow_options = {"Name3": False, "Name4": 1.4}
 
     res = esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
@@ -162,7 +158,6 @@ def test_fill_with_defaults():
 
 
 def test_error_fill_with_defaults():
-
     workflow_options = {"Name3": False}
     with pytest.raises(esa_tf_restapi.api.RequestError, match=r"missing options"):
         esa_tf_restapi.api.fill_with_defaults(workflow_options, WORKFLOW_OPTIONS)
@@ -236,7 +231,6 @@ def test_get_transformation_orders(function):
 
 
 def test_check_filter_validity():
-
     with pytest.raises(esa_tf_restapi.api.RequestError, match=r"allowed key"):
         esa_tf_restapi.api.check_filter_validity([("WrongKey", "op", "value")])
 

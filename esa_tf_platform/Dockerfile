@@ -13,9 +13,7 @@ RUN apt update && apt install -y \
     unzip \
     zip
 
-RUN conda install gdal hdf5 make virtualenv \
-    # && conda install -c anaconda openjdk=8 \
-    && conda clean -afy
+RUN conda install gdal hdf5 make virtualenv && conda install -c anaconda -c conda-forge cxx-compiler openjdk=8 && conda clean -afy
 
 # TODO check JAVA_HOME variable, if necessary set it
 COPY $SEN2COR_RUN $TRACETOOL_ZIP $EOPF_CPM /opt/
@@ -31,7 +29,6 @@ RUN if [ -f /opt/$EOPF_CPM ]; then unzip /opt/$EOPF_CPM -d /opt \
 RUN unzip /opt/$TRACETOOL_ZIP -d /opt
 ENV PATH="${PATH}:/opt/"
 
-RUN conda install conda-libmamba-solver && conda config --set solver libmamba
 RUN conda install make && conda install -c anaconda openjdk=8 && conda clean -afy
 
 RUN bash /opt/$SEN2COR_RUN --target /opt/sen2cor \

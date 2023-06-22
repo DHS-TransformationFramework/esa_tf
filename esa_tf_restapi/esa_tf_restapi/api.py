@@ -157,6 +157,7 @@ def get_all_workflows(scheduler=None, verbose=False):
     """
     Return the workflows configurations installed in the workers.
     """
+
     # definition of the task must be internal
     # to avoid dask to import esa_tf_restapi in the workers
     def task():

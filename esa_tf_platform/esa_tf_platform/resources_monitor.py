@@ -22,7 +22,6 @@ def update_disk_usage(disk_usage: list[float], processing_dir: str) -> float:
 
 
 def update_cpu_time(cpu_times: dict[int, list[float]], process):
-
     children = process.children(recursive=True)
     for child in children + [process]:
         ct = child.cpu_times()
@@ -33,7 +32,6 @@ def update_cpu_time(cpu_times: dict[int, list[float]], process):
 
 
 def update_ram_usage(ram_usage: dict[int, list[float]], process):
-
     children = process.children(recursive=True)
     vms = 0
     for child in children + [process]:

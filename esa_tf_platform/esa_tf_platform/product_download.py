@@ -13,6 +13,8 @@ from authlib.integrations.requests_client import OAuth2Session
 logger = logging.getLogger(__name__)
 
 SESSION_LIST = {}
+CDSE_REDIRECTION_STATUS_CODES = (301, 302, 303, 307)
+PERMANENT_REDIRECT_STATUS_CODE = 308
 
 
 class CscApi:
@@ -33,7 +35,9 @@ class CscApi:
         self.token_endpoint = hub_credentials.get("token_endpoint", None)
 
         if hub_config["query_auth"] or hub_config["download_auth"]:
-            self.auth_session, self.token = self._instantiate_auth_session(hub_credentials)
+            self.auth_session, self.token = self._instantiate_auth_session(
+                hub_credentials
+            )
         else:
             self.auth_session = None
             self.token = None
@@ -56,11 +60,13 @@ class CscApi:
             session.auth = (self.user, self.password)
             token = None
         else:
-            raise RuntimeError(f"{self.auth} is not a valid authentication. 'auth' shell be basic or oauth2")
+            raise RuntimeError(
+                f"{self.auth} is not a valid authentication. 'auth' shell be basic or oauth2"
+            )
         return session, token
 
     def _ensure_token(self):
-        if self.auth is not "oauth2":
+        if self.auth != "oauth2":
             return
         if (self.token["expires_at"] - time.time() - 60) < 0:
             self.token = self.auth_session.fetch_token(
@@ -78,7 +84,7 @@ class CscApi:
 
         product = os.path.splitext(product)[0]
         query_url = urllib.parse.urljoin(
-           self.api_url, f"Products?$filter=startswith(Name,'{product}')"
+            self.api_url, f"Products?$filter=startswith(Name,'{product}')"
         )
         logger.debug(f"QUERY: {query_url}")
         response = session.get(query_url)
@@ -97,6 +103,7 @@ class CscApi:
             session = self.auth_session
         else:
             session = requests.Session()
+
         product_info = self._get_product_info(product)
         product_id = product_info["Id"]
         download_url = urllib.parse.urljoin(
@@ -117,16 +124,26 @@ class CscApi:
             hash_md5 = hashlib.md5()
         logger.info(f"trying to download product {product}")
         self._ensure_token()
-        with session.get(download_url, stream=True) as response:
-            response.raise_for_status()
-            with open(product_path, "wb") as f:
-                k = 1
-                for chunk in response.iter_content(chunk_size=chunk_size):
-                    if checksum:
-                        hash_md5.update(chunk)
-                    f.write(chunk)
-                    logger.debug(f"downloaded {8192 * k} bytes")
-                    k += 1
+        # the CDSE implemented a redirection to the URL "zipper.dataspace.copernicus.eu" during
+        # the download phase. Each client of the CDSE should support the redirection and the
+        # trusting of the source. This is possible using, as example, the option "--location" and
+        # "--location-trusted" on cURL command. The Python implementation of redirection is shown
+        # at https://documentation.dataspace.copernicus.eu/APIs/OData.html#:~:text=O%20example_odata.zip-,Python,-import%20requests%0Asession
+        response = session.get(download_url, stream=True, allow_redirects=False)
+        while response.status_code in CDSE_REDIRECTION_STATUS_CODES:
+            download_url = response.headers["Location"]
+            response = session.get(download_url, allow_redirects=False)
+        if response.status_code == PERMANENT_REDIRECT_STATUS_CODE:
+            response = session.get(download_url, stream=True, verify=False)
+        response.raise_for_status()
+        with open(product_path, "wb") as f:
+            k = 1
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                if checksum:
+                    hash_md5.update(chunk)
+                f.write(chunk)
+                logger.debug(f"downloaded {8192 * k} bytes")
+                k += 1
         if checksum:
             if not (hash_md5.hexdigest() == product_checksum):
                 raise RuntimeError(

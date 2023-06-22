@@ -14,9 +14,12 @@ from esa_tf_platform import product_download
 )
 def test_download_product_from_hub():
     hub_credentials = {
-        "api_url": "https:/apihub.copernicus.eu/apihub",
-        "user": "user",
-        "password": "password",
+        "api_type": "dhus-api",
+        "credentials": {
+            "api_url": "https:/apihub.copernicus.eu/apihub",
+            "user": "user",
+            "password": "password",
+        },
     }
 
     session = product_download.DhusApi(**hub_credentials)
@@ -34,12 +37,14 @@ def test_download_product_from_hub():
 )
 @mock.patch("sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={}))
 def test_error_download_product_from_hub():
-
     with pytest.raises(ValueError, match=f"product not found"):
         hub_credentials = {
-            "api_url": "https:/apihub.copernicus.eu/apihub",
-            "user": "user",
-            "password": "password",
+            "api_type": "dhus-api",
+            "credentials": {
+                "api_url": "https:/apihub.copernicus.eu/apihub",
+                "user": "user",
+                "password": "password",
+            },
         }
 
         session = product_download.DhusApi(**hub_credentials)

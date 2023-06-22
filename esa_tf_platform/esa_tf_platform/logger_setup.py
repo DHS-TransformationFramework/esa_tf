@@ -42,7 +42,6 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-
         if hasattr(record, "order_id") and record.order_id is not None:
             record.order_id = record.order_id.split("-")[0]
         else:
