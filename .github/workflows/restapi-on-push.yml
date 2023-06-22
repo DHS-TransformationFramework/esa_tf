@@ -52,15 +52,12 @@ jobs:
         path: ~/conda_pkgs_dir
         key:
           ubuntu-latest-3.9
-    - uses: conda-incubator/setup-miniconda@v2
+    - name: Install Conda environment with Micromamba
+      uses: mamba-org/setup-micromamba@v1
       with:
-        activate-environment: ubuntu-latest-3.9
-        auto-update-conda: false
-        python-version: 3.9
-        use-only-tar-bz2: true
-    - name: Install dependencies
-      run: |
-        make conda-env-update ENVIRONMENT=ubuntu-latest-3.9
+        environment-file: ./esa_tf_restapi/environment.yml
+        environment-name: ubuntu-latest-3.9
+        cache-environment: true
     - name: Lint with flake8
       run: |
         make code-quality
