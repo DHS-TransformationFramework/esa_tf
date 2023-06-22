@@ -7,7 +7,7 @@ dependencies:
   - cloudpickle = 1.6.0
   - dask-core = 2021.8.1
   - distributed
-  - fastapi = 0.89.1
+  - fastapi = 0.97.0
   - flake8
   - gunicorn
   - isort
