@@ -109,7 +109,11 @@ class CscApi:
         download_url = urllib.parse.urljoin(
             self.api_url, f"Products({product_id})/$value"
         )
-        product_checksum = product_info.get("Checksum", None)
+        product_checksum = product_info.get("Checksum", [{}])
+        try:
+            product_checksum = product_checksum[0].get("Value")
+        except (TypeError, AttributeError):
+            product_checksum = None
         if not isinstance(product_checksum, str):
             product_checksum = None
         product_basename = os.path.splitext(product)[0]
@@ -119,7 +123,6 @@ class CscApi:
                 f"checksum cannot be verified, checksum not available in {self.api_url} product info"
             )
             checksum = False
-
         if checksum:
             hash_md5 = hashlib.md5()
         logger.info(f"trying to download product {product}")
