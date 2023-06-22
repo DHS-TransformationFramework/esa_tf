@@ -186,6 +186,8 @@ async def transformation_order_create(
         uri_root=uri_root,
     )
 
-    url = request.url_for("transformation_order", id=running_transformation.get("Id"))
+    url = str(
+        request.url_for("transformation_order", id=running_transformation.get("Id"))
+    )
     response.headers["Location"] = url
     return {**running_transformation}
