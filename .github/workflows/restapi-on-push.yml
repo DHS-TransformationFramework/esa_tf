@@ -27,7 +27,7 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: environment.yml
+        environment-file: ./esa_tf_restapi/environment.yml
         environment-name: ubuntu-latest-3.9
         cache-environment: true
     - name: Install package
