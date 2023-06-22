@@ -18,7 +18,7 @@ OUTPATH = "./tests/data"
 def test_download_scihub():
     os.makedirs(OUTPATH, exist_ok=True)
     hub_config = product_download.read_hub_config(HUB_CONFIG_FILE)
-    credentials = hub_config.get("scihub", {}).get("credentials", None)
+    credentials = hub_config.get("scihub", {})
 
     session = product_download.DhusApi(**credentials)
     path = session.download(
@@ -33,7 +33,7 @@ def test_download_scihub():
 def test_download_creodias():
     os.makedirs(OUTPATH, exist_ok=True)
     hub_config = product_download.read_hub_config(HUB_CONFIG_FILE)
-    credentials = hub_config.get("creodias", {}).get("credentials", None)
+    credentials = hub_config.get("cdse", {})
 
     session = product_download.CscApi(**credentials)
     path = session.download(
@@ -52,6 +52,7 @@ def test_download():
         CREODIAS_PRODUCT,
         processing_dir=OUTPATH,
         hubs_config_file=HUB_CONFIG_FILE,
+        hub_name="cdse",
     )
 
     product_basename = os.path.splitext(CREODIAS_PRODUCT)[0]

@@ -10,7 +10,6 @@ class ConfigurationError(Exception):
 
 
 class Configuration(pydantic.BaseModel):
-
     keeping_period: int = 14400
     excluded_workflows: T.List[str] = []
     enable_traceability: bool = True

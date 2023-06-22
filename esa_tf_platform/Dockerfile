@@ -16,7 +16,7 @@ RUN curl -LO https://repository.gael-systems.com/repository/public/fr/gael/datac
 RUN unzip $TRACETOOL_ZIP -d /opt
 ENV PATH="${PATH}:/opt/"
 
-RUN conda install make && conda install -c anaconda openjdk=8 && conda clean -afy
+RUN conda install make && conda install -c anaconda -c conda-forge cxx-compiler openjdk=8 && conda clean -afy
 
 COPY $SEN2COR_RUN /opt
 

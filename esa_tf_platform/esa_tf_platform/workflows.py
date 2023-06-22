@@ -425,7 +425,6 @@ def chown(path, user, group):
 def move_in_output_folder(
     output, order_id, output_dir, workflow_id, output_owner, output_group_owner
 ):
-
     if not os.path.exists(output):
         raise ValueError(f"{workflow_id!r} output file {output!r} not found.")
     # re-package the output

@@ -12,7 +12,6 @@ class ConfigurationError(Exception):
 
 
 class Configuration(pydantic.BaseModel):
-
     service_url: pydantic.HttpUrl
     url_access_token: pydantic.HttpUrl
     url_push_trace: pydantic.HttpUrl

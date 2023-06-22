@@ -21,3 +21,4 @@ dependencies:
     - mdformat-gfm
     - sentinelsat
     - cachetools
+    - requests
