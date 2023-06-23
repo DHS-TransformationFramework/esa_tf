@@ -91,9 +91,12 @@ def check_ozone_content(options):
     """
     ozone_content_value = options["Ozone_Content"]
     mid_latitude_value = options.get(
-        "Mid_Latitude", sen2cor_l1c_l2a["WorkflowOptions"]["Mid_Latitude"]["Default"]
+        "Mid_Latitude",
+        sen2cor_l1c_l2a_workflow_api["WorkflowOptions"]["Mid_Latitude"]["Default"],
     )
-    valid_ozone_values = sen2cor_l1c_l2a["WorkflowOptions"]["Ozone_Content"]["Enum"]
+    valid_ozone_values = sen2cor_l1c_l2a_workflow_api["WorkflowOptions"][
+        "Ozone_Content"
+    ]["Enum"]
     if ozone_content_value not in valid_ozone_values:
         raise ValueError(
             f"valid ozone content values are {valid_ozone_values}, given {ozone_content_value}"
@@ -172,14 +175,16 @@ def check_options(options):
 
     # check the validity of non-ROI options
     other_options = {k: v for k, v in options.items() if k not in ROI_OPTIONS_NAMES}
-    valid_names = list(sen2cor_l1c_l2a["WorkflowOptions"])
+    valid_names = list(sen2cor_l1c_l2a_workflow_api["WorkflowOptions"])
     for oname, ovalue in other_options.items():
         if oname == "Ozone_Content":
             check_ozone_content(options)
         elif oname in valid_names:
             if oname == "Resolution" and ovalue is None:
                 continue
-            valid_values = sen2cor_l1c_l2a["WorkflowOptions"][oname].get("Enum")
+            valid_values = sen2cor_l1c_l2a_workflow_api["WorkflowOptions"][oname].get(
+                "Enum"
+            )
             if valid_values and (ovalue not in valid_values):
                 raise ValueError(
                     f"invalid value '{ovalue}'' for '{oname}': valid values are {valid_values}"
@@ -196,7 +201,9 @@ def log_options(workflow_options):
     """
     applied_options = {
         option_name: option.get("Default")
-        for option_name, option in sen2cor_l1c_l2a["WorkflowOptions"].items()
+        for option_name, option in sen2cor_l1c_l2a_workflow_api[
+            "WorkflowOptions"
+        ].items()
     }
     applied_options.update(workflow_options)
     logger.info(applied_options)

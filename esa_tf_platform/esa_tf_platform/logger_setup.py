@@ -69,7 +69,6 @@ def add_stderr_handlers(logger):
     logger.addHandler(stream_handler)
 
 
-
 def logger_setup():
     rootlogger = logging.getLogger()
     rootlogger.setLevel(LOGGING_LEVEL)
