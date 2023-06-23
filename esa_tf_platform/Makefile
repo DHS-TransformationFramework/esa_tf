@@ -8,7 +8,8 @@ SEN2COR_URL := http://step.esa.int/thirdparties/sen2cor/2.10.0/$(SEN2COR_RUN)
 COV_REPORT := html
 TRACETOOL_ZIP := tracetool-1.2.4-distribution.zip
 TRACETOOL_URL := https://repository.gael-systems.com/repository/public/fr/gael/datac/tracetool/1.2.4/$(TRACETOOL_ZIP)
-EOPF_CPM := eopf-cpm-1.2.2.zip
+EOPF_CPM := eopf-cpm-1.2.2
+CONDA := conda
 
 default: fix-code-style test
 
@@ -33,10 +34,10 @@ code-style:
 # deploy
 
 conda-env-create:
-	conda env create -n $(ENVIRONMENT) -f environment.yml
+	${CONDA} env create -n $(ENVIRONMENT) -f environment.yml
 
 conda-env-update:
-	conda env update -n $(ENVIRONMENT) -f environment.yml
+	${CONDA} env update -n $(ENVIRONMENT) -f environment.yml
 
 $(SEN2COR_RUN):
 	curl -LO $(SEN2COR_URL)
