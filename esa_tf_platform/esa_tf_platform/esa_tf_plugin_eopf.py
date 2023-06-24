@@ -8,13 +8,22 @@ import pkg_resources
 logger = logging.getLogger(__name__)
 
 
-def run_prcessing(product_path, output_dir, workflow_options):
+def run_processing(
+    product_path,
+    *,
+    workflow_options,
+    processing_dir,
+    output_dir
+):
     stem = pathlib.Path(product_path).stem
     output_product = os.path.join(output_dir, f"{stem}.zarr")
     eopf_safe_to_zarr_cli = pkg_resources.resource_filename(
         __package__, os.path.join("resources", "eopf_safe_to_zarr_cli.py")
     )
-    cmd = f"conda run -n eopf python {eopf_safe_to_zarr_cli} --intput_path {product_path} --output_path {output_product}"
+    cmd = f"conda run -n eopf python {eopf_safe_to_zarr_cli} {product_path} {output_product}"
+
+    logger.info(f"Executing command: {cmd}")
+
     process = subprocess.Popen(
         cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
     )
@@ -36,8 +45,29 @@ def run_prcessing(product_path, output_dir, workflow_options):
 
 eopf_safe_to_zarr_workflow_api = {
     "WorkflowName": "eopf_safe_to_zarr",
+    "WorkflowOptions": {
+        "dask_compression": {
+            "Description": "",
+            "Type": "string",
+            "Default": "ZSTD",
+            "Enum": ["ZSTD", "BLOSCLZ", "LZ4", "LZ4HC", "ZLIB", "SNAPPY"]
+        },
+        "dask_comp_level": {
+            "Description": "",
+            "Type": "int",
+            "Default": 1,
+            "Enum": [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        },
+        "dask_shuffle": {
+            "Description": "shuffle: NOSHUFFLE (0), SHUFFLE (1), BITSHUFFLE (2) or AUTOSHUFFLE (-1)",
+            "Type": "int",
+            "Default": 2,
+            "Enum": [0, 1, 2, -1]
+        }
+
+    },
     "Description": "",
-    "Execute": "esa_tf_platform.esa_plugin_eopf.run_processing",
+    "Execute": "esa_tf_platform.esa_tf_plugin_eopf.run_processing",
     "InputProductType": "S2MSI1C",
     "OutputProductType": None,
     "WorkflowVersion": "0.1",

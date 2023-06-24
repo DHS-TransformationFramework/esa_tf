@@ -20,7 +20,7 @@ RUN mamba install gdal hdf5 make virtualenv -y\
 COPY $SEN2COR_RUN $TRACETOOL_ZIP ${EOPF_CPM}.zip /opt/
 
 RUN unzip /opt/${EOPF_CPM}.zip -d /opt \
-    && mamba create -n eopf python=3.10.9 scipy=1.9.0 -c conda-forge \
+    && mamba create -n eopf python=3.10.9 scipy=1.9.0 cfgrib=0.9.10.1 -c conda-forge \
     && mamba run -n eopf pip install /opt/$EOPF_CPM\
     && mamba clean -afy
 
@@ -43,6 +43,6 @@ COPY . /opt/esa-tf-platform
 
 RUN pip install .
 
-RUN mkdir -p /processing
+RUN mkdir -p /working_dir
 
-WORKDIR /processing
+WORKDIR /working_dir

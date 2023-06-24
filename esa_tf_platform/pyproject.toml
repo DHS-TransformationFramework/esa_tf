@@ -40,5 +40,5 @@ include-package-data = true
 esa_tf_platform = ["resources/*.xml"]
 
 [project.entry-points."esa_tf.plugin"]
-eofp_safe_to_zarr = "esa_tf_platform.esa_tf_plugin_eopf:eopf_safe_to_zarr_workflow_api"
+eopf_safe_to_zarr = "esa_tf_platform.esa_tf_plugin_eopf:eopf_safe_to_zarr_workflow_api"
 sen2cor_l1c_l2a = "esa_tf_platform.esa_tf_plugin_sen2cor:sen2cor_l1c_l2a_workflow_api"
