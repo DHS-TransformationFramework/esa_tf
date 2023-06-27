@@ -183,7 +183,7 @@ def check_product_is_type_of(
     elif product_type in SENTINEL5P:
         exp = f"S5P_(OFFL|OPER|NRTI)_{product_type}"
     else:
-        raise logger.warning(
+        logger.warning(
             f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"
         )
 
