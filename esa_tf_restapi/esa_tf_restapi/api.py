@@ -173,7 +173,6 @@ def check_product_is_type_of(
     The check is done on the first characters of `input_product_reference_name`.
     Currently are supported only Sentinel1 nd Sentinel2 products.
     """
-
     if product_type in SENTINEL1:
         exp = f"^S1[AB_]_{product_type}"
     elif product_type in SENTINEL2:
@@ -186,6 +185,7 @@ def check_product_is_type_of(
         logger.warning(
             f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"
         )
+        return False
 
     ok = False
     if re.match(exp, str(input_product_reference_name)):

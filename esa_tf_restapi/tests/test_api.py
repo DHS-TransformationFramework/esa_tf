@@ -118,7 +118,7 @@ def test_check_product_type_wrong_product_type():
     input_product_reference_name = (
         "S2A_MSIL1C_20211022T062221_N0301_R048_T39GWH_20211022T064132.zip"
     )
-    with pytest.raises(ValueError, match=f"product type"):
+    with pytest.raises(esa_tf_restapi.api.RequestError, match=f"product types"):
         esa_tf_restapi.api.check_product_type(
             product_type, input_product_reference_name, workflow_id=workflow_id
         )
