@@ -108,14 +108,48 @@ SENTINEL3 = [
     "SR_2_LAN___",
 ]
 
+SENTINEL5P = [
+    "L1B_RA_BD1",
+    "L1B_RA_BD2",
+    "L1B_RA_BD3",
+    "L1B_RA_BD4",
+    "L1B_RA_BD5",
+    "L1B_RA_BD6",
+    "L1B_RA_BD7",
+    "L1B_RA_BD8",
+    "L1B_IR_UVN",
+    "L1B_IR_SIR",
+    "L2__O3____",
+    "L2__O3_TCL",
+    "L2__O3__PR",
+    "L2__O3_TPR",
+    "L2__NO2___",
+    "L2__SO2___",
+    "L2__CO____",
+    "L2__CH4___",
+    "L2__HCHO__",
+    "L2__CLOUD_",
+    "L2__AER_AI",
+    "L2__AER_LH",
+    "L2__FRESCO",
+    "L2__NP_BD3",
+    "L2__NP_BD6",
+    "L2__NP_BD7",
+    "AUX_CTMFCT",
+    "AUX_CTMANA",
+]
+
 
 def check_valid_product_type(workflow, workflow_id=None):
-    product_type = workflow["InputProductType"]
-    if product_type not in set([*SENTINEL1, *SENTINEL2, *SENTINEL3]):
-        raise ValueError(
-            f"error in workflow plugin {workflow_id}: product type {product_type} not recognized; "
-            f"product type shall be one of the following {[*SENTINEL1, *SENTINEL2, *SENTINEL3]}"
-        )
+    product_type_list = workflow["InputProductType"]
+    if isinstance(product_type_list, str):
+        product_type_list = [product_type_list]
+    for product_type in product_type_list:
+        if product_type not in set([*SENTINEL1, *SENTINEL2, *SENTINEL3]):
+            raise ValueError(
+                f"error in workflow plugin {workflow_id}: product type {product_type} not recognized; "
+                f"product type shall be one of the following {[*SENTINEL1, *SENTINEL2, *SENTINEL3, *SENTINEL5P]}"
+            )
 
 
 def check_mandatory_workflow_keys(workflow, workflow_id=None):
@@ -326,7 +360,7 @@ def load_workflow_runner(workflow_id):
     workflow_runner_name = get_all_workflows()[workflow_id]["Execute"]
     module_name, function_name = workflow_runner_name.rsplit(".", 1)
     module = importlib.import_module(module_name)
-    workflow_runner = getattr(module, "run_processing")
+    workflow_runner = getattr(module, function_name)
     return workflow_runner
 
 
@@ -466,9 +500,9 @@ def run_workflow(
     except ValueError:
         pass
     logger.info(f"current worker folder: {os.getcwd()}")
-    working_dir = os.getenv("WORKING_DIR", "./working_dir")
-    output_dir = os.getenv("OUTPUT_DIR", "./output_dir")
-    traces_dir = os.getenv("TRACES_DIR", "./traces")
+    working_dir = os.getenv("WORKING_DIR", "/working_dir")
+    output_dir = os.getenv("OUTPUT_DIR", "/output_dir")
+    traces_dir = os.getenv("TRACES_DIR", "/traces")
     output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
     output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
     hubs_config_file = os.getenv("HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml")
@@ -506,7 +540,7 @@ def run_workflow(
         # download
         product = product_reference["Reference"]
         hub_name = product_reference.get("DataSourceName")
-        logger.info(f"downloading input product {product!r} from {hub_name}")
+        logger.info(f"downloading input product {product!r}")
         product_zip_file = product_download.download(
             product=product,
             hubs_config_file=hubs_config_file,
