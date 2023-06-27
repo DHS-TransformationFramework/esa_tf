@@ -85,6 +85,37 @@ SENTINEL3 = [
     "SR_2_LAN___",
 ]
 
+SENTINEL5P = [
+    "L1B_RA_BD1",
+    "L1B_RA_BD2",
+    "L1B_RA_BD3",
+    "L1B_RA_BD4",
+    "L1B_RA_BD5",
+    "L1B_RA_BD6",
+    "L1B_RA_BD7",
+    "L1B_RA_BD8",
+    "L1B_IR_UVN",
+    "L1B_IR_SIR",
+    "L2__O3____",
+    "L2__O3_TCL",
+    "L2__O3__PR",
+    "L2__O3_TPR",
+    "L2__NO2___",
+    "L2__SO2___",
+    "L2__CO____",
+    "L2__CH4___",
+    "L2__HCHO__",
+    "L2__CLOUD_",
+    "L2__AER_AI",
+    "L2__AER_LH",
+    "L2__FRESCO",
+    "L2__NP_BD3",
+    "L2__NP_BD6",
+    "L2__NP_BD7",
+    "AUX_CTMFCT",
+    "AUX_CTMANA",
+]
+
 
 class RequestError(Exception):
     def __init__(self, user_id, message):
@@ -107,8 +138,35 @@ class ItemNotFound(Exception):
         super().__init__(self.message)
 
 
-def check_products_consistency(
-    product_type, input_product_reference_name, workflow_id=None, user_id=DEFAULT_USER
+def check_product_type(
+    product_type_list: list[str] | str,
+    input_product_reference_name: str,
+    workflow_id: str | None = None,
+    user_id: str = DEFAULT_USER
+):
+    if isinstance(product_type_list, str):
+        product_type_list = [product_type_list]
+
+    ok = False
+    for product_type in product_type_list:
+        ok = check_product_is_type_of(product_type, input_product_reference_name)
+        if ok:
+            break
+
+    if not ok:
+        raise RequestError(
+            user_id,
+            f"input product name {input_product_reference_name!r} does not comply "
+            f"to the naming convention to any of the naming conventions "
+            f"of the following product types required by {workflow_id!r}: "
+            f"{product_type_list!r}"
+        )
+
+
+def check_product_is_type_of(
+    product_type: list[str] | str,
+    input_product_reference_name: str,
+    workflow_id: str | None = None,
 ):
     """
     Check if the workflow product type is consistent with the product name.
@@ -122,18 +180,18 @@ def check_products_consistency(
         exp = f"^S2[AB_]_{product_type[2:5]}L{product_type[5:7]}"
     elif product_type in SENTINEL3:
         exp = f"S3[AB_]_{product_type}"
+    elif product_type in SENTINEL5P:
+        exp = f"S5P_(OFFL|OPER|NRTI)_{product_type}"
     else:
-        raise ValueError(
+        raise logger.warning(
             f"product type ${product_type} not recognized, error in plugin: {workflow_id!r}"
         )
 
-    if not re.match(exp, str(input_product_reference_name)):
-        raise RequestError(
-            user_id,
-            f"input product name {input_product_reference_name!r} does not comply "
-            f"to the naming convention for the {product_type!r} product type required by "
-            f"{workflow_id!r}",
-        )
+    ok = False
+    if re.match(exp, str(input_product_reference_name)):
+        ok = True
+
+    return ok
 
 
 def instantiate_client(scheduler_addr=None):
@@ -461,7 +519,7 @@ def submit_workflow(
         workflow_id, esa_tf_config=esa_tf_config, verbose=True
     )
 
-    check_products_consistency(
+    check_product_type(
         workflow["InputProductType"],
         input_product_reference["Reference"],
         workflow_id=workflow_id,
