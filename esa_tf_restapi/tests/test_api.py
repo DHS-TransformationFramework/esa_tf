@@ -105,9 +105,7 @@ def test_check_product_type(product_type, input_product_reference_name):
         ),
     ],
 )
-def test_check_product_type_wrong_product(
-    product_type, input_product_reference_name
-):
+def test_check_product_type_wrong_product(product_type, input_product_reference_name):
     with pytest.raises(esa_tf_restapi.api.RequestError, match=r"input product name"):
         esa_tf_restapi.api.check_product_type(
             product_type, input_product_reference_name, workflow_id="sen2cor_l1c_l2a"

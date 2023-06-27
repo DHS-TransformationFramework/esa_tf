@@ -142,7 +142,7 @@ def check_product_type(
     product_type_list: list[str] | str,
     input_product_reference_name: str,
     workflow_id: str | None = None,
-    user_id: str = DEFAULT_USER
+    user_id: str = DEFAULT_USER,
 ):
     if isinstance(product_type_list, str):
         product_type_list = [product_type_list]
@@ -159,7 +159,7 @@ def check_product_type(
             f"input product name {input_product_reference_name!r} does not comply "
             f"to the naming convention to any of the naming conventions "
             f"of the following product types required by {workflow_id!r}: "
-            f"{product_type_list!r}"
+            f"{product_type_list!r}",
         )
 
 
