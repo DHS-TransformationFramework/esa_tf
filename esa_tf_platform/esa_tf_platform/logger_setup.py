@@ -42,7 +42,7 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-        if hasattr(record, "order_id"):
+        if hasattr(record, "order_id") and record.order_id is not None:
             record.order_id = record.order_id.split("-")[0]
         else:
             try:
@@ -67,16 +67,6 @@ def add_stderr_handlers(logger):
     stream_handler.setFormatter(logging_formatter)
     stream_handler.addFilter(filter)
     logger.addHandler(stream_handler)
-
-    try:
-        dask.distributed.worker.get_worker()
-    except ValueError:
-        pass
-    else:
-        dask_handler = DaskLogHandler()
-        dask_handler.setFormatter(logging_formatter)
-        dask_handler.addFilter(filter)
-        logger.addHandler(dask_handler)
 
 
 def logger_setup():

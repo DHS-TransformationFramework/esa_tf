@@ -1,6 +1,48 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+
+[project]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Internet :: WWW/HTTP :: WSGI :: Application"
+]
+description = "ESA Transformation Framework Platform"
+dynamic = ["version"]
+license = {file = "LICENSE"}
+name = "esa_tf_platform"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+tests = ["pytest"]
+
 [tool.coverage.run]
 branch = true
-omit = ["setup.py"]
+omit = ["setup.py", "tests/test_*.py"]
 
 [tool.isort]
 profile = "black"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+
+[tool.setuptools.package-data]
+esa_tf_platform = ["resources/*.xml"]
+
+[project.entry-points."esa_tf.plugin"]
+eopf_convert_to_zarr = "esa_tf_platform.esa_tf_plugin_eopf:eopf_to_zarr_workflow_api"
+eopf_convert_to_netcdf = "esa_tf_platform.esa_tf_plugin_eopf:eopf_to_netcdf_workflow_api"
+eopf_convert_to_cog = "esa_tf_platform.esa_tf_plugin_eopf:eopf_to_cog_workflow_api"
+
+sen2cor_l1c_l2a = "esa_tf_platform.esa_tf_plugin_sen2cor:sen2cor_l1c_l2a_workflow_api"
+
