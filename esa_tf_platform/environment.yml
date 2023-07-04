@@ -19,6 +19,7 @@ dependencies:
   - pip:
       - Authlib
       - blosc
+      - conda-merge
       - mdformat-gfm
       - sentinelsat
       - cachetools
