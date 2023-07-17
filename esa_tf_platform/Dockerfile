@@ -39,7 +39,8 @@ COPY environment.yml /opt/esa-tf-platform/
 
 WORKDIR /opt/esa-tf-platform
 
-RUN make conda-env-update ENVIRONMENT=base CONDA=$CONDA && $CONDA clean -afy
+RUN conda install -c conda-forge mamba \
+    && make conda-env-update ENVIRONMENT=base CONDA=mamba && $CONDA clean -afy
 
 COPY . /opt/esa-tf-platform
 
