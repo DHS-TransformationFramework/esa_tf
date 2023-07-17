@@ -4,13 +4,15 @@ channels:
   - conda-forge
 dependencies:
   - black
+  - blosc
   - cachetools
   - cloudpickle
   - dask = 2023.3.2
   - flake8
+  - gdal
+  - hdf5
   - isort
   - lz4 = 4.3.2
-  - make
   - nomkl
   - pip
   - pydantic
@@ -19,7 +21,5 @@ dependencies:
   - python = 3.10.9
   - pip:
       - Authlib
-      - blosc
-      - conda-merge
       - mdformat-gfm
       - sentinelsat
