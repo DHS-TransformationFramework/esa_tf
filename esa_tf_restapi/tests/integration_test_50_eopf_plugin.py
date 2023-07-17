@@ -1,9 +1,8 @@
 import os
-import pytest
 import time
 
+import pytest
 import requests
-
 
 REFERENCES = [
     "S2A_MSIL1C_20230305T075811_N0509_R035_T36MVU_20230305T094419",
