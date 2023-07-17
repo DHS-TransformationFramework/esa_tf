@@ -162,25 +162,26 @@ eopf_to_zarr_workflow_api = {
     "WorkflowName": "eopf_to_zarr",
     "WorkflowOptions": {
         "dask_compression": {
-            "Description": "",
+            "Description": "Type of compression",
             "Type": "string",
             "Default": "zstd",
             "Enum": ["zstd", "blosclz", "lz4", "lz4hc", "zlib", "snappy"],
         },
         "dask_comp_level": {
-            "Description": "",
+            "Description": "Compression level",
             "Type": "integer",
             "Default": 1,
             "Enum": [1, 2, 3, 4, 5, 6, 7, 8, 9],
         },
         "dask_shuffle": {
-            "Description": "shuffle: NOSHUFFLE (0), SHUFFLE (1), BITSHUFFLE (2) or AUTOSHUFFLE (-1)",
+            "Description": "Shuffle: NOSHUFFLE (0), SHUFFLE (1), BITSHUFFLE (2) or AUTOSHUFFLE (-1)",
             "Type": "integer",
             "Default": 2,
             "Enum": [0, 1, 2, -1],
         },
     },
-    "Description": "",
+    "Description": "EOPF plugin for converting internal file of Sentinel-1, Sentinel-2 and "
+                   "Sentinel-3 SAFE in zarr format",
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_zarr_run_processing",
     "InputProductType": PRODUCT_TYPE,
     "OutputProductType": None,
@@ -195,25 +196,26 @@ eopf_to_netcdf_workflow_api = {
     "WorkflowName": "eopf_to_netcdf",
     "WorkflowOptions": {
         "netcdf_compression": {
-            "Description": "",
+            "Description": "Activate the compression",
             "Type": "boolean",
             "Default": True,
             "Enum": [True, False],
         },
         "netcdf_comp_level": {
-            "Description": "",
+            "Description": "Compression level",
             "Type": "integer",
             "Default": 1,
             "Enum": [1, 2, 3, 4, 5, 6, 7, 8, 9],
         },
         "netcdf_shuffle": {
-            "Description": "shuffle: NOSHUFFLE (0), SHUFFLE (1), BITSHUFFLE (2) or AUTOSHUFFLE (-1)",
+            "Description": "Activate the shuffle",
             "Type": "string",
             "Default": "YES",
             "Enum": ["YES", "NO"],
         },
     },
-    "Description": "",
+    "Description": "EOPF plugin for converting internal file of Sentinel-1, Sentinel-2 and "
+                   "Sentinel-3 SAFE in netcdf format",
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_netcdf_run_processing",
     "InputProductType": PRODUCT_TYPE,
     "OutputProductType": None,
@@ -227,26 +229,8 @@ eopf_to_netcdf_workflow_api = {
 eopf_to_cog_workflow_api = {
     "WorkflowName": "eopf_to_netcdf",
     "WorkflowOptions": {
-        "cog_lock": {
-            "Description": "",
-            "Type": "boolean",
-            "Default": False,
-            "Enum": [True, False],
-        },
-        "cog_driver": {
-            "Description": "",
-            "Type": "string",
-            "Default": "cog",
-            "Enum": ["cog"],
-        },
-        "cog_predictor": {
-            "Description": "",
-            "Type": "string",
-            "Default": "YES",
-            "Enum": ["YES", "NO"],
-        },
         "cog_compression": {
-            "Description": "",
+            "Description": "Type of compression",
             "Type": "string",
             "Default": "DEFLATE",
             "Enum": [
@@ -263,7 +247,8 @@ eopf_to_cog_workflow_api = {
             ],
         },
     },
-    "Description": "",
+    "Description": "EOPF plugin for converting internal file of Sentinel-1, Sentinel-2 and "
+                   "Sentinel-3 SAFE in COG format",
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_cog_run_processing",
     "InputProductType": PRODUCT_TYPE,
     "OutputProductType": None,

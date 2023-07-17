@@ -13,24 +13,19 @@ RUN apt update && apt install -y \
     unzip \
     zip
 
-RUN conda update conda  && conda clean -afy
-RUN $CONDA install gdal hdf5 make virtualenv -y\
+COPY $SEN2COR_RUN $TRACETOOL_ZIP ${EOPF_CPM}.zip /opt/
+
+RUN conda update conda && conda clean -afy
+RUN $CONDA install gdal hdf5 make -y\
     && $CONDA install -c anaconda -c conda-forge cxx-compiler openjdk=8 -y\
     && $CONDA clean -afy
 
-# RUN conda install mamba -c conda-forge -y && conda clean -afy
-
-#RUN $CONDA install gdal hdf5 make virtualenv -y && $CONDA clean -afy
-# RUN $CONDA install -c anaconda -c conda-forge cxx-compiler openjdk=8 -y && $CONDA clean -afy
-
-
-# TODO check JAVA_HOME variable, if necessary set it
-COPY $SEN2COR_RUN $TRACETOOL_ZIP ${EOPF_CPM}.zip /opt/
-
-RUN unzip /opt/${EOPF_CPM}.zip -d /opt \
-    && $CONDA create -n eopf python=3.10.9 scipy=1.9.0 cfgrib=0.9.10.1 -c conda-forge \
-    && $CONDA run -n eopf pip install /opt/$EOPF_CPM\
-    && $CONDA clean -afy
+RUN if [ -f /opt/${EOPF_CPM}.zip ]; then \
+    unzip /opt/${EOPF_CPM}.zip -d /opt \
+    && conda create -n eopf python=3.10.9 scipy=1.9.0 cfgrib=0.9.10.1 -c conda-forge \
+    && conda run -n eopf pip install /opt/$EOPF_CPM \
+    && conda clean -afy; \
+    fi
 
 RUN unzip /opt/$TRACETOOL_ZIP -d /opt
 ENV PATH="${PATH}:/opt/"

@@ -1,18 +1,22 @@
 import os
+import pytest
 import time
 
 import requests
 
-REFERENCE = os.getenv(
-    "REFERENCE", "S2A_MSIL1C_20230305T075811_N0509_R035_T36MVU_20230305T094419"
-)
+
+REFERENCES = [
+    "S2A_MSIL1C_20230305T075811_N0509_R035_T36MVU_20230305T094419",
+    "S3A_OL_1_EFR____20230703T125831_20230703T125941_20230704T131848_0070_100_323_3780_PS1_O_NT_003"
+]
 
 
-def test_eopf_convert_to_zarr():
+@pytest.mark.parametrize("reference", REFERENCES)
+def test_eopf_convert_to_zarr(reference):
     process_prams = {
         "WorkflowId": "eopf_convert_to_zarr",
         "InputProductReference": {
-            "Reference": REFERENCE,
+            "Reference": reference,
         },
     }
 
@@ -36,11 +40,12 @@ def test_eopf_convert_to_zarr():
     assert order_status == "completed"
 
 
-def test_eopf_convert_to_netcdf():
+@pytest.mark.parametrize("reference", REFERENCES)
+def test_eopf_convert_to_netcdf(reference):
     process_prams = {
         "WorkflowId": "eopf_convert_to_netcdf",
         "InputProductReference": {
-            "Reference": REFERENCE,
+            "Reference": reference,
         },
     }
 
@@ -64,11 +69,12 @@ def test_eopf_convert_to_netcdf():
     assert order_status == "completed"
 
 
-def test_eopf_convert_to_cog():
+@pytest.mark.parametrize("reference", REFERENCES)
+def test_eopf_convert_to_cog(reference):
     process_prams = {
         "WorkflowId": "eopf_convert_to_cog",
         "InputProductReference": {
-            "Reference": REFERENCE,
+            "Reference": reference,
         },
     }
 

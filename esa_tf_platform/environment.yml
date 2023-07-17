@@ -4,6 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - black
+  - cachetools
   - cloudpickle
   - dask = 2023.3.2
   - flake8
@@ -22,4 +23,3 @@ dependencies:
       - conda-merge
       - mdformat-gfm
       - sentinelsat
-      - cachetools
