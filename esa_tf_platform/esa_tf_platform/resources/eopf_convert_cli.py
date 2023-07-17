@@ -34,8 +34,12 @@ def eopf_convert(
             f"target_store shall be one of the following zarr, netcdf, cod:"
         )
 
-    logger.info(f"Converting {input_path} in format {target_store} using the following options: {target_kwargs}")
-    logger.info(f"cmdl:   convert({in_store}, {target_store}, target_kwargs={target_kwargs})")
+    logger.info(
+        f"Converting {input_path} in format {target_store} using the following options: {target_kwargs}"
+    )
+    logger.info(
+        f"cmdl:   convert({in_store}, {target_store}, target_kwargs={target_kwargs})"
+    )
     convert(in_store, target_store, target_kwargs=target_kwargs)
 
 
@@ -44,6 +48,4 @@ if __name__ == "__main__":
     output_path = sys.argv[2]
     target_store = sys.argv[3]
     target_kwargs = ast.literal_eval(sys.argv[4])
-    eopf_convert(
-        input_path, output_path, target_store, target_kwargs=target_kwargs
-    )
+    eopf_convert(input_path, output_path, target_store, target_kwargs=target_kwargs)

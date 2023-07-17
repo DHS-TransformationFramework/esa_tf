@@ -181,7 +181,7 @@ eopf_to_zarr_workflow_api = {
         },
     },
     "Description": "EOPF plugin for converting internal file of Sentinel-1, Sentinel-2 and "
-                   "Sentinel-3 SAFE in zarr format",
+    "Sentinel-3 SAFE in zarr format",
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_zarr_run_processing",
     "InputProductType": PRODUCT_TYPE,
     "OutputProductType": None,
@@ -215,7 +215,7 @@ eopf_to_netcdf_workflow_api = {
         },
     },
     "Description": "EOPF plugin for converting internal file of Sentinel-1, Sentinel-2 and "
-                   "Sentinel-3 SAFE in netcdf format",
+    "Sentinel-3 SAFE in netcdf format",
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_netcdf_run_processing",
     "InputProductType": PRODUCT_TYPE,
     "OutputProductType": None,
@@ -248,7 +248,7 @@ eopf_to_cog_workflow_api = {
         },
     },
     "Description": "EOPF plugin for converting internal file of Sentinel-1, Sentinel-2 and "
-                   "Sentinel-3 SAFE in COG format",
+    "Sentinel-3 SAFE in COG format",
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_cog_run_processing",
     "InputProductType": PRODUCT_TYPE,
     "OutputProductType": None,
