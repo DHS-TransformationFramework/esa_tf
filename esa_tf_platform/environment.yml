@@ -15,7 +15,7 @@ dependencies:
   - lz4 = 4.3.2
   - nomkl
   - pip
-  - pydantic
+  - pydantic<2
   - pytest
   - pytest-cov
   - python = 3.10.9
