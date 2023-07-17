@@ -47,7 +47,7 @@ $(TRACETOOL_ZIP):
 
 setup: $(SEN2COR_RUN) $(TRACETOOL_ZIP)
 
-image: $(SEN2COR_RUN) $(TRACETOOL_ZIP) $(EOPF_CPM)
+image: $(SEN2COR_RUN) $(TRACETOOL_ZIP) $(EOPF_CPM).zip
 	docker build -t $(IMAGE_NAME) --build-arg SEN2COR_RUN=$(SEN2COR_RUN) --build-arg TRACETOOL_ZIP=$(TRACETOOL_ZIP) --build-arg EOPF_CPM=$(EOPF_CPM) .
 
 # HACK: the EOPF_CMP must be a glob matching no file
