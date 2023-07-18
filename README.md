@@ -72,13 +72,21 @@ To easily test REST API from the command line you can use the following software
 - `curl`
 - `jq`
 
-### List of plugins
+### List of workflows 
+
+The transformation framework has a set of pre-installed workflows:
+- eopf_convert_to_zarr
+- eopf_convert_to_netcdf
+- eopf_convert_to_cog
+- sen2cor_l1c_l2a
+
+The full list of workflows can e explored with the following command:
 
 ```bash
 curl http://localhost:8080/Workflows | jq
 ```
 
-### Access plugin definition
+### Access workflow definition
 
 ```bash
 curl "http://localhost:8080/Workflows('sen2cor_l1c_l2a')" | jq
