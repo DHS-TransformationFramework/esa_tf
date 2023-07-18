@@ -6,7 +6,7 @@ services:
         ports:
             - "8786:8786"
             - "8787:8787"
-        command: dask-scheduler
+        command: dask scheduler
 
     esa_tf_restapi:
         image: ${ESA_REGISTRY_PATH:-collaborativedhs}/esa_tf_restapi:${ESA_TF_RELEASE:-latest}

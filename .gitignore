@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+fix# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -55,3 +55,5 @@ cover/
 esa_tf/config/
 dask-worker-space/
 esa_tf_platform/working_dir/
+esa_tf_platform/*.run
+esa_tf_platform/*.zip

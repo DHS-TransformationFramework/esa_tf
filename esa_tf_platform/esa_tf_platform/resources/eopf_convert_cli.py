@@ -11,11 +11,11 @@ from eopf.product.store import (
     convert,
 )
 
-logger = logging.getLogger("eopf_safe_to_zarr")
+logger = logging.getLogger("eopf_convert")
 
 
 def eopf_convert(
-    input_path: str, output_path: str, target_store: str, zarr_store_options: str
+    input_path: str, output_path: str, target_store: str, target_kwargs: str
 ):
     if os.path.splitext(input_path)[-1] == "nc":
         in_store = EONetCDFStore(input_path)
@@ -34,14 +34,18 @@ def eopf_convert(
             f"target_store shall be one of the following zarr, netcdf, cod:"
         )
 
-    convert(in_store, target_store, target_kwargs=zarr_store_options)
+    logger.info(
+        f"Converting {input_path} in format {target_store} using the following options: {target_kwargs}"
+    )
+    logger.info(
+        f"cmdl:   convert({in_store}, {target_store}, target_kwargs={target_kwargs})"
+    )
+    convert(in_store, target_store, target_kwargs=target_kwargs)
 
 
 if __name__ == "__main__":
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     target_store = sys.argv[3]
-    zarr_store_options = ast.literal_eval(sys.argv[4])
-    eopf_convert(
-        input_path, output_path, target_store, zarr_store_options=zarr_store_options
-    )
+    target_kwargs = ast.literal_eval(sys.argv[4])
+    eopf_convert(input_path, output_path, target_store, target_kwargs=target_kwargs)
