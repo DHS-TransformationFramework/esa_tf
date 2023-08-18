@@ -4,19 +4,19 @@ import time
 import pytest
 import requests
 
-REFERENCES_S1S2S3 = [
-    "S1A_IW_SLC__1SSH_20230718T070806_20230718T070833_049474_05F2F3_7AE9",
-    "S2A_MSIL1C_20230305T075811_N0509_R035_T36MVU_20230305T094419",
-    "S3A_OL_1_EFR____20230703T125831_20230703T125941_20230704T131848_0070_100_323_3780_PS1_O_NT_003",
-]
+S1_TEST = os.getenv(
+    "S1_TEST", "S1A_IW_GRDH_1SDV_20230818T062305_20230818T062330_049926_060166_AFA3"
+)
+S2_TEST = os.getenv(
+    "S2_TEST", "S2B_MSIL1C_20230818T022539_N0509_R046_T50NPN_20230818T062210"
+)
+S3_TEST = os.getenv(
+    "S3_TEST",
+    "S3A_SY_2_SYN____20230818T080556_20230818T080655_20230818T195414_0059_102_206_3960_PS1_O_ST_002",
+)
 
-REFERENCES_S2S3 = [
-    "S2A_MSIL1C_20230305T075811_N0509_R035_T36MVU_20230305T094419",
-    "S3A_OL_1_EFR____20230703T125831_20230703T125941_20230704T131848_0070_100_323_3780_PS1_O_NT_003",
-]
 
-
-@pytest.mark.parametrize("reference", REFERENCES_S1S2S3)
+@pytest.mark.parametrize("reference", [S1_TEST, S2_TEST, S3_TEST])
 def test_eopf_convert_to_zarr(reference):
     process_prams = {
         "WorkflowId": "eopf_convert_to_zarr",
@@ -45,7 +45,7 @@ def test_eopf_convert_to_zarr(reference):
     assert order_status == "completed"
 
 
-@pytest.mark.parametrize("reference", REFERENCES_S2S3)
+@pytest.mark.parametrize("reference", [S2_TEST, S3_TEST])
 def test_eopf_convert_to_netcdf(reference):
     process_prams = {
         "WorkflowId": "eopf_convert_to_netcdf",
@@ -74,7 +74,7 @@ def test_eopf_convert_to_netcdf(reference):
     assert order_status == "completed"
 
 
-@pytest.mark.parametrize("reference", REFERENCES_S2S3)
+@pytest.mark.parametrize("reference", [S2_TEST, S3_TEST])
 def test_eopf_convert_to_cog(reference):
     process_prams = {
         "WorkflowId": "eopf_convert_to_cog",

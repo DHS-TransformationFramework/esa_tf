@@ -554,6 +554,15 @@ def run_workflow(
         # run workflow
         logger.info(f"run workflow: {workflow_id!r}, {workflow_options!r}")
         workflow_runner = load_workflow_runner(workflow_id)
+        logger.info(
+            f"{workflow_id}("
+            f"{product_path}, "
+            f"processing_dir={processing_dir}, "
+            f"output_dir={output_binder_dir}, "
+            f"workflow_options={workflow_options}"
+            f")"
+        )
+
         output = workflow_runner(
             product_path,
             processing_dir=processing_dir,

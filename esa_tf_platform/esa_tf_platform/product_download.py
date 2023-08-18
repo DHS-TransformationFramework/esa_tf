@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import pathlib
 import time
 import urllib
 
@@ -249,6 +250,12 @@ def download(
     """
     Download the product from the first hub in the hubs_credentials_file that publishes the product
     """
+
+    product = pathlib.Path(product).stem
+    if int(os.getenv("TF_DEBUG", 0)):
+        product_path = f"processing_dir/{product}.zip"
+        if pathlib.Path(product_path).is_file():
+            return product_path
 
     session_list = update_api_list(hubs_config_file)
 

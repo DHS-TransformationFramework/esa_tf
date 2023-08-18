@@ -1,6 +1,5 @@
 import ast
 import logging
-import os
 import sys
 
 from eopf.product.store import (
@@ -17,10 +16,7 @@ logger = logging.getLogger("eopf_convert")
 def eopf_convert(
     input_path: str, output_path: str, target_store: str, target_kwargs: str
 ):
-    if os.path.splitext(input_path)[-1] == "nc":
-        in_store = EONetCDFStore(input_path)
-    else:
-        in_store = EOSafeStore(input_path)
+    in_store = EOSafeStore(input_path)
 
     if target_store == "zarr":
         target_store = EOZarrStore(output_path)
@@ -31,15 +27,13 @@ def eopf_convert(
     else:
         raise ValueError(
             f"target_store {target_store} not recognized. "
-            f"target_store shall be one of the following zarr, netcdf, cod:"
+            f"target_store shall be one of the following zarr, netcdf, cog:"
         )
 
     logger.info(
         f"Converting {input_path} in format {target_store} using the following options: {target_kwargs}"
     )
-    logger.info(
-        f"cmdl:   convert({in_store}, {target_store}, target_kwargs={target_kwargs})"
-    )
+    logger.info(f"convert({in_store}, {target_store}, target_kwargs={target_kwargs})")
     convert(in_store, target_store, target_kwargs=target_kwargs)
 
 
