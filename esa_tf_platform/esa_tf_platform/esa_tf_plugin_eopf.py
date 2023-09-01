@@ -27,27 +27,35 @@ PRODUCT_TYPE_ZARR = [
     "SL_1_RBT___",
     "OL_1_EFR___",
     "OL_1_ERR___",
-    "OL_2_LFR___",
     "OL_2_LRR___",
     "SL_2_LST___",
     "SL_2_FRP___",
     "SY_2_SYN___",
+    "SR_2_LAN___",
 ]
 
 
 PRODUCT_TYPE_COG = [
+    "WV_SLC__1S",
+    "IW_SLC__1S",
+    "EW_SLC__1S",
+    "IW_GRDH_1S",
+    "EW_GRDH_1S",
+    "IW_GRDM_1S",
+    "EW_GRDM_1S",
     "IW_OCN__2S",
     "EW_OCN__2S",
     "S2MSI1C",
     "S2MSI2A",
+    "SR_1_SRA_BS",
     "SL_1_RBT___",
     "OL_1_EFR___",
     "OL_1_ERR___",
-    "OL_2_LFR___",
     "OL_2_LRR___",
     "SL_2_LST___",
     "SL_2_FRP___",
     "SY_2_SYN___",
+    "SR_2_LAN___",
 ]
 
 
@@ -56,14 +64,15 @@ PRODUCT_TYPE_NC = [
     "EW_OCN__2S",
     "S2MSI1C",
     "S2MSI2A",
+    "SR_1_SRA_BS",
     "SL_1_RBT___",
     "OL_1_EFR___",
     "OL_1_ERR___",
-    "OL_2_LFR___",
     "OL_2_LRR___",
     "SL_2_LST___",
     "SL_2_FRP___",
     "SY_2_SYN___",
+    "SR_2_LAN___",
 ]
 
 
