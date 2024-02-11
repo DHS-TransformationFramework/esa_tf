@@ -10,13 +10,13 @@ from esa_tf_platform import product_download
     mock.MagicMock(return_value={"path": "product_path"}),
 )
 @mock.patch(
-    "sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={"uuid": "uuid"})
+    "sentinelsat.SentinelAPI._load_query", mock.MagicMock(return_value=[[{"id": "uuid"}], 1])
 )
 def test_download_product_from_hub():
     hub_credentials = {
         "api_type": "dhus-api",
         "credentials": {
-            "api_url": "https:/apihub.copernicus.eu/apihub",
+            "api_url": "https://colhub2.copernicus.eu/dhus",
             "user": "user",
             "password": "password",
         },
@@ -35,13 +35,15 @@ def test_download_product_from_hub():
     "sentinelsat.SentinelAPI.download",
     mock.MagicMock(return_value={"path": "product_path"}),
 )
-@mock.patch("sentinelsat.SentinelAPI.query", mock.MagicMock(return_value={}))
+@mock.patch(
+    "sentinelsat.SentinelAPI._load_query", mock.MagicMock(return_value=[[], 0])
+)
 def test_error_download_product_from_hub():
     with pytest.raises(ValueError, match=f"product not found"):
         hub_credentials = {
             "api_type": "dhus-api",
             "credentials": {
-                "api_url": "https:/apihub.copernicus.eu/apihub",
+                "api_url": "https://colhub2.copernicus.eu/dhus",
                 "user": "user",
                 "password": "password",
             },
