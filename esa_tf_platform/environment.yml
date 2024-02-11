@@ -5,7 +5,7 @@ channels:
 dependencies:
   - black
   - blosc
-  - cloudpickle
+  - cloudpickle = 2.2.1
   - dask = 2023.3.2
   - flake8
   - gdal

@@ -4,7 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - black
-  - cloudpickle
+  - cloudpickle = 2.2.1
   - dask-core = 2023.3.2
   - distributed
   - fastapi = 0.97.0

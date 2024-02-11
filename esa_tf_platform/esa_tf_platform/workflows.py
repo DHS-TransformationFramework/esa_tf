@@ -3,6 +3,7 @@ import importlib
 import itertools
 import logging
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -328,7 +329,8 @@ def unzip_product(product_zip_file, processing_dir):
     :param str processing_dir: directory where to unzip the product zip
     """
     with zipfile.ZipFile(product_zip_file, "r") as product_zip:
-        product_folder = product_zip.infolist()[0].filename
+        path = pathlib.Path(product_zip.infolist()[0].filename)
+        product_folder = path.parts[0]
         product_zip.extractall(processing_dir)
     return os.path.join(processing_dir, product_folder)
 

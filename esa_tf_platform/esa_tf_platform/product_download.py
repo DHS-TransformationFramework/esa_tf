@@ -172,11 +172,13 @@ class DhusApi:
 
     def _get_product_id(self, product):
         identifier = os.path.splitext(product)[0]
-        uuid_products = self.api.query(identifier=identifier)
-        if len(uuid_products) == 0:
+        products, count = self.api._load_query(f'identifier:"{identifier}"')
+        if count == 0:
             raise ValueError(f"{product} not found in: {self.api_url}")
-        logger.info(f"{product} found in: {self.api_url}")
-        return list(uuid_products)[0]
+        if count > 1:
+            raise ValueError(f"Multiple products found for {product}")
+        uuid_product = products[0]["id"]
+        return uuid_product
 
     def download(self, product, directory_path, checksum=True):
         uuid_product = self._get_product_id(product)
