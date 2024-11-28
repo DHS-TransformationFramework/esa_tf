@@ -18,7 +18,8 @@ COPY $SEN2COR_RUN $TRACETOOL_ZIP ${EOPF_CPM}.zip /opt/
 
 RUN if [ -f /opt/${EOPF_CPM}.zip ]; then \
     unzip /opt/${EOPF_CPM}.zip -d /opt \
-    && conda create -n eopf python=3.10 -c conda-forge \
+    && conda create -n eopf python=3.11.9 -c conda-forge \
+    && conda run -n eopf --no-capture-output pip install ipython overrides bs4 \
     && conda run -n eopf --no-capture-output pip install /opt/$EOPF_CPM \
     && conda clean -afy; \
     fi

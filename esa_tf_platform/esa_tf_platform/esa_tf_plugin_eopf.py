@@ -151,7 +151,7 @@ eopf_to_zarr_workflow_api = {
     "OutputProductType": None,
     "WorkflowVersion": "0.1",
     "ProcessorName": "eopf",
-    "ProcessorVersion": "1.2.2",
+    "ProcessorVersion": "2.5.5",
     "SupportTraceabilty": True,
 }
 
@@ -185,7 +185,7 @@ eopf_to_netcdf_workflow_api = {
     "OutputProductType": None,
     "WorkflowVersion": "0.1",
     "ProcessorName": "eopf",
-    "ProcessorVersion": "1.2.2",
+    "ProcessorVersion": "2.5.0",
     "SupportTraceabilty": True,
 }
 
@@ -218,6 +218,6 @@ eopf_to_cog_workflow_api = {
     "OutputProductType": None,
     "WorkflowVersion": "0.1",
     "ProcessorName": "eopf",
-    "ProcessorVersion": "1.2.2",
+    "ProcessorVersion": "2.5.0",
     "SupportTraceabilty": True,
 }
