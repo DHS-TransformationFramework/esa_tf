@@ -3,12 +3,12 @@ ESACCI_URL := ftp://geo10.elie.ucl.ac.be/CCI/LandCover/$(ESACCI_ZIP)
 ESACCI_TAR := CCI4SEN2COR/ESACCI-LC-L4-ALL-FOR-SEN2COR.tar
 define HUBS_CREDENTIALS
 # example for: config/hubs_credentials.yaml
-scihub:
+colhub:
   api_type: dhus-api
   credentials:
-    api_url: https://scihub.copernicus.eu/dhus
-    user: my-scihub-username
-    password: my-scihub-password
+    api_url: https://colhub.copernicus.eu/dhus
+    user: my-colhub-username
+    password: my-colhub-password
 cdse:
   api_type: csc-api
   auth: oauth2
