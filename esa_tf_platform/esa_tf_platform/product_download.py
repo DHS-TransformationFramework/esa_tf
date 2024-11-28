@@ -110,20 +110,22 @@ class CscApi:
         download_url = urllib.parse.urljoin(
             self.api_url, f"Products({product_id})/$value"
         )
-        product_checksum = product_info.get("Checksum", [{}])
-        try:
-            product_checksum = product_checksum[0].get("Value")
-        except (TypeError, AttributeError):
-            product_checksum = None
-        if not isinstance(product_checksum, str):
-            product_checksum = None
         product_basename = os.path.splitext(product)[0]
         product_path = os.path.join(directory_path, f"{product_basename}.zip")
-        if checksum and not product_checksum:
-            logging.warning(
-                f"checksum cannot be verified, checksum not available in {self.api_url} product info"
-            )
-            checksum = False
+        if checksum:
+            try:
+                product_checksum = product_info.get("Checksum", [{}])
+                product_checksum = product_checksum[0].get("Value")
+            except Exception as ex:
+                product_checksum = None
+                logging.warning(f"an error occurred trying to read product checksum: {ex}")
+            if not isinstance(product_checksum, str):
+                product_checksum = None
+            if not product_checksum:
+                logging.warning(
+                    f"checksum cannot be verified, checksum not available in {self.api_url} product info"
+                )
+                checksum = False
         if checksum:
             hash_md5 = hashlib.md5()
         logger.info(f"trying to download product {product}")
@@ -263,7 +265,7 @@ def download(
 
     if hub_name:
         if hub_name not in session_list:
-            raise ValueError(f"{hub_name} not found")
+            raise ValueError(f"{hub_name} not found in {session_list}")
         session_list = {hub_name: session_list[hub_name]}
 
     product_path = None
