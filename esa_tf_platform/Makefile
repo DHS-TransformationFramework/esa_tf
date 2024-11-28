@@ -3,7 +3,7 @@
 ENVIRONMENT := ESA_TF_PLATFORM
 DASKFLAGS :=
 IMAGE_NAME := collaborativedhs/esa_tf_worker
-SEN2COR_RUN := Sen2Cor-02.10.01-Linux64.run
+SEN2COR_RUN := Sen2Cor-02.12.03-Linux64.run
 SEN2COR_URL := http://step.esa.int/thirdparties/sen2cor/2.10.0/$(SEN2COR_RUN)
 COV_REPORT := html
 TRACETOOL_ZIP := tracetool-1.2.4-distribution.zip

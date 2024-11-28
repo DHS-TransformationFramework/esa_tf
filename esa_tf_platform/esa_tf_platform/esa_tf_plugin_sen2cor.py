@@ -325,7 +325,7 @@ sen2cor_l1c_l2a_workflow_api = {
     "Execute": "esa_tf_platform.esa_tf_plugin_sen2cor.run_processing",
     "InputProductType": "S2MSI1C",
     "OutputProductType": "S2MSI2A",
-    "WorkflowVersion": "0.2",
+    "WorkflowVersion": "0.3",
     "WorkflowOptions": {
         "Aerosol_Type": {
             "Description": "Default processing via configuration is the rural (continental) aerosol type with mid latitude summer and an ozone concentration of 331 Dobson Units",
@@ -365,6 +365,6 @@ sen2cor_l1c_l2a_workflow_api = {
         },
     },
     "ProcessorName": "Sen2Cor_L1C_L2A",
-    "ProcessorVersion": "v2.10",
+    "ProcessorVersion": "v02.12.03",
     "SupportTraceabilty": True,
 }
