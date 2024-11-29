@@ -2,7 +2,6 @@ import ast
 import logging
 import sys
 
-
 from eopf.store.convert import convert
 
 logger = logging.getLogger("eopf_convert")
