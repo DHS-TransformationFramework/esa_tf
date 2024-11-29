@@ -118,7 +118,9 @@ class CscApi:
                 product_checksum = product_checksum[0].get("Value")
             except Exception as ex:
                 product_checksum = None
-                logging.warning(f"an error occurred trying to read product checksum: {ex}")
+                logging.warning(
+                    f"an error occurred trying to read product checksum: {ex}"
+                )
             if not isinstance(product_checksum, str):
                 product_checksum = None
             if not product_checksum:

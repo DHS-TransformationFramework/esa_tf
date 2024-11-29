@@ -14,7 +14,12 @@ def eopf_convert(
     logger.info(
         f"Converting {input_path} in format {target_format} using the following options: {target_store_kwargs}"
     )
-    convert(input_path, output_path, target_format=target_format, target_store_kwargs=target_store_kwargs)
+    convert(
+        input_path,
+        output_path,
+        target_format=target_format,
+        target_store_kwargs=target_store_kwargs,
+    )
 
 
 if __name__ == "__main__":
@@ -22,4 +27,6 @@ if __name__ == "__main__":
     output_path = sys.argv[2]
     target_format = sys.argv[3]
     target_store_kwargs = ast.literal_eval(sys.argv[4])
-    eopf_convert(input_path, output_path, target_format, target_store_kwargs=target_store_kwargs)
+    eopf_convert(
+        input_path, output_path, target_format, target_store_kwargs=target_store_kwargs
+    )
