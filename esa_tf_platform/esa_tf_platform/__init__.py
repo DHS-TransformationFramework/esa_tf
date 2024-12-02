@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "1.5.3-osf"
+__version__ = "1.5.4"
 
 from .logger_setup import logger_setup
 from .workflows import get_all_workflows, run_workflow
