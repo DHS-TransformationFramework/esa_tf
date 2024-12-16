@@ -5,19 +5,19 @@ channels:
 dependencies:
   - black
   - blosc
-  - cloudpickle = 2.2.1
-  - dask = 2023.3.2
+  - cloudpickle = 3.1.0
+  - dask = 2024.9.1
   - flake8
   - gdal
   - hdf5
   - isort
-  - lz4 = 4.3.2
+  - lz4
   - nomkl
   - pip
   - pydantic<2
   - pytest
   - pytest-cov
-  - python = 3.10.9
+  - python = 3.12
   - pip:
       - Authlib
       - cachetools

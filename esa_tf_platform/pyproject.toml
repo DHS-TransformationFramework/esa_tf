@@ -19,7 +19,7 @@ dynamic = ["version"]
 license = {file = "LICENSE"}
 name = "esa_tf_platform"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 
 [project.optional-dependencies]
 tests = ["pytest"]
