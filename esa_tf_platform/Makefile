@@ -8,7 +8,7 @@ SEN2COR_URL := http://step.esa.int/thirdparties/sen2cor/2.10.0/$(SEN2COR_RUN)
 COV_REPORT := html
 TRACETOOL_ZIP := tracetool-1.2.4-distribution.zip
 TRACETOOL_URL := https://repository.gael-systems.com/repository/public/fr/gael/datac/tracetool/1.2.4/$(TRACETOOL_ZIP)
-EOPF_CPM := eopf-cpm-2.5.0
+EOPF_CPM := eopf-cpm-2.5.1
 CONDA := conda
 
 default: fix-code-style test
