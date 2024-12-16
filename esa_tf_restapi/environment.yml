@@ -4,8 +4,8 @@ channels:
   - nodefaults
 dependencies:
   - black
-  - cloudpickle = 2.2.1
-  - dask-core = 2023.3.2
+  - cloudpickle = 3.1.0
+  - dask-core = 2024.9.1
   - distributed
   - fastapi = 0.97.0
   - flake8
@@ -16,7 +16,7 @@ dependencies:
   - pip
   - pytest
   - pytest-cov
-  - python = 3.10.9
+  - python = 3.12
   - uvicorn
   - pip:
       - Authlib
