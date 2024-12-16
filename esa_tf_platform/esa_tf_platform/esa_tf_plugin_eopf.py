@@ -12,15 +12,6 @@ store_suffix = {"zarr": "zarr", "cog": "cog", "netcdf": "nc"}
 
 
 PRODUCT_TYPE_ZARR = [
-    "WV_SLC__1S",
-    "IW_SLC__1S",
-    "EW_SLC__1S",
-    "IW_GRDH_1S",
-    "EW_GRDH_1S",
-    "IW_GRDM_1S",
-    "EW_GRDM_1S",
-    "IW_OCN__2S",
-    "EW_OCN__2S",
     "S2MSI1C",
     "S2MSI2A",
     "SR_1_SRA_BS",
@@ -30,21 +21,15 @@ PRODUCT_TYPE_ZARR = [
     "OL_2_LRR___",
     "SL_2_LST___",
     "SL_2_FRP___",
-    "SY_2_SYN___",
-    "SR_2_LAN___",
+    "OL_2_LFR___",
+    "SY_2_V10___",
+    "SY_2_VG1___",
+    "SY_2_VGP___",
+    "SY_2_VGK___",
 ]
 
 
 PRODUCT_TYPE_COG = [
-    "WV_SLC__1S",
-    "IW_SLC__1S",
-    "EW_SLC__1S",
-    "IW_GRDH_1S",
-    "EW_GRDH_1S",
-    "IW_GRDM_1S",
-    "EW_GRDM_1S",
-    "IW_OCN__2S",
-    "EW_OCN__2S",
     "S2MSI1C",
     "S2MSI2A",
     "SR_1_SRA_BS",
@@ -54,14 +39,15 @@ PRODUCT_TYPE_COG = [
     "OL_2_LRR___",
     "SL_2_LST___",
     "SL_2_FRP___",
-    "SY_2_SYN___",
-    "SR_2_LAN___",
+    "OL_2_LFR___",
+    "SY_2_V10___",
+    "SY_2_VG1___",
+    "SY_2_VGP___",
+    "SY_2_VGK___",
 ]
 
 
 PRODUCT_TYPE_NC = [
-    "IW_OCN__2S",
-    "EW_OCN__2S",
     "S2MSI1C",
     "S2MSI2A",
     "SR_1_SRA_BS",
@@ -71,8 +57,11 @@ PRODUCT_TYPE_NC = [
     "OL_2_LRR___",
     "SL_2_LST___",
     "SL_2_FRP___",
-    "SY_2_SYN___",
-    "SR_2_LAN___",
+    "OL_2_LFR___",
+    "SY_2_V10___",
+    "SY_2_VG1___",
+    "SY_2_VGP___",
+    "SY_2_VGK___",
 ]
 
 
@@ -119,7 +108,7 @@ convert_to_zarr_run_processing = functools.partial(run_processing, target_store=
 convert_to_netcdf_run_processing = functools.partial(
     run_processing, target_store="netcdf"
 )
-convert_to_cog_run_processing = functools.partial(run_processing, target_store="cog")
+convert_to_cog_run_processing = functools.partial(run_processing, target_store="cogs")
 
 
 eopf_to_zarr_workflow_api = {
@@ -149,9 +138,9 @@ eopf_to_zarr_workflow_api = {
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_zarr_run_processing",
     "InputProductType": PRODUCT_TYPE_ZARR,
     "OutputProductType": None,
-    "WorkflowVersion": "0.2",
+    "WorkflowVersion": "0.3",
     "ProcessorName": "eopf",
-    "ProcessorVersion": "2.5.5",
+    "ProcessorVersion": "2.5.1",
     "SupportTraceabilty": True,
 }
 
@@ -183,9 +172,9 @@ eopf_to_netcdf_workflow_api = {
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_netcdf_run_processing",
     "InputProductType": PRODUCT_TYPE_NC,
     "OutputProductType": None,
-    "WorkflowVersion": "0.2",
+    "WorkflowVersion": "0.3",
     "ProcessorName": "eopf",
-    "ProcessorVersion": "2.5.0",
+    "ProcessorVersion": "2.5.1",
     "SupportTraceabilty": True,
 }
 
@@ -216,8 +205,8 @@ eopf_to_cog_workflow_api = {
     "Execute": "esa_tf_platform.esa_tf_plugin_eopf.convert_to_cog_run_processing",
     "InputProductType": PRODUCT_TYPE_COG,
     "OutputProductType": None,
-    "WorkflowVersion": "0.2",
+    "WorkflowVersion": "0.3",
     "ProcessorName": "eopf",
-    "ProcessorVersion": "2.5.0",
+    "ProcessorVersion": "2.5.1",
     "SupportTraceabilty": True,
 }
