@@ -32,7 +32,7 @@ jobs:
         use-only-tar-bz2: true
     - name: Install dependencies
       run: |
-        make conda-env-update ENVIRONMENT=ubuntu-latest-3.12
+        conda update --all && make conda-env-update ENVIRONMENT=ubuntu-latest-3.12
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
