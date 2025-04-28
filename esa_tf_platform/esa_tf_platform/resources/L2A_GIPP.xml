@@ -26,13 +26,17 @@
     <Product_Generator>NONE</Product_Generator>
     <!-- should be either a directory in the sen2cor home folder or 'NONE'. If NONE, Toolbox mode of operation will be used-->
     <DEM_Directory>NONE</DEM_Directory>
-    <!-- should be either a directory in the sen2cor home folder or 'NONE'. If NONE, no DEM will be used -->
+    <!-- should be either a directory in the sen2cor home folder or 'NONE'.
+        1) To use previously downloaded CDSE DGED DEM, set <DEM_Directory> to the local path where the DEM files are stored (e.g. dem/CopernicusDEM90_DGED).
+        2) To use the Copernicus DEM hosted by AWS, set <DEM_Directory> to the local path where the DEM files are stored (e.g. dem/CopernicusDEM90_AWS).
+        3) If not DEM is used, <DEM_Directory> should be set to 'NONE'.
+    -->
     <DEM_Reference>NONE</DEM_Reference>
-    <!-- DEM_Reference>http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/</DEM_Reference
-         disable / enable the upper two rows if you want to use an SRTM DEM
-         The SRTM DEM will then be downloaded from this reference, if no local DEM is available
-         if you use Planet DEM you can optionally add the local path instead,
-         which then will be inserted in the datastrip metadata -->
+    <!-- DEM_Reference is used to 1) reference the DEM in the L2A Metadata and, alternatively, 2) to set the url where DEM can be automatically downloaded.
+        1) To use previously downloaded CDSE DGED DEM, set <DEM_Reference> to 'CDSE-GLO-30' or 'CDSE-GLO-90' (resolution, 30/90, is mandatory).
+        2) To use the Copernicus DEM hosted by AWS, set <DEM_Reference>https://copernicus-dem-90m.s3.eu-central-1.amazonaws.com/</DEM_Reference>.
+        3) If no DEM is used, <DEM_Reference> should be set to 'NONE'.
+     -->
     <Generate_DEM_Output>FALSE</Generate_DEM_Output>
     <!-- FALSE: no DEM output, TRUE: store DEM in the AUX data directory -->
     <Force_Exit_On_DEM_Error>TRUE</Force_Exit_On_DEM_Error>
@@ -81,6 +85,14 @@
 		<DS_Scheme_2A>S2_PDI_Level-2A_Datastrip_Metadata</DS_Scheme_2A>
 	</PSD_Scheme>
           <PSD_Scheme PSD_Version="14.9" PSD_Reference="S2-PDGS-TAS-DI-PSD-V14.9_Schema">
+        <UP_Scheme_1C>S2_User_Product_Level-1C_Metadata</UP_Scheme_1C>
+        <UP_Scheme_2A>S2_User_Product_Level-2A_Metadata</UP_Scheme_2A>
+        <Tile_Scheme_1C>S2_PDI_Level-1C_Tile_Metadata</Tile_Scheme_1C>
+        <Tile_Scheme_2A>S2_PDI_Level-2A_Tile_Metadata</Tile_Scheme_2A>
+        <DS_Scheme_1C>S2_PDI_Level-1C_Datastrip_Metadata</DS_Scheme_1C>
+        <DS_Scheme_2A>S2_PDI_Level-2A_Datastrip_Metadata</DS_Scheme_2A>
+    </PSD_Scheme>
+          <PSD_Scheme PSD_Version="15.0" PSD_Reference="S2-PDGS-CS-DI-PSD-V15.0_Schema">
         <UP_Scheme_1C>S2_User_Product_Level-1C_Metadata</UP_Scheme_1C>
         <UP_Scheme_2A>S2_User_Product_Level-2A_Metadata</UP_Scheme_2A>
         <Tile_Scheme_1C>S2_PDI_Level-1C_Tile_Metadata</Tile_Scheme_1C>
