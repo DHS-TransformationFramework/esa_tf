@@ -176,7 +176,7 @@ def check_product_is_type_of(
     if product_type in SENTINEL1:
         exp = f"^S1[AB_]_{product_type}"
     elif product_type in SENTINEL2:
-        exp = f"^S2[AB_]_{product_type[2:5]}L{product_type[5:7]}"
+        exp = f"^S2[ABC_]_{product_type[2:5]}L{product_type[5:7]}"
     elif product_type in SENTINEL3:
         exp = f"S3[AB_]_{product_type}"
     elif product_type in SENTINEL5P:
