@@ -18,6 +18,7 @@ dependencies:
   - pytest
   - pytest-cov
   - python = 3.12
+  - h11 >= 0.16.0
   - pip:
       - Authlib
       - cachetools

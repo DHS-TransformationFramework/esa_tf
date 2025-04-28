@@ -13,6 +13,7 @@ RUN apt update && apt install -y \
     gnupg \
     make \
     unzip \
+    wget > 1.23.1 \
     zip \
     openssl
 
@@ -47,6 +48,12 @@ RUN make conda-env-update ENVIRONMENT=base CONDA=conda && conda clean -afy
 COPY . /opt/esa-tf-platform
 
 RUN pip install .
+
+RUN echo rm -rf /opt/esa-tf-platform/${TRACETOOL_ZIP} /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
+RUN rm -rf /opt/esa-tf-platform/${TRACETOOL_ZIP} /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
+RUN echo rm -rf /opt/${TRACETOOL_ZIP} /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
+RUN rm -rf /opt/${TRACETOOL_ZIP} /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
+
 
 RUN mkdir -p /working_dir
 
