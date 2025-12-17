@@ -8,7 +8,7 @@ SEN2COR_URL := https://step.esa.int/thirdparties/sen2cor/2.12.0/$(SEN2COR_RUN)
 COV_REPORT := html
 TRACETOOL_ZIP := tracetool-1.2.4-distribution.zip
 TRACETOOL_URL := https://repository.gael-systems.com/repository/public/fr/gael/datac/tracetool/1.2.4/$(TRACETOOL_ZIP)
-EOPF_CPM := eopf-cpm-2.5.1
+EOPF_CPM := 2.6.3
 CONDA := conda
 
 default: fix-code-style test
@@ -47,7 +47,7 @@ $(TRACETOOL_ZIP):
 
 setup: $(SEN2COR_RUN) $(TRACETOOL_ZIP)
 
-image: $(SEN2COR_RUN) $(TRACETOOL_ZIP) $(EOPF_CPM).zip
+image: $(SEN2COR_RUN) $(TRACETOOL_ZIP)
 	docker build -t $(IMAGE_NAME) --build-arg SEN2COR_RUN=$(SEN2COR_RUN) --build-arg TRACETOOL_ZIP=$(TRACETOOL_ZIP) --build-arg EOPF_CPM=$(EOPF_CPM) .
 
 # HACK: the EOPF_CMP must be a glob matching no file

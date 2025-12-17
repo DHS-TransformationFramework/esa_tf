@@ -17,15 +17,12 @@ RUN apt update && apt install -y \
     zip \
     openssl
 
-COPY $SEN2COR_RUN $TRACETOOL_ZIP ${EOPF_CPM}.zip /opt/
+COPY $SEN2COR_RUN $TRACETOOL_ZIP /opt/
 
-RUN if [ -f /opt/${EOPF_CPM}.zip ]; then \
-    unzip /opt/${EOPF_CPM}.zip -d /opt \
-    && conda create -n eopf python=3.11.9 -c conda-forge \
-    && conda run -n eopf --no-capture-output pip install ipython overrides bs4 \
-    && conda run -n eopf --no-capture-output pip install /opt/$EOPF_CPM \
-    && conda clean -afy; \
-    fi
+RUN conda create -n eopf python=3.11.9 -c conda-forge \
+    && conda run -n eopf --no-capture-output pip install eopf==${EOPF_CPM} \
+    && conda clean -afy
+  # && conda run -n eopf --no-capture-output pip install ipython overrides bs4 \
 
 RUN $CONDA install -c anaconda -c conda-forge openjdk=8 -y\
     && $CONDA clean -afy

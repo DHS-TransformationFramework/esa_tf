@@ -46,7 +46,7 @@ services:
         command: >
             sh -c 'if \[ -n "$$(ls /plugins/* 2>/dev/null)" \]; then pip install /plugins/* ; fi &&
                    cd /opt/esa-tf-platform && 
-                   make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786 --nworkers ${NPROCESSES:-8} --nthreads 1"'
+                   make dask-worker DASKFLAGS="tcp://esa_tf_scheduler:8786 --memory-limit=${MEMORY_LIMIT:-4GB} --nworkers ${NPROCESSES:-8} --nthreads 1"'
 
     esa_tf_proxy:
         image: nginx:1.21.6

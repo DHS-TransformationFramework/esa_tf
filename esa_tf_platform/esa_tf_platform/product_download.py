@@ -9,6 +9,8 @@ import cachetools
 import requests
 import sentinelsat
 import yaml
+from urllib.parse import urlunsplit
+
 from authlib.integrations.requests_client import OAuth2Session
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ PERMANENT_REDIRECT_STATUS_CODE = 308
 class CscApi:
     def __init__(self, **hub_config):
         hub_credentials = hub_config["credentials"]
+        self.query_api = hub_config.get("query_api", "odata")
         self.password = hub_credentials["password"]
         self.user = hub_credentials["user"]
         self.auth = hub_config["auth"].lower()
@@ -28,9 +31,15 @@ class CscApi:
         self.download_auth = hub_config["download_auth"]
 
         version = hub_credentials.get("version", "v1")
-        self.api_url = urllib.parse.urljoin(
-            hub_credentials["api_url"] + "/", f"odata/{version}/"
-        )
+
+        if self.query_api == "odata":
+            self.api_url = urllib.parse.urljoin(
+                hub_credentials["api_url"] + "/", f"odata/{version}/"
+            )
+        elif self.query_api == "stac":
+            self.api_url = hub_credentials["api_url"]
+        else:
+            raise ValueError(f"Query API f{self.query_api=} not supported")
 
         self.client_id = hub_credentials.get("client_id", None)
         self.token_endpoint = hub_credentials.get("token_endpoint", None)
@@ -76,7 +85,7 @@ class CscApi:
                 password=self.password,
             )
 
-    def _get_product_info(self, product):
+    def _get_odata_product_info(self, product):
         if self.query_auth:
             self._ensure_token()
             session = self.auth_session
@@ -91,36 +100,93 @@ class CscApi:
         response = session.get(query_url)
         response.raise_for_status()
 
-        product_info = response.json()["value"]
-        if len(product_info) == 0:
+        product_info_list = response.json()["value"]
+        if len(product_info_list) == 0:
             raise ValueError(f"{product} not found in: {self.api_url}")
+        product_info = product_info_list[0]
 
         logger.info(f"{product} found in: {self.api_url}")
         logger.debug(f"PRODUCT INFO {product_info}")
-        return product_info[0]
+        product_id = product_info["Id"]
+        download_url = urllib.parse.urljoin(
+            self.api_url, f"Products({product_id})/$value"
+        )
+        try:
+            product_checksum = product_info.get("Checksum", [{}])
+            product_checksum = product_checksum[0].get("Value")
+        except Exception as ex:
+            product_checksum = None
+            logging.warning(
+                f"an error occurred trying to read product checksum: {ex}"
+            )
 
-    def download(self, product, directory_path, chunk_size=8192, checksum=True):
+        return {"download_url": download_url, "product_checksum": product_checksum}
+
+    def _get_stac_product_info(self, product):
+
+        if self.query_auth:
+            self._ensure_token()
+            session = self.auth_session
+        else:
+            session = requests.Session()
+
+        product = os.path.splitext(product)[0]
+        query_url = urllib.parse.urljoin(
+            self.api_url, f"search?ids={product},{product}.zip"
+        )
+
+        logger.info(f"QUERY: {query_url}")
+        print(query_url)
+        response = session.get(query_url)
+        response.raise_for_status()
+
+        product_info_list = response.json()["features"]
+        if len(product_info_list) == 0:
+            raise ValueError(f"{product} not found in: {self.api_url}")
+
+        product_info = product_info_list[0]
+
+        if "product" in product_info["assets"]:
+            download_url = product_info["assets"]["product"]["href"]
+        elif "Product" in product_info["assets"]:
+            download_url = product_info["assets"]["Product"]["href"]
+        else:
+            raise ValueError(f"downaload path not found in response {product_info=}")
+
+        product_checksum = None
+        try:
+            product_checksum = product_info["assets"]["product"]["file:checksum"]
+            logging.warning(f"checksum found in assets/product/file:checksum")
+        except KeyError:
+            logging.debug(f"checksum not found in assets/product/file:checksum")
+
+        try:
+            product_checksum = product_info["properties"]["file:checksum"]
+            logging.warning(f"checksum found in properties/file:checksum")
+        except KeyError:
+            logging.debug(f"checksum not found in properties/file:checksum")
+
+        if product_checksum is None:
+            logging.warning(f"an error occurred trying to read product checksum")
+
+        return {"download_url": download_url, "product_checksum": product_checksum}
+
+    def download(self, product, directory_path, chunk_size=8192, query_api="odata", checksum=True):
         if self.download_auth:
             session = self.auth_session
         else:
             session = requests.Session()
 
-        product_info = self._get_product_info(product)
-        product_id = product_info["Id"]
-        download_url = urllib.parse.urljoin(
-            self.api_url, f"Products({product_id})/$value"
-        )
+        if query_api == "odata":
+            product_info = self._get_stac_product_info(product)
+        elif query_api == "stac":
+            product_info = self._get_odata_product_info(product)
+
+        download_url = product_info["download_url"]
+        product_checksum = product_info["product_checksum"]
         product_basename = os.path.splitext(product)[0]
         product_path = os.path.join(directory_path, f"{product_basename}.zip")
         if checksum:
-            try:
-                product_checksum = product_info.get("Checksum", [{}])
-                product_checksum = product_checksum[0].get("Value")
-            except Exception as ex:
-                product_checksum = None
-                logging.warning(
-                    f"an error occurred trying to read product checksum: {ex}"
-                )
             if not isinstance(product_checksum, str):
                 product_checksum = None
             if not product_checksum:
@@ -273,6 +339,9 @@ def download(
     product_path = None
     for hub_name, session in session_list.items():
         logger.info(f"trying to download data from {hub_name}")
+        logger.warning("-------------------------------------------------------")
+        logger.warning(f"{session}")
+        logger.warning("-------------------------------------------------------")
         try:
             product_path = session.download(
                 product,

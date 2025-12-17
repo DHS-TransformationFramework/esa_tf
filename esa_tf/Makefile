@@ -3,15 +3,22 @@ ESACCI_URL := ftp://geo10.elie.ucl.ac.be/CCI/LandCover/$(ESACCI_ZIP)
 ESACCI_TAR := CCI4SEN2COR/ESACCI-LC-L4-ALL-FOR-SEN2COR.tar
 define HUBS_CREDENTIALS
 # example for: config/hubs_credentials.yaml
-colhub:
-  api_type: dhus-api
+cda:
+  api_type: csc-api
+  auth: oauth2
+  query_api: odata
+  query_auth: False
+  download_auth: True
   credentials:
-    api_url: https://colhub.copernicus.eu/dhus
-    user: my-colhub-username
-    password: my-colhub-password
+    api_url: https://cda.copernicus.eu/cda/
+    user: my-cda-username
+    password: my-cda-password
+    token_endpoint: https://auth.cda.copernicus.eu/auth/realms/CollaborativeDataAccess/protocol/openid-connect/token
+    client_id: cda-gss
 cdse:
   api_type: csc-api
   auth: oauth2
+  query_api: stac
   query_auth: False
   download_auth: True
   credentials:
@@ -22,13 +29,16 @@ cdse:
     client_id: cdse-public
 gss:
   api_type: csc-api
-  auth: basic
+  auth: oauth2
+  query_api: stac
   query_auth: True
   download_auth: True
   credentials:
-    api_url: https://dhs-test.onda-dias.eu/gss-cat-01
+    api_url: https://dhs-test.onda-dias.eu/stac-02/stac/
     user: my-gss-username
     password: my-gss-password
+    token_endpoint: https://collaborative-dhs.onda-dias.eu/auth/realms/collaborative-dhs/protocol/openid-connect/token
+    client_id: ivv-gss1-client
 endef
 
 define TRACEABILITY_CONFIG
