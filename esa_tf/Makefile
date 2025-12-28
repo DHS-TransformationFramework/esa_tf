@@ -1,6 +1,7 @@
 ESACCI_ZIP := ESACCI-LC-L4-ALL-FOR-SEN2COR.zip
 ESACCI_URL := ftp://geo10.elie.ucl.ac.be/CCI/LandCover/$(ESACCI_ZIP)
 ESACCI_TAR := CCI4SEN2COR/ESACCI-LC-L4-ALL-FOR-SEN2COR.tar
+DOCKERFLAGS := --platform linux/amd64
 define HUBS_CREDENTIALS
 # example for: config/hubs_credentials.yaml
 cda:
@@ -82,7 +83,7 @@ enable_quota_check: true
 
 # Optional, default true
 # it enables traceability pushing traces on the configured Traceability Service
-enable_traceability: true
+enable_traceability: false
 
 # list of workflows for which the trace should not be sent
 # default empty list
@@ -147,8 +148,8 @@ traces:
 setup: plugins traces
 
 build: setup
-	make -C ../esa_tf_restapi image
-	make -C ../esa_tf_platform image
+	$(MAKE) -C ../esa_tf_restapi image DOCKERFLAGS="${DOCKERFLAGS}"
+	$(MAKE) -C ../esa_tf_platform image DOCKERFLAGS="${DOCKERFLAGS}"
 
 up:
 	docker compose up

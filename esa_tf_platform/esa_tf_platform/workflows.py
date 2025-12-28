@@ -481,9 +481,10 @@ def run_workflow(
     product_reference,
     workflow_options,
     order_id,
-    enable_traceability=True,
+    enable_traceability=False,
     enable_monitoring=True,
     monitoring_polling_time_s=10,
+    checksum=True,
 ):
     """
     Run the workflow defined by 'workflow_id':
@@ -496,6 +497,8 @@ def run_workflow(
     :param bool enable_traceability: enable sending the trace to the Traceability Service of the output product
     """
     # define create directories
+    if enable_traceability:
+        logger.info("Traceability is disabled")
     try:
         dask_worker = dask.distributed.worker.get_worker()
         logger.info(f"start processing on worker: {dask_worker.name!r}")
@@ -549,6 +552,7 @@ def run_workflow(
             processing_dir=processing_dir,
             hub_name=hub_name,
             order_id=order_id,
+            checksum=checksum,
         )
         logger.info(f"unpack input product: {product_zip_file!r}")
         product_path = unzip_product(product_zip_file, processing_dir)

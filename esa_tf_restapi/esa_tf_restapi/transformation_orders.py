@@ -37,7 +37,7 @@ class TransformationOrder(object):
         workflow_id,
         workflow_options,
         workflow_name="",
-        enable_traceability=True,
+        enable_traceability=False,
         enable_monitoring=True,
         monitoring_polling_time_s=10,
         uri_root="",

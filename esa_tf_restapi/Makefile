@@ -7,6 +7,7 @@ COV_REPORT := html
 CONDA := conda
 
 .DEFAULT_GOAL := default
+DOCKERFLAGS ?= --platform linux/amd64
 
 start:
 	SCHEDULER=$(SCHEDULER) uvicorn --proxy-headers --port $(PORT) esa_tf_restapi:app --reload
@@ -40,7 +41,7 @@ conda-env-update:
 	${CONDA} env update -n $(ENVIRONMENT) -f environment.yml
 
 image:
-	docker build -t $(IMAGE_NAME) .
+	docker build -t $(IMAGE_NAME) $(DOCKERFLAGS) .
 
 # run
 

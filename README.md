@@ -15,7 +15,6 @@ In its current development status *Alpha*, it features:
   or over a distributed architecture. 
 - The functionalities which allow setting workflow parameters and options
   [via a REST API](#How-to-test-API-endpoints). 
-- The ability to compute the traceability record and upload it to the traceability service.
 - Support for multiple users.
 - A [Sen2Cor plugin](https://step.esa.int/main/snap-supported-plugins/sen2cor/)
   which uses Sen2Cor v2.10 tool to convert Sentinel-2 L1C products into L2A output products,

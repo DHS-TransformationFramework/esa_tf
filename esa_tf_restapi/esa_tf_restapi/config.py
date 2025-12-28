@@ -12,7 +12,7 @@ class ConfigurationError(Exception):
 class Configuration(pydantic.BaseModel):
     keeping_period: int = 14400
     excluded_workflows: T.List[str] = []
-    enable_traceability: bool = True
+    enable_traceability: bool = False
     enable_authorization_check: bool = True
     enable_quota_check: bool = True
     default_role: T.TypedDict("Role", quota=int, profile=str) = {

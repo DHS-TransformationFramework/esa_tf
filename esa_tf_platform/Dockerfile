@@ -5,7 +5,7 @@ ARG TRACETOOL_ZIP=tracetool-1.2.4-distribution.zip
 ARG EOPF_CPM=does-not-exixs[t]
 ARG CONDA=conda
 
-# `curl` and `unzip` are required to install tracetool
+# `curl` and `unzip` are required to install
 RUN apt remove python3 -y
 RUN apt update && apt install -y \
     curl \
@@ -17,7 +17,7 @@ RUN apt update && apt install -y \
     zip \
     openssl
 
-COPY $SEN2COR_RUN $TRACETOOL_ZIP /opt/
+COPY $SEN2COR_RUN /opt/
 
 RUN conda create -n eopf python=3.11.9 -c conda-forge \
     && conda run -n eopf --no-capture-output pip install eopf==${EOPF_CPM} \
@@ -27,7 +27,6 @@ RUN conda create -n eopf python=3.11.9 -c conda-forge \
 RUN $CONDA install -c anaconda -c conda-forge openjdk=8 -y\
     && $CONDA clean -afy
 
-RUN unzip /opt/$TRACETOOL_ZIP -d /opt
 ENV PATH="${PATH}:/opt/"
 
 RUN bash /opt/$SEN2COR_RUN --target /opt/sen2cor \
@@ -46,10 +45,10 @@ COPY . /opt/esa-tf-platform
 
 RUN pip install .
 
-RUN echo rm -rf /opt/esa-tf-platform/${TRACETOOL_ZIP} /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
-RUN rm -rf /opt/esa-tf-platform/${TRACETOOL_ZIP} /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
-RUN echo rm -rf /opt/${TRACETOOL_ZIP} /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
-RUN rm -rf /opt/${TRACETOOL_ZIP} /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
+RUN echo rm -rf /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
+RUN rm -rf /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
+RUN echo rm -rf /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
+RUN rm -rf /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
 
 
 RUN mkdir -p /working_dir

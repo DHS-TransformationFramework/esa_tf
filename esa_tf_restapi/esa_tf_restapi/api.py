@@ -535,19 +535,18 @@ def submit_workflow(
         workflow_id,
         input_product_reference,
         workflow_options,
-        esa_tf_config["enable_traceability"],
     )
     logger.info(f"user: {user_id!r} - required transformation order {order_id!r}")
-    enable_traceability = True
-    if not esa_tf_config["enable_traceability"]:
-        logger.info("traceability is disabled")
-        enable_traceability = False
-    if workflow["Id"] in esa_tf_config["untraced_workflows"]:
-        logger.info(f"workflow {workflow_id!r} traceability is disabled")
-        enable_traceability = False
-    if not workflow.get("SupportTraceabilty", True):
-        logger.info(f"workflow {workflow_id!r} does not support traceability")
-        enable_traceability = False
+    enable_traceability = False
+    if esa_tf_config["enable_traceability"]:
+        logger.warning("Traceability no more supported, the keyword enable_traceability will be ignored")
+
+    # if workflow["Id"] in esa_tf_config["untraced_workflows"]:
+    #     logger.info(f"workflow {workflow_id!r} traceability is disabled")
+    #     enable_traceability = False
+    # if not workflow.get("SupportTraceabilty", True):
+    #     logger.info(f"workflow {workflow_id!r} does not support traceability")
+    #     enable_traceability = False
 
     if order_id in queue.transformation_orders:
         logger.info(f"oder {order_id!r} is already in list of submitted orders")

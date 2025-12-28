@@ -52,6 +52,17 @@ class CscApi:
             self.auth_session = None
             self.token = None
 
+    def _get_product_info(self, *args, **kwargs):
+        if self.query_api == "odata":
+            logger.info(f"Using ODATA api: {self.query_api}")
+            out = self._get_product_info = self._get_odata_product_info(*args, **kwargs)
+        elif self.query_api == "stac":
+            out = self._get_product_info = self._get_stac_product_info(*args, **kwargs)
+        else:
+            logger.info(f"Using STAC api: {self.query_api}")
+            raise ValueError(f"Query API f{self.query_api=} not supported")
+        return out
+
     def _instantiate_auth_session(self, hub_credentials):
         if self.auth == "oauth2":
             logger.info(f"using oauth2 authentication for {hub_credentials['api_url']}")
@@ -85,7 +96,26 @@ class CscApi:
                 password=self.password,
             )
 
+    @staticmethod
+    def find_checksum(product_info):
+        checksum_info_list = product_info.get("Checksum", [{}])
+        algorithms = []
+        target_checksum = None
+        for checksum_info in checksum_info_list:
+            algorithm = checksum_info.get("Algorithm", "")
+            logging.warning(f"algorithm {algorithm}")
+            if algorithm.lower() == "md5":
+                target_checksum = checksum_info.get("Value")
+            algorithms.append(algorithm)
+        if checksum_info is None:
+            logging.warning(
+                f"MD5 checksum algorithm not found in available algorithms {algorithms}"
+                "Only MD5 is supported; the checksum will be ignored."
+            )
+        return target_checksum
+
     def _get_odata_product_info(self, product):
+        logger.info("Using ODATA api for catalogue search")
         if self.query_auth:
             self._ensure_token()
             session = self.auth_session
@@ -112,17 +142,17 @@ class CscApi:
             self.api_url, f"Products({product_id})/$value"
         )
         try:
-            product_checksum = product_info.get("Checksum", [{}])
-            product_checksum = product_checksum[0].get("Value")
+            target_checksum = self.find_checksum(product_info)
         except Exception as ex:
-            product_checksum = None
+            target_checksum = None
             logging.warning(
                 f"an error occurred trying to read product checksum: {ex}"
             )
 
-        return {"download_url": download_url, "product_checksum": product_checksum}
+        return {"download_url": download_url, "target_checksum": target_checksum}
 
     def _get_stac_product_info(self, product):
+        logger.info("Using STAC api for catalogue search")
 
         if self.query_auth:
             self._ensure_token()
@@ -136,7 +166,6 @@ class CscApi:
         )
 
         logger.info(f"QUERY: {query_url}")
-        print(query_url)
         response = session.get(query_url)
         response.raise_for_status()
 
@@ -147,53 +176,62 @@ class CscApi:
         product_info = product_info_list[0]
 
         if "product" in product_info["assets"]:
-            download_url = product_info["assets"]["product"]["href"]
+            product_dict = product_info["assets"]["product"]
         elif "Product" in product_info["assets"]:
-            download_url = product_info["assets"]["Product"]["href"]
+            product_dict = product_info["assets"]["Product"]
         else:
-            raise ValueError(f"downaload path not found in response {product_info=}")
+            raise ValueError(f"product / Product path not found in response {product_info=}")
 
-        product_checksum = None
+        download_url = product_dict["href"]
+
+        target_checksum = None
         try:
-            product_checksum = product_info["assets"]["product"]["file:checksum"]
-            logging.warning(f"checksum found in assets/product/file:checksum")
+            target_checksum = product_dict["file:checksum"]
         except KeyError:
-            logging.debug(f"checksum not found in assets/product/file:checksum")
-
+            pass
         try:
-            product_checksum = product_info["properties"]["file:checksum"]
-            logging.warning(f"checksum found in properties/file:checksum")
+            target_checksum = product_info["properties"]["file:checksum"]
         except KeyError:
-            logging.debug(f"checksum not found in properties/file:checksum")
+            pass
 
-        if product_checksum is None:
-            logging.warning(f"an error occurred trying to read product checksum")
+        if target_checksum is None:
+            logging.warning(
+                f"an error occurred trying to read product checksum "
+                f"neither in assets/product/file:checksum nor"
+                f"properties/file:checksum"
+            )
+        if target_checksum[:2] != "d5":
+            target_checksum = None
+            logging.warning(
+                f"Unsupported checksum algorithm (multihash prefix: {target_checksum[:2]}). "
+                "Only prefix d5 (MD5) is supported; the checksum will be ignored."
+            )
+        else:
+            target_checksum = target_checksum[6:]
 
-        return {"download_url": download_url, "product_checksum": product_checksum}
+        return {"download_url": download_url, "target_checksum": target_checksum}
 
-    def download(self, product, directory_path, chunk_size=8192, query_api="odata", checksum=True):
+    def download(self, product, directory_path, chunk_size=8192, checksum=True):
         if self.download_auth:
             session = self.auth_session
         else:
             session = requests.Session()
 
-        if query_api == "odata":
-            product_info = self._get_stac_product_info(product)
-        elif query_api == "stac":
-            product_info = self._get_odata_product_info(product)
+        product_info = self._get_product_info(product)
 
         download_url = product_info["download_url"]
-        product_checksum = product_info["product_checksum"]
+        target_checksum = product_info["target_checksum"]
         product_basename = os.path.splitext(product)[0]
         product_path = os.path.join(directory_path, f"{product_basename}.zip")
         if checksum:
-            if not isinstance(product_checksum, str):
-                product_checksum = None
-            if not product_checksum:
+            if not isinstance(target_checksum, str):
+                target_checksum = None
+            if not target_checksum:
                 logging.warning(
                     f"checksum cannot be verified, checksum not available in {self.api_url} product info"
                 )
                 checksum = False
+        logger.info(f"Target cheksum {target_checksum}")
         if checksum:
             hash_md5 = hashlib.md5()
         logger.info(f"trying to download product {product}")
@@ -216,12 +254,16 @@ class CscApi:
                 if checksum:
                     hash_md5.update(chunk)
                 f.write(chunk)
-                logger.debug(f"downloaded {8192 * k} bytes")
+                if k % 10 == 0:
+                    logger.debug(f"downloaded {8192 * k} bytes")
                 k += 1
         if checksum:
-            if not (hash_md5.hexdigest() == product_checksum):
+            product_checksum = hash_md5.hexdigest()
+            if not (product_checksum == target_checksum):
                 raise RuntimeError(
-                    f"checksum does not match, failed to download product: {product}"
+                    f"Checksum does not match: "
+                    f"target checksum is {target_checksum}, product checksum is {product_checksum},"
+                    f"Failed to download product: {product}"
                 )
         logger.info(f"product {product} downloaded")
         return product_path
@@ -317,7 +359,7 @@ def update_api_list(hubs_config_file):
 
 
 def download(
-    product, *, processing_dir, hubs_config_file, hub_name=None, order_id=None
+    product, *, processing_dir, hubs_config_file, hub_name=None, order_id=None, checksum=True,
 ):
     """
     Download the product from the first hub in the hubs_credentials_file that publishes the product
@@ -339,13 +381,11 @@ def download(
     product_path = None
     for hub_name, session in session_list.items():
         logger.info(f"trying to download data from {hub_name}")
-        logger.warning("-------------------------------------------------------")
-        logger.warning(f"{session}")
-        logger.warning("-------------------------------------------------------")
         try:
             product_path = session.download(
                 product,
                 directory_path=processing_dir,
+                checksum=checksum,
             )
         except Exception:
             logger.exception(
