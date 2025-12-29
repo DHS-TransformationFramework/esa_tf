@@ -107,7 +107,7 @@ class CscApi:
             if algorithm.lower() == "md5":
                 target_checksum = checksum_info.get("Value")
             algorithms.append(algorithm)
-        if checksum_info is None:
+        if target_checksum is None:
             logging.warning(
                 f"MD5 checksum algorithm not found in available algorithms {algorithms}"
                 "Only MD5 is supported; the checksum will be ignored."
@@ -200,12 +200,12 @@ class CscApi:
                 f"neither in assets/product/file:checksum nor"
                 f"properties/file:checksum"
             )
-        if target_checksum[:2] != "d5":
-            target_checksum = None
+        elif target_checksum[:2] != "d5":
             logging.warning(
                 f"Unsupported checksum algorithm (multihash prefix: {target_checksum[:2]}). "
                 "Only prefix d5 (MD5) is supported; the checksum will be ignored."
             )
+            target_checksum = None
         else:
             target_checksum = target_checksum[6:]
 

@@ -1,6 +1,5 @@
 FROM --platform=linux/amd64 continuumio/miniconda3:latest
 ARG SEN2COR_RUN=Sen2Cor-02.12.03-Linux64.run
-ARG TRACETOOL_ZIP=tracetool-1.2.4-distribution.zip
 # By default the following glob doesn't match any file and the dependency is skipped
 ARG EOPF_CPM=does-not-exixs[t]
 ARG CONDA=conda
@@ -24,8 +23,8 @@ RUN conda create -n eopf python=3.11.9 -c conda-forge \
     && conda clean -afy
   # && conda run -n eopf --no-capture-output pip install ipython overrides bs4 \
 
-RUN $CONDA install -c anaconda -c conda-forge openjdk=8 -y\
-    && $CONDA clean -afy
+# RUN $CONDA install -c anaconda -c conda-forge openjdk=8 -y\
+#     && $CONDA clean -afy
 
 ENV PATH="${PATH}:/opt/"
 
