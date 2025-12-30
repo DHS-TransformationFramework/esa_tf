@@ -511,6 +511,10 @@ def submit_workflow(
     # a default role is used if user_roles is equal to None or [], [None], [None, None, ...]
 
     esa_tf_config = config.read_esa_tf_config()
+    enable_traceability = esa_tf_config.pop("enable_traceability", False)
+    if enable_traceability:
+        logger.warning("Traceability no more supported, the keyword enable_traceability will be ignored")
+
     evict_orders(esa_tf_config=esa_tf_config)
     check_user_quota(
         user_id=user_id, user_roles=user_roles, esa_tf_config=esa_tf_config
@@ -537,16 +541,7 @@ def submit_workflow(
         workflow_options,
     )
     logger.info(f"user: {user_id!r} - required transformation order {order_id!r}")
-    enable_traceability = False
-    if esa_tf_config["enable_traceability"]:
-        logger.warning("Traceability no more supported, the keyword enable_traceability will be ignored")
 
-    # if workflow["Id"] in esa_tf_config["untraced_workflows"]:
-    #     logger.info(f"workflow {workflow_id!r} traceability is disabled")
-    #     enable_traceability = False
-    # if not workflow.get("SupportTraceabilty", True):
-    #     logger.info(f"workflow {workflow_id!r} does not support traceability")
-    #     enable_traceability = False
 
     if order_id in queue.transformation_orders:
         logger.info(f"oder {order_id!r} is already in list of submitted orders")
@@ -561,7 +556,6 @@ def submit_workflow(
             workflow_id=workflow_id,
             workflow_name=workflow["WorkflowName"],
             workflow_options=workflow_options,
-            enable_traceability=enable_traceability,
             enable_monitoring=esa_tf_config.get("enable_monitoring", True),
             monitoring_polling_time_s=esa_tf_config.get(
                 "monitoring_polling_time_s", True
