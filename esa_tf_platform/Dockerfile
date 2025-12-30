@@ -1,7 +1,6 @@
 FROM --platform=linux/amd64 continuumio/miniconda3:latest
 ARG SEN2COR_RUN=Sen2Cor-02.12.03-Linux64.run
 # By default the following glob doesn't match any file and the dependency is skipped
-ARG EOPF_CPM=does-not-exixs[t]
 ARG CONDA=conda
 
 # `curl` and `unzip` are required to install
@@ -18,10 +17,9 @@ RUN apt update && apt install -y \
 
 COPY $SEN2COR_RUN /opt/
 
-RUN conda create -n eopf python=3.11.9 -c conda-forge \
-    && conda run -n eopf --no-capture-output pip install eopf==${EOPF_CPM} \
-    && conda clean -afy
-  # && conda run -n eopf --no-capture-output pip install ipython overrides bs4 \
+COPY environment_eopf.yml .
+
+RUN conda env create -f environment_eopf.yml && conda clean -afy
 
 # RUN $CONDA install -c anaconda -c conda-forge openjdk=8 -y\
 #     && $CONDA clean -afy
@@ -44,10 +42,8 @@ COPY . /opt/esa-tf-platform
 
 RUN pip install .
 
-RUN echo rm -rf /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
-RUN rm -rf /opt/esa-tf-platform/${EOPF_CPM}.zip  /opt/esa-tf-platform/$SEN2COR_RUN
-RUN echo rm -rf /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
-RUN rm -rf /opt/${EOPF_CPM}.zip /opt/${EOPF_CPM}
+RUN echo rm -rf /opt/esa-tf-platform/$SEN2COR_RUN
+RUN rm -rf /opt/esa-tf-platform/$SEN2COR_RUN
 
 
 RUN mkdir -p /working_dir
