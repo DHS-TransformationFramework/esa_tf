@@ -13,7 +13,7 @@ import zipfile
 import dask.distributed
 import pkg_resources
 
-from . import product_download, resources_monitor, traceability
+from . import product_download, resources_monitor
 
 logger = logging.getLogger(__name__)
 
@@ -382,74 +382,6 @@ def extract_product_platform(product_path):
     return platform
 
 
-def push_trace(
-    output_product_path,
-    traces_dir,
-    order_id,
-    workflow_id,
-    traceability_config_path=None,
-    key_path=None,
-    tracetool_path=None,
-):
-    """Create and push a trace relative to the output product. If the pushing ends successfully the
-    .json file trace is deleted, otherwise it is stored into the ``traces_dir`` folder.
-
-    :param str output_product_path: filename of the output file product
-    :param str traces_dir: path of the folder for traces
-    :param str order_id: unique identifier of the processing order, used to create a processing folder
-    :param str workflow_id: id that identifies the workflow to run
-    :param str traceability_config_path: optional file containing the traceability configuration. If
-    it is None, the environment variable ``TRACEABILITY_CONFIG_FILE`` is used
-    :param str key_path: optional file containing the TS Data Producer key. If it is None,
-    the environment variable ``KEY_FILE`` is used
-    :param str tracetool_path: optional path for the tracetool-x.x.x.jar file. If it is None,
-    the environment variable ``TRACETOOL_FILE`` is used
-    """
-    logger.info("sending product trace")
-    if traceability_config_path is None:
-        traceability_config_path = os.getenv(
-            "TRACEABILITY_CONFIG_FILE", "./traceability_config.yaml"
-        )
-    if key_path is None:
-        key_path = os.getenv("KEY_FILE", "./secret.txt")
-    if tracetool_path is None:
-        tracetool_path = os.getenv("TRACETOOL_FILE", "/opt/tracetool-1.2.4.jar")
-    trace_path = os.path.join(traces_dir, f"trace_{order_id}.json")
-    try:
-        workflow_info = get_all_workflows()[workflow_id]
-        trace_kwargs = {
-            "beginningDateTime": extract_product_sensing_date(output_product_path),
-            "platformShortName": extract_product_platform(output_product_path),
-            "productType": workflow_info["OutputProductType"],
-            "processorName": workflow_info.get("ProcessorName", None),
-            "processorVersion": workflow_info.get("ProcessorVersion", None),
-        }
-        trace = traceability.Trace(
-            traceability_config_path,
-            key_path,
-            tracetool_path,
-            trace_path,
-            **trace_kwargs,
-        )
-        trace.hash(output_product_path)
-
-        trace.sign()
-        trace.push()
-        os.remove(trace_path)
-
-        trace_id = trace.trace_content["id"]
-        logger.info(
-            f"the trace '{os.path.basename(trace_path)}' has been pushed, ID: {trace_id}"
-        )
-        logger.info("the trace has been pushed")
-    except Exception as err:
-        trace_id = None
-        logger.exception(
-            f"the trace '{trace_path}' has not been pushed, an error occurred: {err}"
-        )
-    return trace_id
-
-
 def chown(path, user, group):
     try:
         shutil.chown(path, user=user, group=group)
@@ -481,7 +413,6 @@ def run_workflow(
     product_reference,
     workflow_options,
     order_id,
-    enable_traceability=False,
     enable_monitoring=True,
     monitoring_polling_time_s=10,
     checksum=True,
@@ -494,11 +425,8 @@ def run_workflow(
     {'Reference': 'S2A_MSIL1C_20170205T105221_N0204_R051_T31TCF_20170205T105426', 'api_hub': 'scihub'}.
     :param dict workflow_options: dictionary containing the workflow kwargs.
     :param str order_id: unique identifier of the processing order, used to create a processing folder
-    :param bool enable_traceability: enable sending the trace to the Traceability Service of the output product
     """
     # define create directories
-    if enable_traceability:
-        logger.info("Traceability is disabled")
     try:
         dask_worker = dask.distributed.worker.get_worker()
         logger.info(f"start processing on worker: {dask_worker.name!r}")
@@ -507,7 +435,6 @@ def run_workflow(
     logger.info(f"current worker folder: {os.getcwd()}")
     working_dir = os.getenv("WORKING_DIR", "/working_dir")
     output_dir = os.getenv("OUTPUT_DIR", "/output_dir")
-    traces_dir = os.getenv("TRACES_DIR", "/traces")
     output_owner = int(os.getenv("OUTPUT_OWNER_ID", "-1"))
     output_group_owner = int(os.getenv("OUTPUT_GROUP_OWNER_ID", "-1"))
     hubs_config_file = os.getenv("HUBS_CREDENTIALS_FILE", "./hubs_credentials.yaml")
@@ -583,10 +510,6 @@ def run_workflow(
         if enable_monitoring:
             stop_event.set()
 
-        if enable_traceability:
-            trace_id = push_trace(
-                output_product_path, traces_dir, order_id, workflow_id
-            )
     finally:
         if enable_monitoring:
             stop_event.set()
