@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 continuumio/miniconda3:latest
+FROM --platform=linux/amd64 continuumio/miniconda3:25.3.1-1
 ARG SEN2COR_RUN=Sen2Cor-02.12.03-Linux64.run
 # By default the following glob doesn't match any file and the dependency is skipped
 ARG CONDA=conda
@@ -21,8 +21,8 @@ COPY environment_eopf.yml .
 
 RUN conda env create -f environment_eopf.yml && conda clean -afy
 
-# RUN $CONDA install -c anaconda -c conda-forge openjdk=8 -y\
-#     && $CONDA clean -afy
+RUN $CONDA install -c anaconda -c conda-forge openjdk=8 -y\
+    && $CONDA clean -afy
 
 ENV PATH="${PATH}:/opt/"
 
