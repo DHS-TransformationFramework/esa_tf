@@ -14,8 +14,11 @@ def update_disk_usage(disk_usage: list[float], processing_dir: str) -> float:
     total_size_b = 0
     for path, _, filenames in os.walk(processing_dir):
         for filename in filenames:
-            filepath = os.path.join(path, filename)
-            total_size_b += os.path.getsize(filepath)
+            try:
+                filepath = os.path.join(path, filename)
+                total_size_b += os.path.getsize(filepath)
+            except FileNotFoundError:
+                pass
 
     total_size_gb = total_size_b * B_TO_GB
     disk_usage.append(total_size_gb)
